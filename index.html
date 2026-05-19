@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sidebar Aplikasi Madrasah</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            background-color: #f0f7ff; 
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 250px;
+            background-color: #ffffff;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Bagian Logo */
+        .logo-container {
+            padding: 30px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .logo-box {
+            background-color: #004d40; 
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .logo-box i {
+            font-size: 20px;
+            color: #4db6ac;
+        }
+
+        .logo-text {
+            font-weight: bold;
+            font-size: 14px;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+
+        /* Navigasi Menu */
+        .nav-menu {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            text-decoration: none;
+            color: #5f6368; 
+            transition: background 0.3s;
+            font-size: 15px;
+            cursor: pointer; /* Menambahkan kursor pointer agar terlihat bisa diklik */
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: #f8f9fa;
+            color: #1a73e8;
+        }
+
+        .nav-item i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        /* Area Konten Kosong (Kanan) */
+        .main-content {
+            flex-grow: 1;
+            background-color: #f4f8fb;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* Styling untuk wadah tampilan JSON */
+        #display-data {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #e0e0e0;
+            margin-top: 15px;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: monospace;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo-container">
+            <div class="logo-box">
+                <i class="fas fa-book-open"></i>
+                <div class="logo-text">APLIKASI<br>MADRASAH</div>
+            </div>
+        </div>
+
+        <div class="nav-menu">
+            <a onclick="loadData('kartu1.json', this)" class="nav-item">
+                <i class="fas fa-address-card"></i>
+                Nomor Ujian Nasional
+            </a>
+            
+            <a onclick="loadData('kartu2.json', this)" class="nav-item">
+                <i class="fas fa-user-check"></i>
+                Nomor Ujian SAT
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h2>Dashboard Data Ujian</h2>
+        <div id="display-data">
+            <p style="color: #666;">Silakan pilih menu di sidebar untuk memuat data JSON...</p>
+        </div>
+    </div>
+
+    <script>
+        function loadData(namaFile, element) {
+            // 1. Mengubah efek visual tombol menu yang aktif
+            const allNavItems = document.querySelectorAll('.nav-item');
+            allNavItems.forEach(nav => nav.classList.remove('active'));
+            element.classList.add('active');
+
+            const displayArea = document.getElementById('display-data');
+            
+            // Tampilkan pesan loading
+            displayArea.innerHTML = `<p style="color: #1a73e8;">Mencari dan memuat file <b>${namaFile}</b>...</p>`;
+
+            // 2. Proses pemanggilan file JSON menggunakan Fetch API
+            fetch(namaFile)
+                .then(response => {
+                    // Cek jika file tidak ditemukan (error 404)
+                    if (!response.ok) {
+                        throw new Error(`File ${namaFile} tidak ditemukan atau gagal dimuat.`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 3. Jika berhasil, tampilkan isinya di layar
+                    // (Anda bisa mengubah bagian ini nanti untuk memasukkan data ke dalam tabel/kartu)
+                    displayArea.innerHTML = `
+                        <h3 style="margin-bottom: 15px; color: #004d40;">Isi Data dari ${namaFile}:</h3>
+                        <pre>${JSON.stringify(data, null, 4)}</pre>
+                    `;
+                })
+                .catch(error => {
+                    // 4. Jika gagal (file belum ada), tampilkan error
+                    displayArea.innerHTML = `
+                        <p style="color: red; font-weight: bold;">Gagal!</p>
+                        <p style="color: red;">${error.message}</p>
+                        <br>
+                        <p style="font-size: 14px; color: #555;">
+                            <b>Catatan Penting:</b><br>
+                            Pemanggilan file JSON eksternal menggunakan JavaScript memerlukan <i>Local Server</i>.<br>
+                            Anda tidak bisa membukanya langsung dengan cara klik dua kali file HTML-nya (alamat <code>file:///...</code>).<br>
+                            Gunakan ekstensi <b>Live Server</b> di VS Code, atau aplikasi seperti XAMPP/Laragon.
+                        </p>
+                    `;
+                });
+        }
+    </script>
+
+</body>
+</html>
