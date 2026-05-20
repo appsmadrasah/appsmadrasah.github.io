@@ -1,0 +1,25 @@
+{
+  "pengaturan_kartu": {
+    "kop_surat": {
+      "logo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_Kementerian_Agama_Republik_Indonesia.svg/200px-Logo_Kementerian_Agama_Republik_Indonesia.svg.png",
+      "baris_1": "Kartu Peserta",
+      "baris_2": "Ujian Madrasah",
+      "baris_3": "Tahun Pelajaran 2025/2026",
+      "baris_4": "MI Hidayatus Shibyan"
+    },
+    "tanda_tangan": {
+      "tempat_tanggal": "Lamongan, 01 Mei 2026",
+      "nama_pejabat": "IMAM TAUFIQ, ST"
+    }
+  },
+  "data_peserta": [
+    {
+      "nama": "AFZAN MAULIDU ANAQIE",
+      "tglLahir": "2006-03-08",
+      "noUjian": "26-13-18-1-0167-0003",
+      "username": "131203",
+      "password": "131203",
+      "fotoUrl": ""
+    }
+  ]
+}
