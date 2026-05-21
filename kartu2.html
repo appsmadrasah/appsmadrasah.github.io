@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Kartu Peserta Ujian - Auto-Fetch Firebase</title>
+    <title>Aplikasi Kartu Peserta Ujian - Realtime Database</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -153,7 +153,7 @@
                 </tr>
             </thead>
             <tbody id="tabel-body">
-                <tr><td colspan="6" style="text-align: center;">Menghubungkan & memuat database Firebase...</td></tr>
+                <tr><td colspan="6" style="text-align: center;">Menghubungkan & memuat Realtime Database...</td></tr>
             </tbody>
         </table>
     </div>
@@ -255,7 +255,7 @@
         const filterValue = document.getElementById("filter-kelas").value;
 
         if(window.dataPeserta.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Tidak ada data siswa di Firebase. Silakan tambah data.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Tidak ada data siswa. Silakan tambah data.</td></tr>`;
             return;
         }
 
@@ -316,7 +316,7 @@
 
         if(dataBaru.nama === "" || dataBaru.nisn === "") { alert("Nama dan NISN tidak boleh kosong!"); return; }
         
-        document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Menyimpan data... mohon tunggu.</td></tr>`;
+        document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Menyimpan data ke Realtime Database...</td></tr>`;
 
         if(index === "") {
             if (window.firebase_tambahSiswa) await window.firebase_tambahSiswa(dataBaru);
@@ -332,7 +332,7 @@
     window.hapusSiswa = async function(index) {
         const target = window.dataPeserta[index];
         if(confirm(`Yakin ingin menghapus data ${target.nama}?`)) {
-            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Menghapus data... mohon tunggu.</td></tr>`;
+            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Menghapus data dari Realtime Database...</td></tr>`;
             if (window.firebase_hapusSiswa && target.docId) {
                 await window.firebase_hapusSiswa(target.docId);
             }
@@ -362,7 +362,7 @@
             const jsonSheet = XLSX.utils.sheet_to_json(worksheet, {raw: false});
             let berhasil = 0;
 
-            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Mengunggah berkas Excel ke Firebase...</td></tr>`;
+            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Mengunggah berkas Excel ke Realtime Database...</td></tr>`;
 
             for (const row of jsonSheet) {
                 const keys = Object.keys(row);
@@ -487,12 +487,14 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    // MENGGUNAKAN FIREBASE-DATABASE BUKAN FIRESTORE
+    import { getDatabase, ref, get, push, set, remove, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // Konfigurasi Project Firebase datasiswa-65abf
+    // Konfigurasi ini sudah ditambahkan databaseURL sesuai gambar Anda
     const firebaseConfig = {
       apiKey: "AIzaSyCae3CoI4eWy9T6yhf_yGvoHiyoAJ7gUyA",
       authDomain: "datasiswa-65abf.firebaseapp.com",
+      databaseURL: "https://datasiswa-65abf-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "datasiswa-65abf",
       storageBucket: "datasiswa-65abf.firebasestorage.app",
       messagingSenderId: "1043621527533",
@@ -501,38 +503,42 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const siswaRef = collection(db, "siswa");
+    const db = getDatabase(app);
+    const dbRef = ref(db);
 
-    // FUNGSI UTAMA: Menarik dan Memetakan data dari Firebase Console Anda
+    // 1. Fungsi Menarik Data dari REALTIME DATABASE
     async function muatDataFirebase() {
         try {
-            const querySnapshot = await getDocs(siswaRef);
+            const snapshot = await get(child(dbRef, `siswa`));
             let dataOnline = [];
             
-            querySnapshot.forEach((docSnap) => {
-                let item = docSnap.data();
-                item.docId = docSnap.id; 
-                
-                // PINTAR: Jika data di Firebase Console Anda memakai nama kolom lama (username / password)
-                // Kode ini otomatis mendeteksi dan mengarahkannya ke kolom NISN & Kelas agar tidak kosong!
-                if (item.username && !item.nisn) item.nisn = item.username;
-                if (item.password && !item.kelas) item.kelas = item.password;
-                
-                dataOnline.push(item);
-            });
+            if (snapshot.exists()) {
+                snapshot.forEach((childSnapshot) => {
+                    let item = childSnapshot.val();
+                    item.docId = childSnapshot.key; // Simpan ID unik / Push ID
+                    
+                    // Auto-mapping jika masih ada kolom lama
+                    if (item.username && !item.nisn) item.nisn = item.username;
+                    if (item.password && !item.kelas) item.kelas = item.password;
+                    
+                    dataOnline.push(item);
+                });
+            }
 
             window.dataPeserta = dataOnline;
             window.renderTabel();
         } catch (error) {
             console.error("Firebase Error: ", error);
-            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Gagal memuat database online dari Firebase.</td></tr>`;
+            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Gagal memuat dari Realtime Database. Pastikan koneksi benar.</td></tr>`;
         }
     }
 
+    // 2. Fungsi Menambah Data ke REALTIME DATABASE
     async function tambahSiswa(data) {
         try {
-            await addDoc(siswaRef, {
+            const siswaListRef = ref(db, 'siswa');
+            const newSiswaRef = push(siswaListRef); // Membuat ID unik otomatis
+            await set(newSiswaRef, {
                 nama: data.nama,
                 tglLahir: data.tglLahir,
                 noUjian: data.noUjian,
@@ -542,10 +548,11 @@
         } catch (e) { console.error(e); }
     }
 
+    // 3. Fungsi Update Data ke REALTIME DATABASE
     async function updateSiswa(docId, data) {
         try {
-            const docRef = doc(db, "siswa", docId);
-            await updateDoc(docRef, {
+            const siswaRef = ref(db, 'siswa/' + docId);
+            await set(siswaRef, {
                 nama: data.nama,
                 tglLahir: data.tglLahir,
                 noUjian: data.noUjian,
@@ -555,20 +562,21 @@
         } catch (e) { console.error(e); }
     }
 
+    // 4. Fungsi Menghapus Data dari REALTIME DATABASE
     async function hapusSiswa(docId) {
         try {
-            const docRef = doc(db, "siswa", docId);
-            await deleteDoc(docRef);
+            const siswaRef = ref(db, 'siswa/' + docId);
+            await remove(siswaRef);
         } catch (e) { console.error(e); }
     }
 
-    // Daftarkan fungsi module ke global window scope
+    // Daftarkan fungsi ke global scope
     window.firebase_muatData = muatDataFirebase;
     window.firebase_tambahSiswa = tambahSiswa;
     window.firebase_updateSiswa = updateSiswa;
     window.firebase_hapusSiswa = hapusSiswa;
 
-    // Jalankan pengambilan data otomatis saat web pertama kali dibuka
+    // Jalankan otomatis
     window.addEventListener('DOMContentLoaded', () => {
         muatDataFirebase();
     });
