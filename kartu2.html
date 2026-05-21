@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Kartu Peserta Ujian - Autocync Firebase</title>
+    <title>Aplikasi Kartu Peserta Ujian - Auto-Fetch Firebase</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -147,8 +147,8 @@
                     <th>Nama</th>
                     <th>Tgl Lahir</th>
                     <th>No. Ujian</th>
-                    <th>NISN</th>
-                    <th>Kelas</th>
+                    <th>NISN / Username</th>
+                    <th>Kelas / Password</th>
                     <th style="width: 140px; text-align:center;">Aksi</th>
                 </tr>
             </thead>
@@ -173,7 +173,6 @@
             <div class="form-group">
                 <label>Upload Tanda Tangan (Opsional):</label>
                 <input type="file" accept="image/*" id="input-ttd" onchange="gantiTTD(event)">
-                <p style="font-size: 11px; color: #777; margin-top: 4px;">*Mendukung format JPG/PNG. Jika dikosongkan, area tanda tangan akan tetap kosong untuk ditandatangani manual.</p>
             </div>
             
             <div class="form-group"><label>Nama Kepala Madrasah:</label><input type="text" id="input-nama-kepsek" value="IMAM TAUFIQ, ST"></div>
@@ -204,8 +203,8 @@
                     <tr><td>No. Peserta</td><td>:</td><td id="k-no">...</td></tr>
                     <tr><td>Nama</td><td>:</td><td><strong id="k-nama">...</strong></td></tr>
                     <tr><td>Tanggal Lahir</td><td>:</td><td id="k-tgl">...</td></tr>
-                    <tr><td>NISN</td><td>:</td><td id="k-nisn">...</td></tr>
-                    <tr><td>Kelas</td><td>:</td><td id="k-kelas">...</td></tr>
+                    <tr><td>NISN / User</td><td>:</td><td id="k-nisn">...</td></tr>
+                    <tr><td>Kelas / Pass</td><td>:</td><td id="k-kelas">...</td></tr>
                 </table>
                 <div class="footer">
                     <div class="signature">
@@ -234,8 +233,8 @@
         <div class="form-group"><label>Nama Peserta:</label><input type="text" id="form-nama" autocomplete="off"></div>
         <div class="form-group"><label>Tanggal Lahir:</label><input type="text" id="form-tgl" placeholder="Contoh: 2006-03-08" autocomplete="off"></div>
         <div class="form-group"><label>Nomor Ujian:</label><input type="text" id="form-no" autocomplete="off"></div>
-        <div class="form-group"><label>NISN:</label><input type="text" id="form-nisn" autocomplete="off"></div>
-        <div class="form-group"><label>Kelas:</label><input type="text" id="form-kelas" placeholder="Contoh: 1, 2A, 6B" autocomplete="off"></div>
+        <div class="form-group"><label>NISN / Username:</label><input type="text" id="form-nisn" autocomplete="off"></div>
+        <div class="form-group"><label>Kelas / Password:</label><input type="text" id="form-kelas" autocomplete="off"></div>
         <div class="modal-footer">
             <button class="btn-batal" onclick="tutupModalForm()">Batal</button>
             <button class="btn-simpan" onclick="simpanSiswa()">Simpan Data</button>
@@ -256,7 +255,7 @@
         const filterValue = document.getElementById("filter-kelas").value;
 
         if(window.dataPeserta.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Tidak ada data siswa di Firebase. Silakan tambah manual atau impor Excel.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Tidak ada data siswa di Firebase. Silakan tambah data.</td></tr>`;
             return;
         }
 
@@ -305,7 +304,6 @@
 
     window.tutupModalForm = function() { document.getElementById('modalForm').style.display = 'none'; }
 
-    // OTOMATIS: Fungsi simpan sekarang mengirim data ke Firebase script
     window.simpanSiswa = async function() {
         const index = document.getElementById('form-index').value;
         const dataBaru = {
@@ -318,13 +316,11 @@
 
         if(dataBaru.nama === "" || dataBaru.nisn === "") { alert("Nama dan NISN tidak boleh kosong!"); return; }
         
-        document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Menyimpan data ke Firebase... mohon tunggu.</td></tr>`;
+        document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Menyimpan data... mohon tunggu.</td></tr>`;
 
         if(index === "") {
-            // Tambah Baru ke Firebase
             if (window.firebase_tambahSiswa) await window.firebase_tambahSiswa(dataBaru);
         } else {
-            // Update Data Lama di Firebase
             const docId = window.dataPeserta[index].docId;
             if (window.firebase_updateSiswa && docId) await window.firebase_updateSiswa(docId, dataBaru);
         }
@@ -333,11 +329,10 @@
         if (window.firebase_muatData) await window.firebase_muatData();
     }
 
-    // OTOMATIS: Fungsi hapus sekarang menghapus data langsung dari Firebase
     window.hapusSiswa = async function(index) {
         const target = window.dataPeserta[index];
-        if(confirm(`Yakin ingin menghapus data ${target.nama} dari Firebase?`)) {
-            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Menghapus data dari Firebase... mohon tunggu.</td></tr>`;
+        if(confirm(`Yakin ingin menghapus data ${target.nama}?`)) {
+            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Menghapus data... mohon tunggu.</td></tr>`;
             if (window.firebase_hapusSiswa && target.docId) {
                 await window.firebase_hapusSiswa(target.docId);
             }
@@ -352,16 +347,13 @@
         ];
         const workbook = XLSX.utils.book_new();
         const worksheet = XLSX.utils.aoa_to_sheet(dataTemplate);
-        worksheet['!cols'] = [ { wch: 30 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 } ];
         XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Siswa");
         XLSX.writeFile(workbook, "Template_Data_Siswa.xlsx");
     }
 
-    // OTOMATIS: Impor Excel akan langsung mengupload baris data secara massal ke Firebase
     window.prosesImporExcel = async function(event) {
         const file = event.target.files[0];
         if(!file) return;
-
         const reader = new FileReader();
         reader.onload = async function(e) {
             const data = new Uint8Array(e.target.result);
@@ -370,7 +362,7 @@
             const jsonSheet = XLSX.utils.sheet_to_json(worksheet, {raw: false});
             let berhasil = 0;
 
-            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Mengunggah data Excel ke Firebase... Mohon tunggu.</td></tr>`;
+            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Mengunggah berkas Excel ke Firebase...</td></tr>`;
 
             for (const row of jsonSheet) {
                 const keys = Object.keys(row);
@@ -381,7 +373,7 @@
 
                 const nama = getVal(["nama"]);
                 const tgl = getVal(["lahir", "tanggal", "tgl", "ttl"]); 
-                const no = getVal(["ujian", "nomor", "peserta", "no. ", "no "]);
+                const no = getVal(["ujian", "nomor", "peserta", "no."]);
                 const nisn = getVal(["nisn", "user", "username"]);
                 const kelas = getVal(["kelas", "kls", "pass", "password"]);
 
@@ -393,8 +385,7 @@
                     }
                 }
             }
-
-            alert(`Selesai! Berhasil mensinkronisasi ${berhasil} data siswa baru ke Firebase.`);
+            alert(`Selesai! Berhasil memuat ${berhasil} data dari Excel.`);
             if (window.firebase_muatData) await window.firebase_muatData();
             document.getElementById('inputExcel').value = ""; 
         };
@@ -406,7 +397,6 @@
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
         if(btnElement) btnElement.classList.add('active');
-        else document.querySelectorAll('.tab-btn')[['tab-data', 'tab-pengaturan', 'tab-kartu'].indexOf(tabId)].classList.add('active');
     }
 
     window.lihatKartu = function(index) {
@@ -426,7 +416,7 @@
         document.getElementById('teks-kop-4').innerText = document.getElementById('input-kop-4').value;
         document.getElementById('k-tgl-surat').innerText = document.getElementById('input-tgl-surat').value;
         document.getElementById('k-kepsek').innerText = document.getElementById('input-nama-kepsek').value;
-        alert("Pengaturan Kop dan Tanda Tangan berhasil diperbarui!"); bukaTab('tab-kartu');
+        alert("Kop surat berhasil diperbarui!"); bukaTab('tab-kartu');
     }
     
     window.gantiLogo = function(event) {
@@ -477,8 +467,8 @@
                     <tr><td>No. Peserta</td><td>:</td><td>${p.noUjian || ''}</td></tr>
                     <tr><td>Nama</td><td>:</td><td><strong>${p.nama || ''}</strong></td></tr>
                     <tr><td>Tanggal Lahir</td><td>:</td><td>${p.tglLahir || ''}</td></tr>
-                    <tr><td>NISN</td><td>:</td><td>${p.nisn || ''}</td></tr>
-                    <tr><td>Kelas</td><td>:</td><td>${p.kelas || ''}</td></tr>
+                    <tr><td>NISN / User</td><td>:</td><td>${p.nisn || ''}</td></tr>
+                    <tr><td>Kelas / Pass</td><td>:</td><td>${p.kelas || ''}</td></tr>
                 </table>
                 <div class="footer">
                     <div class="signature">
@@ -499,6 +489,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
+    // Konfigurasi Project Firebase datasiswa-65abf
     const firebaseConfig = {
       apiKey: "AIzaSyCae3CoI4eWy9T6yhf_yGvoHiyoAJ7gUyA",
       authDomain: "datasiswa-65abf.firebaseapp.com",
@@ -513,7 +504,7 @@
     const db = getFirestore(app);
     const siswaRef = collection(db, "siswa");
 
-    // 1. Ambil & Petakan Data Otomatis (Kompatibel dengan nama kolom lama/baru)
+    // FUNGSI UTAMA: Menarik dan Memetakan data dari Firebase Console Anda
     async function muatDataFirebase() {
         try {
             const querySnapshot = await getDocs(siswaRef);
@@ -521,10 +512,10 @@
             
             querySnapshot.forEach((docSnap) => {
                 let item = docSnap.data();
-                item.docId = docSnap.id; // Simpan ID unik dokumen Firebase untuk edit/hapus
+                item.docId = docSnap.id; 
                 
-                // PINTAR: Jika di Firebase masih pakai nama kolom lama (username/password), 
-                // langsung dialihkan otomatis ke kolom baru (nisn/kelas) agar tidak kosong di tabel!
+                // PINTAR: Jika data di Firebase Console Anda memakai nama kolom lama (username / password)
+                // Kode ini otomatis mendeteksi dan mengarahkannya ke kolom NISN & Kelas agar tidak kosong!
                 if (item.username && !item.nisn) item.nisn = item.username;
                 if (item.password && !item.kelas) item.kelas = item.password;
                 
@@ -534,12 +525,11 @@
             window.dataPeserta = dataOnline;
             window.renderTabel();
         } catch (error) {
-            console.error("Gagal terhubung ke Firebase: ", error);
-            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Gagal memuat database online.</td></tr>`;
+            console.error("Firebase Error: ", error);
+            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Gagal memuat database online dari Firebase.</td></tr>`;
         }
     }
 
-    // 2. Fungsi Unggah Tambah Otomatis
     async function tambahSiswa(data) {
         try {
             await addDoc(siswaRef, {
@@ -552,7 +542,6 @@
         } catch (e) { console.error(e); }
     }
 
-    // 3. Fungsi Perbarui/Edit Otomatis
     async function updateSiswa(docId, data) {
         try {
             const docRef = doc(db, "siswa", docId);
@@ -566,7 +555,6 @@
         } catch (e) { console.error(e); }
     }
 
-    // 4. Fungsi Hapus Otomatis
     async function hapusSiswa(docId) {
         try {
             const docRef = doc(db, "siswa", docId);
@@ -574,13 +562,13 @@
         } catch (e) { console.error(e); }
     }
 
-    // Daftarkan fungsi module ke window global aplikasi
+    // Daftarkan fungsi module ke global window scope
     window.firebase_muatData = muatDataFirebase;
     window.firebase_tambahSiswa = tambahSiswa;
     window.firebase_updateSiswa = updateSiswa;
     window.firebase_hapusSiswa = hapusSiswa;
 
-    // Picu pengambilan data otomatis saat pertama kali aplikasi dibuka
+    // Jalankan pengambilan data otomatis saat web pertama kali dibuka
     window.addEventListener('DOMContentLoaded', () => {
         muatDataFirebase();
     });
