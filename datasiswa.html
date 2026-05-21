@@ -108,13 +108,13 @@
     // Import SDK Firebase yang diperlukan
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
-    // Menambahkan SDK Realtime Database
     import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
-    // Firebase configuration Anda
+    // Firebase configuration dengan memasukkan databaseURL Anda
     const firebaseConfig = {
         apiKey: "AIzaSyCae3CoI4eWy9T6yhf_yGvoHiyoAJ7gUyA",
         authDomain: "datasiswa-65abf.firebaseapp.com",
+        databaseURL: "https://datasiswa-65abf-default-rtdb.asia-southeast1.firebasedatabase.app/",
         projectId: "datasiswa-65abf",
         storageBucket: "datasiswa-65abf.firebasestorage.app",
         messagingSenderId: "1043621527533",
@@ -129,7 +129,7 @@
 
     // Variabel penampung data lokal
     window.dataPeserta = [];
-    window.dataKeys = []; // Menyimpan ID/Key unik dari Firebase untuk keperluan Edit & Hapus
+    window.dataKeys = [];
 
     // Mendengarkan perubahan data secara Real-time dari Firebase ('siswa')
     const siswaRef = ref(db, 'siswa');
@@ -225,11 +225,9 @@
         }
 
         if(index === "") {
-            // Tambah data baru ke Firebase
             const newSiswaRef = push(ref(db, 'siswa'));
             set(newSiswaRef, dataBaru);
         } else {
-            // Update data yang sudah ada berdasarkan Key Firebase-nya
             const key = window.dataKeys[index];
             set(ref(db, `siswa/${key}`), dataBaru);
         }
@@ -287,7 +285,6 @@
                 const kelas = getVal(["kelas", "kls"]);
 
                 if(nama && nisn) { 
-                    // Langsung dikirim ke Firebase satu per satu
                     const newSiswaRef = push(ref(db, 'siswa'));
                     set(newSiswaRef, {
                         nama: nama.toUpperCase(), tglLahir: tgl, noUjian: no, nisn: nisn, kelas: kelas
