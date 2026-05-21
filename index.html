@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sidebar Aplikasi Madrasah</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Menambahkan Library Chart.js untuk membuat grafik -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         * {
             margin: 0;
@@ -90,7 +94,7 @@
             font-size: 18px;
         }
 
-        /* Area Konten Kosong (Kanan) */
+        /* Area Konten (Kanan) */
         .main-content {
             flex-grow: 1;
             background-color: #f4f8fb;
@@ -98,7 +102,7 @@
             overflow-y: auto;
         }
 
-        /* Styling untuk wadah tampilan JSON */
+        /* Styling untuk wadah tampilan grafik */
         #display-data {
             background-color: #ffffff;
             padding: 20px;
@@ -106,13 +110,8 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             border: 1px solid #e0e0e0;
             margin-top: 15px;
-        }
-
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font-family: monospace;
-            color: #333;
+            width: 100%;
+            max-width: 800px; /* Membatasi lebar grafik agar proporsional */
         }
     </style>
 </head>
@@ -127,10 +126,22 @@
         </div>
 
         <div class="nav-menu">
-            <!-- Link diperbarui ke datasiswa.html -->
+            <!-- 1. Tombol Dashboard (Di atas Data Siswa) -->
+            <a href="#" class="nav-item active" onclick="loadDashboard(this)">
+                <i class="fas fa-chart-pie"></i>
+                Dashboard Data Ujian
+            </a>
+
+            <!-- Tombol Data Siswa -->
             <a href="https://appsmadrasah.github.io/datasiswa.html" class="nav-item">
                 <i class="fas fa-users"></i>
                 Data Siswa
+            </a>
+            
+            <!-- 3. Tombol Daftar Hadir (Di bawah Data Siswa) -->
+            <a href="#" class="nav-item">
+                <i class="fas fa-clipboard-list"></i>
+                Daftar Hadir
             </a>
             
             <a href="https://appsmadrasah.github.io/kartu1.html" class="nav-item">
@@ -148,47 +159,115 @@
     <div class="main-content">
         <h2>Dashboard Data Ujian</h2>
         <div id="display-data">
-            <p style="color: #666;">Silakan pilih menu di sidebar untuk memuat data JSON...</p>
+            <!-- Area ini akan diisi oleh grafik (Canvas) -->
+            <p style="color: #1a73e8;">Memuat data dari Firebase...</p>
         </div>
     </div>
 
     <script>
-        function loadData(namaFile, element) {
-            const allNavItems = document.querySelectorAll('.nav-item');
-            allNavItems.forEach(nav => nav.classList.remove('active'));
-            element.classList.add('active');
+        // Menyimpan instance chart agar bisa di-reset saat tombol diklik ulang
+        let myChart = null;
+
+        // Fungsi ini akan berjalan otomatis saat halaman dimuat, 
+        // dan saat tombol "Dashboard Data Ujian" diklik
+        function loadDashboard(element) {
+            // Ubah warna tombol aktif
+            if(element) {
+                const allNavItems = document.querySelectorAll('.nav-item');
+                allNavItems.forEach(nav => nav.classList.remove('active'));
+                element.classList.add('active');
+            }
 
             const displayArea = document.getElementById('display-data');
             
-            displayArea.innerHTML = `<p style="color: #1a73e8;">Mencari dan memuat file <b>${namaFile}</b>...</p>`;
+            // 2. Mengambil data dari Firebase
+            // Catatan: Anda WAJIB menambahkan '.json' di akhir URL Firebase untuk mengambil datanya via Fetch API
+            // Jika data tersimpan di folder tertentu, misalnya /siswa, maka URL menjadi ...app/siswa.json
+            const firebaseUrl = 'https://datasiswa-65abf-default-rtdb.asia-southeast1.firebasedatabase.app/.json';
 
-            fetch(namaFile)
+            fetch(firebaseUrl)
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`File ${namaFile} tidak ditemukan atau gagal dimuat.`);
-                    }
+                    if (!response.ok) throw new Error("Gagal terhubung ke Firebase");
                     return response.json();
                 })
                 .then(data => {
-                    displayArea.innerHTML = `
-                        <h3 style="margin-bottom: 15px; color: #004d40;">Isi Data dari ${namaFile}:</h3>
-                        <pre>${JSON.stringify(data, null, 4)}</pre>
-                    `;
+                    if (!data) {
+                        displayArea.innerHTML = '<p style="color: red;">Database Firebase Anda masih kosong.</p>';
+                        return;
+                    }
+
+                    // Membuat elemen Canvas untuk Chart.js
+                    displayArea.innerHTML = '<canvas id="grafikSiswa"></canvas>';
+                    const ctx = document.getElementById('grafikSiswa').getContext('2d');
+
+                    // ==========================================
+                    // LOGIKA PENGOLAHAN DATA GRAFIK
+                    // ==========================================
+                    // Karena struktur data Anda di Firebase belum diketahui spesifiknya, 
+                    // ini adalah contoh dasar. Script ini mencoba membaca data yang berbentuk Object/Array.
+                    
+                    let totalSiswa = 0;
+                    
+                    // Asumsi 1: Jika data berbentuk array atau object, kita hitung jumlahnya
+                    if (typeof data === 'object') {
+                        totalSiswa = Object.keys(data).length;
+                    }
+
+                    // Menyiapkan label dan angka untuk grafik (Contoh: Total Data Masuk)
+                    const labels = ["Total Siswa Terdaftar"];
+                    const dataAngka = [totalSiswa];
+
+                    // ==========================================
+
+                    // Hapus chart lama jika ada agar tidak menumpuk
+                    if(myChart) {
+                        myChart.destroy();
+                    }
+
+                    // Render Grafik menggunakan Chart.js
+                    myChart = new Chart(ctx, {
+                        type: 'bar', // Bisa diganti 'pie', 'line', 'doughnut'
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Statistik Data Firebase',
+                                data: dataAngka,
+                                backgroundColor: ['rgba(54, 162, 235, 0.7)'],
+                                borderColor: ['rgba(54, 162, 235, 1)'],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1 // Skala angka genap bulat
+                                    }
+                                }
+                            }
+                        }
+                    });
                 })
                 .catch(error => {
                     displayArea.innerHTML = `
-                        <p style="color: red; font-weight: bold;">Gagal!</p>
-                        <p style="color: red;">${error.message}</p>
-                        <br>
+                        <p style="color: red; font-weight: bold;">Gagal Memuat Grafik!</p>
                         <p style="font-size: 14px; color: #555;">
-                            <b>Catatan Penting:</b><br>
-                            Pemanggilan file JSON eksternal menggunakan JavaScript memerlukan <i>Local Server</i>.<br>
-                            Anda tidak bisa membukanya langsung dengan cara klik dua kali file HTML-nya (alamat <code>file:///...</code>).<br>
-                            Gunakan ekstensi <b>Live Server</b> di VS Code, atau aplikasi seperti XAMPP/Laragon.
+                            <b>Alasan:</b> Akses ditolak atau link salah.<br>
+                            <b>Solusi:</b> Buka Firebase Console > Realtime Database > Rules. Ubah menjadi:<br>
+                            <code>".read": true</code>
                         </p>
                     `;
+                    console.error("Error Firebase:", error);
                 });
         }
+
+        // Panggil fungsi secara otomatis ketika halaman pertama kali dibuka
+        window.onload = () => {
+            const btnDashboard = document.querySelector('.nav-item.active');
+            loadDashboard(btnDashboard);
+        };
     </script>
 
 </body>
