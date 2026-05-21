@@ -72,6 +72,7 @@
     <table>
         <thead>
             <tr>
+                <th style="width: 40px; text-align: center;">No.</th>
                 <th>Nama</th>
                 <th>Tgl Lahir</th>
                 <th>No. Ujian</th>
@@ -110,7 +111,7 @@
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
     import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
-    // Firebase configuration dengan memasukkan databaseURL Anda
+    // Firebase configuration
     const firebaseConfig = {
         apiKey: "AIzaSyCae3CoI4eWy9T6yhf_yGvoHiyoAJ7gUyA",
         authDomain: "datasiswa-65abf.firebaseapp.com",
@@ -127,7 +128,6 @@
     const analytics = getAnalytics(app);
     const db = getDatabase(app);
 
-    // Variabel penampung data lokal
     window.dataPeserta = [];
     window.dataKeys = [];
 
@@ -147,12 +147,13 @@
         window.renderTabel();
     });
 
-    // Fungsi Render Tabel dengan Filter Kelas
+    // Fungsi Render Tabel
     window.renderTabel = function() {
         const tbody = document.getElementById("tabel-body");
         tbody.innerHTML = "";
         
         const filterValue = document.getElementById("filter-kelas").value;
+        let nomorUrut = 1; // Variabel untuk menghitung nomor urut
 
         window.dataPeserta.forEach((p, index) => {
             let tampilkan = true;
@@ -167,6 +168,7 @@
 
             if (tampilkan) {
                 const tr = `<tr>
+                    <td style="text-align: center;">${nomorUrut}</td>
                     <td>${p.nama}</td>
                     <td>${p.tglLahir}</td>
                     <td>${p.noUjian}</td>
@@ -178,6 +180,7 @@
                     </td>
                 </tr>`;
                 tbody.innerHTML += tr;
+                nomorUrut++; // Nomor urut ditambah setiap kali ada baris yang ditampilkan
             }
         });
     }
