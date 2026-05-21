@@ -139,8 +139,8 @@
                     <th>Nama</th>
                     <th>Tgl Lahir</th>
                     <th>No. Ujian</th>
-                    <th>NISN / Username</th>
-                    <th>Kelas / Password</th>
+                    <th>NISN</th>
+                    <th>Kelas</th>
                     <th style="width: 100px; text-align:center;">Aksi</th>
                 </tr>
             </thead>
@@ -195,8 +195,8 @@
                     <tr><td>No. Peserta</td><td>:</td><td id="k-no">...</td></tr>
                     <tr><td>Nama</td><td>:</td><td><strong id="k-nama">...</strong></td></tr>
                     <tr><td>Tanggal Lahir</td><td>:</td><td id="k-tgl">...</td></tr>
-                    <tr><td>NISN / User</td><td>:</td><td id="k-nisn">...</td></tr>
-                    <tr><td>Kelas / Pass</td><td>:</td><td id="k-kelas">...</td></tr>
+                    <tr><td>NISN</td><td>:</td><td id="k-nisn">...</td></tr>
+                    <tr><td>Kelas</td><td>:</td><td id="k-kelas">...</td></tr>
                 </table>
                 <div class="footer">
                     <div class="signature">
@@ -225,8 +225,8 @@
         <div class="form-group"><label>Nama Peserta:</label><input type="text" id="form-nama" autocomplete="off"></div>
         <div class="form-group"><label>Tanggal Lahir:</label><input type="text" id="form-tgl" placeholder="Contoh: 2006-03-08" autocomplete="off"></div>
         <div class="form-group"><label>Nomor Ujian:</label><input type="text" id="form-no" autocomplete="off"></div>
-        <div class="form-group"><label>NISN / Username:</label><input type="text" id="form-nisn" autocomplete="off"></div>
-        <div class="form-group"><label>Kelas / Password:</label><input type="text" id="form-kelas" autocomplete="off"></div>
+        <div class="form-group"><label>NISN:</label><input type="text" id="form-nisn" autocomplete="off"></div>
+        <div class="form-group"><label>Kelas:</label><input type="text" id="form-kelas" autocomplete="off"></div>
         <div class="modal-footer">
             <button class="btn-batal" onclick="tutupModalForm()">Batal</button>
             <button class="btn-simpan" onclick="simpanSiswa()">Simpan Data</button>
@@ -395,8 +395,8 @@
                     <tr><td>No. Peserta</td><td>:</td><td>${p.noUjian || ''}</td></tr>
                     <tr><td>Nama</td><td>:</td><td><strong>${p.nama || ''}</strong></td></tr>
                     <tr><td>Tanggal Lahir</td><td>:</td><td>${p.tglLahir || ''}</td></tr>
-                    <tr><td>NISN / User</td><td>:</td><td>${p.nisn || ''}</td></tr>
-                    <tr><td>Kelas / Pass</td><td>:</td><td>${p.kelas || ''}</td></tr>
+                    <tr><td>NISN</td><td>:</td><td>${p.nisn || ''}</td></tr>
+                    <tr><td>Kelas</td><td>:</td><td>${p.kelas || ''}</td></tr>
                 </table>
                 <div class="footer">
                     <div class="signature">
