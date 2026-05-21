@@ -104,23 +104,59 @@
     </div>
 </div>
 
-<script>
-    // --- DATA PESERTA AWAL ---
-    let dataPeserta = [
-        { nama: "AFZAN MAULIDU ANAQIE", tglLahir: "2006-03-08", noUjian: "26-13-18-1-0167-0003", nisn: "131203", kelas: "6A" }
-    ];
+<script type="module">
+    // Import SDK Firebase yang diperlukan
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
+    // Menambahkan SDK Realtime Database
+    import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+    // Firebase configuration Anda
+    const firebaseConfig = {
+        apiKey: "AIzaSyCae3CoI4eWy9T6yhf_yGvoHiyoAJ7gUyA",
+        authDomain: "datasiswa-65abf.firebaseapp.com",
+        projectId: "datasiswa-65abf",
+        storageBucket: "datasiswa-65abf.firebasestorage.app",
+        messagingSenderId: "1043621527533",
+        appId: "1:1043621527533:web:3e854e6c862709002731e4",
+        measurementId: "G-D6YZGM4KT5"
+    };
+
+    // Inisialisasi Firebase & Database
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getDatabase(app);
+
+    // Variabel penampung data lokal
+    window.dataPeserta = [];
+    window.dataKeys = []; // Menyimpan ID/Key unik dari Firebase untuk keperluan Edit & Hapus
+
+    // Mendengarkan perubahan data secara Real-time dari Firebase ('siswa')
+    const siswaRef = ref(db, 'siswa');
+    onValue(siswaRef, (snapshot) => {
+        const data = snapshot.val();
+        window.dataPeserta = [];
+        window.dataKeys = [];
+        
+        if (data) {
+            Object.keys(data).forEach(key => {
+                window.dataPeserta.push(data[key]);
+                window.dataKeys.push(key);
+            });
+        }
+        window.renderTabel();
+    });
 
     // Fungsi Render Tabel dengan Filter Kelas
-    function renderTabel() {
+    window.renderTabel = function() {
         const tbody = document.getElementById("tabel-body");
         tbody.innerHTML = "";
         
         const filterValue = document.getElementById("filter-kelas").value;
 
-        dataPeserta.forEach((p, index) => {
+        window.dataPeserta.forEach((p, index) => {
             let tampilkan = true;
             
-            // Logika Penyaringan (Mencari angka dalam teks kelas, misal "6A" -> "6")
             if (filterValue !== "semua") {
                 const matchNumber = p.kelas.match(/\d+/);
                 const classNumber = matchNumber ? matchNumber[0] : "";
@@ -146,17 +182,17 @@
         });
     }
 
-    // CRUD Siswa
-    function bukaModalForm(index = null) {
+    // CRUD Siswa - Buka Form Modal
+    window.bukaModalForm = function(index = null) {
         document.getElementById('modalForm').style.display = 'block';
         if(index !== null) {
             document.getElementById('modal-judul').innerText = "Edit Siswa";
             document.getElementById('form-index').value = index;
-            document.getElementById('form-nama').value = dataPeserta[index].nama;
-            document.getElementById('form-tgl').value = dataPeserta[index].tglLahir;
-            document.getElementById('form-no').value = dataPeserta[index].noUjian;
-            document.getElementById('form-nisn').value = dataPeserta[index].nisn;
-            document.getElementById('form-kelas').value = dataPeserta[index].kelas;
+            document.getElementById('form-nama').value = window.dataPeserta[index].nama;
+            document.getElementById('form-tgl').value = window.dataPeserta[index].tglLahir;
+            document.getElementById('form-no').value = window.dataPeserta[index].noUjian;
+            document.getElementById('form-nisn').value = window.dataPeserta[index].nisn;
+            document.getElementById('form-kelas').value = window.dataPeserta[index].kelas;
         } else {
             document.getElementById('modal-judul').innerText = "Tambah Siswa Baru";
             document.getElementById('form-index').value = "";
@@ -168,9 +204,12 @@
         }
     }
 
-    function tutupModalForm() { document.getElementById('modalForm').style.display = 'none'; }
+    window.tutupModalForm = function() { 
+        document.getElementById('modalForm').style.display = 'none'; 
+    }
 
-    function simpanSiswa() {
+    // CRUD Siswa - Simpan Data ke Firebase
+    window.simpanSiswa = function() {
         const index = document.getElementById('form-index').value;
         const dataBaru = {
             nama: document.getElementById('form-nama').value.toUpperCase(),
@@ -180,47 +219,58 @@
             kelas: document.getElementById('form-kelas').value
         };
 
-        if(dataBaru.nama === "" || dataBaru.nisn === "") { alert("Nama dan NISN tidak boleh kosong!"); return; }
+        if(dataBaru.nama === "" || dataBaru.nisn === "") { 
+            alert("Nama dan NISN tidak boleh kosong!"); 
+            return; 
+        }
 
-        if(index === "") dataPeserta.push(dataBaru); 
-        else dataPeserta[index] = dataBaru;
+        if(index === "") {
+            // Tambah data baru ke Firebase
+            const newSiswaRef = push(ref(db, 'siswa'));
+            set(newSiswaRef, dataBaru);
+        } else {
+            // Update data yang sudah ada berdasarkan Key Firebase-nya
+            const key = window.dataKeys[index];
+            set(ref(db, `siswa/${key}`), dataBaru);
+        }
         
-        tutupModalForm(); 
-        renderTabel();
+        window.tutupModalForm(); 
     }
 
-    function hapusSiswa(index) {
-        if(confirm(`Yakin ingin menghapus data ${dataPeserta[index].nama}?`)) {
-            dataPeserta.splice(index, 1); 
-            renderTabel();
+    // CRUD Siswa - Hapus Data dari Firebase
+    window.hapusSiswa = function(index) {
+        const namaSiswa = window.dataPeserta[index].nama;
+        if(confirm(`Yakin ingin menghapus data ${namaSiswa}?`)) {
+            const key = window.dataKeys[index];
+            remove(ref(db, `siswa/${key}`));
         }
     }
 
     // --- FUNGSI DOWNLOAD TEMPLATE EXCEL ---
-    function downloadTemplateExcel() {
+    window.downloadTemplateExcel = function() {
         const dataTemplate = [
             ["Nama", "Tgl Lahir", "No. Ujian", "NISN", "Kelas"],
             ["CONTOH NAMA SISWA", "2006-03-08", "26-13-18-1-0167-0003", "1234567890", "6A"]
         ];
-        const workbook = XLSX.utils.book_new();
-        const worksheet = XLSX.utils.aoa_to_sheet(dataTemplate);
+        const workbook = window.XLSX.utils.book_new();
+        const worksheet = window.XLSX.utils.aoa_to_sheet(dataTemplate);
         worksheet['!cols'] = [ { wch: 30 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 } ];
         
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Siswa");
-        XLSX.writeFile(workbook, "Template_Data_Siswa.xlsx");
+        window.XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Siswa");
+        window.XLSX.writeFile(workbook, "Template_Data_Siswa.xlsx");
     }
 
-    // --- FUNGSI IMPOR EXCEL ---
-    function prosesImporExcel(event) {
+    // --- FUNGSI IMPOR EXCEL (Langsung Unggah ke Firebase) ---
+    window.prosesImporExcel = function(event) {
         const file = event.target.files[0];
         if(!file) return;
 
         const reader = new FileReader();
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
+            const workbook = window.XLSX.read(data, {type: 'array'});
             const firstSheetName = workbook.SheetNames[0];
-            const jsonSheet = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {raw: false});
+            const jsonSheet = window.XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {raw: false});
             let berhasil = 0;
 
             jsonSheet.forEach(row => {
@@ -237,21 +287,20 @@
                 const kelas = getVal(["kelas", "kls"]);
 
                 if(nama && nisn) { 
-                    dataPeserta.push({
+                    // Langsung dikirim ke Firebase satu per satu
+                    const newSiswaRef = push(ref(db, 'siswa'));
+                    set(newSiswaRef, {
                         nama: nama.toUpperCase(), tglLahir: tgl, noUjian: no, nisn: nisn, kelas: kelas
                     });
                     berhasil++;
                 }
             });
 
-            alert(`Selesai! Berhasil mengimpor ${berhasil} data siswa dari Excel.`);
-            renderTabel();
+            alert(`Selesai! Berhasil mengirimkan ${berhasil} data siswa baru ke cloud Firebase.`);
             document.getElementById('inputExcel').value = ""; 
         };
         reader.readAsArrayBuffer(file);
     }
-
-    window.onload = renderTabel;
 </script>
 
 </body>
