@@ -34,9 +34,6 @@
         /* Tombol Toolbar Atas */
         .toolbar { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;}
         .btn-toolbar { padding: 10px 15px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-tambah { background: #4CAF50; }
-        .btn-template { background: #2196F3; } 
-        .btn-excel { background: #1b7339; }    
         
         .box-area { background: #e9f5e9; padding: 15px; border: 2px dashed #4CAF50; border-radius: 5px; margin-bottom: 15px; }
         .form-group { margin-bottom: 15px; }
@@ -124,8 +121,6 @@
     <div id="tab-data" class="tab-content active">
         
         <div class="toolbar">
-            <button class="btn-toolbar btn-tambah" onclick="bukaModalForm()">➕ Tambah Siswa</button>
-            
             <select id="filter-kelas" class="btn-toolbar" onchange="renderTabel()" style="background: #fff; color: #333; border: 1px solid #ccc; cursor: pointer; padding: 9px 15px; font-weight: bold;">
                 <option value="Semua">Tampilkan Semua Kelas</option>
                 <option value="1">Kelas 1</option>
@@ -135,25 +130,22 @@
                 <option value="5">Kelas 5</option>
                 <option value="6">Kelas 6</option>
             </select>
-
-            <button class="btn-toolbar btn-template" onclick="downloadTemplateExcel()">⬇️ Download Template</button>
-            <button class="btn-toolbar btn-excel" onclick="document.getElementById('inputExcel').click()">📊 Impor dari Excel</button>
-            <input type="file" id="inputExcel" accept=".xlsx, .xls" style="display: none;" onchange="prosesImporExcel(event)">
         </div>
 
         <table>
             <thead>
                 <tr>
+                    <th style="width: 40px; text-align:center;">No.</th>
                     <th>Nama</th>
                     <th>Tgl Lahir</th>
                     <th>No. Ujian</th>
                     <th>NISN / Username</th>
                     <th>Kelas / Password</th>
-                    <th style="width: 140px; text-align:center;">Aksi</th>
+                    <th style="width: 100px; text-align:center;">Aksi</th>
                 </tr>
             </thead>
             <tbody id="tabel-body">
-                <tr><td colspan="6" style="text-align: center;">Menghubungkan & memuat Realtime Database...</td></tr>
+                <tr><td colspan="7" style="text-align: center;">Menghubungkan & memuat Realtime Database...</td></tr>
             </tbody>
         </table>
     </div>
@@ -226,7 +218,7 @@
 <div id="modalForm" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <span id="modal-judul">Tambah Siswa</span>
+            <span id="modal-judul">Edit Siswa</span>
             <span class="close-btn" onclick="tutupModalForm()">&times;</span>
         </div>
         <input type="hidden" id="form-index" value=""> 
@@ -255,9 +247,11 @@
         const filterValue = document.getElementById("filter-kelas").value;
 
         if(window.dataPeserta.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Tidak ada data siswa. Silakan tambah data.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">Tidak ada data siswa. Silakan periksa database.</td></tr>`;
             return;
         }
+
+        let nomorUrut = 1;
 
         window.dataPeserta.forEach((p, index) => {
             if (filterValue !== "Semua") {
@@ -266,6 +260,7 @@
             }
 
             const tr = `<tr>
+                <td style="text-align:center;">${nomorUrut++}</td>
                 <td>${p.nama}</td>
                 <td>${p.tglLahir || '-'}</td>
                 <td>${p.noUjian || '-'}</td>
@@ -281,25 +276,14 @@
         });
     }
 
-    window.bukaModalForm = function(index = null) {
+    window.bukaModalForm = function(index) {
         document.getElementById('modalForm').style.display = 'block';
-        if(index !== null) {
-            document.getElementById('modal-judul').innerText = "Edit Siswa";
-            document.getElementById('form-index').value = index;
-            document.getElementById('form-nama').value = window.dataPeserta[index].nama;
-            document.getElementById('form-tgl').value = window.dataPeserta[index].tglLahir || "";
-            document.getElementById('form-no').value = window.dataPeserta[index].noUjian || "";
-            document.getElementById('form-nisn').value = window.dataPeserta[index].nisn || "";
-            document.getElementById('form-kelas').value = window.dataPeserta[index].kelas || "";
-        } else {
-            document.getElementById('modal-judul').innerText = "Tambah Siswa Baru";
-            document.getElementById('form-index').value = "";
-            document.getElementById('form-nama').value = "";
-            document.getElementById('form-tgl').value = "";
-            document.getElementById('form-no').value = "";
-            document.getElementById('form-nisn').value = "";
-            document.getElementById('form-kelas').value = "";
-        }
+        document.getElementById('form-index').value = index;
+        document.getElementById('form-nama').value = window.dataPeserta[index].nama || "";
+        document.getElementById('form-tgl').value = window.dataPeserta[index].tglLahir || "";
+        document.getElementById('form-no').value = window.dataPeserta[index].noUjian || "";
+        document.getElementById('form-nisn').value = window.dataPeserta[index].nisn || "";
+        document.getElementById('form-kelas').value = window.dataPeserta[index].kelas || "";
     }
 
     window.tutupModalForm = function() { document.getElementById('modalForm').style.display = 'none'; }
@@ -316,14 +300,10 @@
 
         if(dataBaru.nama === "" || dataBaru.nisn === "") { alert("Nama dan NISN tidak boleh kosong!"); return; }
         
-        document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Menyimpan data ke Realtime Database...</td></tr>`;
+        document.getElementById("tabel-body").innerHTML = `<tr><td colspan="7" style="text-align: center;">Menyimpan perubahan ke Realtime Database...</td></tr>`;
 
-        if(index === "") {
-            if (window.firebase_tambahSiswa) await window.firebase_tambahSiswa(dataBaru);
-        } else {
-            const docId = window.dataPeserta[index].docId;
-            if (window.firebase_updateSiswa && docId) await window.firebase_updateSiswa(docId, dataBaru);
-        }
+        const docId = window.dataPeserta[index].docId;
+        if (window.firebase_updateSiswa && docId) await window.firebase_updateSiswa(docId, dataBaru);
         
         tutupModalForm();
         if (window.firebase_muatData) await window.firebase_muatData();
@@ -332,64 +312,12 @@
     window.hapusSiswa = async function(index) {
         const target = window.dataPeserta[index];
         if(confirm(`Yakin ingin menghapus data ${target.nama}?`)) {
-            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Menghapus data dari Realtime Database...</td></tr>`;
+            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="7" style="text-align: center;">Menghapus data dari Realtime Database...</td></tr>`;
             if (window.firebase_hapusSiswa && target.docId) {
                 await window.firebase_hapusSiswa(target.docId);
             }
             if (window.firebase_muatData) await window.firebase_muatData();
         }
-    }
-
-    window.downloadTemplateExcel = function() {
-        const dataTemplate = [
-            ["Nama", "Tgl Lahir", "No. Ujian", "NISN", "Kelas"],
-            ["CONTOH NAMA SISWA", "2006-03-08", "26-13-18-1-0167-0003", "1234567890", "6A"]
-        ];
-        const workbook = XLSX.utils.book_new();
-        const worksheet = XLSX.utils.aoa_to_sheet(dataTemplate);
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Siswa");
-        XLSX.writeFile(workbook, "Template_Data_Siswa.xlsx");
-    }
-
-    window.prosesImporExcel = async function(event) {
-        const file = event.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonSheet = XLSX.utils.sheet_to_json(worksheet, {raw: false});
-            let berhasil = 0;
-
-            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center;">Mengunggah berkas Excel ke Realtime Database...</td></tr>`;
-
-            for (const row of jsonSheet) {
-                const keys = Object.keys(row);
-                const getVal = (keywords) => {
-                    const matchKey = keys.find(k => keywords.some(word => k.toLowerCase().includes(word)));
-                    return matchKey ? row[matchKey] : "";
-                };
-
-                const nama = getVal(["nama"]);
-                const tgl = getVal(["lahir", "tanggal", "tgl", "ttl"]); 
-                const no = getVal(["ujian", "nomor", "peserta", "no."]);
-                const nisn = getVal(["nisn", "user", "username"]);
-                const kelas = getVal(["kelas", "kls", "pass", "password"]);
-
-                if(nama && nisn) { 
-                    const dataBaru = { nama: nama.toUpperCase(), tglLahir: tgl, noUjian: no, nisn: nisn, kelas: kelas };
-                    if (window.firebase_tambahSiswa) {
-                        await window.firebase_tambahSiswa(dataBaru);
-                        berhasil++;
-                    }
-                }
-            }
-            alert(`Selesai! Berhasil memuat ${berhasil} data dari Excel.`);
-            if (window.firebase_muatData) await window.firebase_muatData();
-            document.getElementById('inputExcel').value = ""; 
-        };
-        reader.readAsArrayBuffer(file);
     }
 
     window.bukaTab = function(tabId, btnElement) {
@@ -487,10 +415,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    // MENGGUNAKAN FIREBASE-DATABASE BUKAN FIRESTORE
-    import { getDatabase, ref, get, push, set, remove, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, get, set, remove, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // Konfigurasi ini sudah ditambahkan databaseURL sesuai gambar Anda
     const firebaseConfig = {
       apiKey: "AIzaSyCae3CoI4eWy9T6yhf_yGvoHiyoAJ7gUyA",
       authDomain: "datasiswa-65abf.firebaseapp.com",
@@ -515,9 +441,8 @@
             if (snapshot.exists()) {
                 snapshot.forEach((childSnapshot) => {
                     let item = childSnapshot.val();
-                    item.docId = childSnapshot.key; // Simpan ID unik / Push ID
+                    item.docId = childSnapshot.key; 
                     
-                    // Auto-mapping jika masih ada kolom lama
                     if (item.username && !item.nisn) item.nisn = item.username;
                     if (item.password && !item.kelas) item.kelas = item.password;
                     
@@ -529,26 +454,11 @@
             window.renderTabel();
         } catch (error) {
             console.error("Firebase Error: ", error);
-            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Gagal memuat dari Realtime Database. Pastikan koneksi benar.</td></tr>`;
+            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">Gagal memuat dari Realtime Database. Pastikan koneksi benar.</td></tr>`;
         }
     }
 
-    // 2. Fungsi Menambah Data ke REALTIME DATABASE
-    async function tambahSiswa(data) {
-        try {
-            const siswaListRef = ref(db, 'siswa');
-            const newSiswaRef = push(siswaListRef); // Membuat ID unik otomatis
-            await set(newSiswaRef, {
-                nama: data.nama,
-                tglLahir: data.tglLahir,
-                noUjian: data.noUjian,
-                nisn: data.nisn,
-                kelas: data.kelas
-            });
-        } catch (e) { console.error(e); }
-    }
-
-    // 3. Fungsi Update Data ke REALTIME DATABASE
+    // 2. Fungsi Update Data ke REALTIME DATABASE
     async function updateSiswa(docId, data) {
         try {
             const siswaRef = ref(db, 'siswa/' + docId);
@@ -562,7 +472,7 @@
         } catch (e) { console.error(e); }
     }
 
-    // 4. Fungsi Menghapus Data dari REALTIME DATABASE
+    // 3. Fungsi Menghapus Data dari REALTIME DATABASE
     async function hapusSiswa(docId) {
         try {
             const siswaRef = ref(db, 'siswa/' + docId);
@@ -570,13 +480,10 @@
         } catch (e) { console.error(e); }
     }
 
-    // Daftarkan fungsi ke global scope
     window.firebase_muatData = muatDataFirebase;
-    window.firebase_tambahSiswa = tambahSiswa;
     window.firebase_updateSiswa = updateSiswa;
     window.firebase_hapusSiswa = hapusSiswa;
 
-    // Jalankan otomatis
     window.addEventListener('DOMContentLoaded', () => {
         muatDataFirebase();
     });
