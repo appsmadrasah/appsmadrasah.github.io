@@ -127,20 +127,18 @@
         </div>
 
         <div class="nav-menu">
-            <!-- 1. Tombol Data Siswa ditambahkan di atas -->
-            <a href="#" class="nav-item">
+            <!-- Link diperbarui ke datasiswa.html -->
+            <a href="https://appsmadrasah.github.io/datasiswa.html" class="nav-item">
                 <i class="fas fa-users"></i>
                 Data Siswa
             </a>
             
-            <!-- 2. Link ditambahkan di tombol Nomor Ujian Nasional -->
             <a href="https://appsmadrasah.github.io/kartu1.html" class="nav-item">
                 <i class="fas fa-address-card"></i>
                 Nomor Ujian Nasional
             </a>
             
-            <!-- 3. Link yang sama ditambahkan di tombol Nomor Ujian SAT -->
-            <a href="https://appsmadrasah.github.io/kartu1.html" class="nav-item">
+            <a href="https://appsmadrasah.github.io/kartu2.html" class="nav-item">
                 <i class="fas fa-user-check"></i>
                 Nomor Ujian SAT
             </a>
@@ -156,34 +154,28 @@
 
     <script>
         function loadData(namaFile, element) {
-            // 1. Mengubah efek visual tombol menu yang aktif
             const allNavItems = document.querySelectorAll('.nav-item');
             allNavItems.forEach(nav => nav.classList.remove('active'));
             element.classList.add('active');
 
             const displayArea = document.getElementById('display-data');
             
-            // Tampilkan pesan loading
             displayArea.innerHTML = `<p style="color: #1a73e8;">Mencari dan memuat file <b>${namaFile}</b>...</p>`;
 
-            // 2. Proses pemanggilan file JSON menggunakan Fetch API
             fetch(namaFile)
                 .then(response => {
-                    // Cek jika file tidak ditemukan (error 404)
                     if (!response.ok) {
                         throw new Error(`File ${namaFile} tidak ditemukan atau gagal dimuat.`);
                     }
                     return response.json();
                 })
                 .then(data => {
-                    // 3. Jika berhasil, tampilkan isinya di layar
                     displayArea.innerHTML = `
                         <h3 style="margin-bottom: 15px; color: #004d40;">Isi Data dari ${namaFile}:</h3>
                         <pre>${JSON.stringify(data, null, 4)}</pre>
                     `;
                 })
                 .catch(error => {
-                    // 4. Jika gagal (file belum ada), tampilkan error
                     displayArea.innerHTML = `
                         <p style="color: red; font-weight: bold;">Gagal!</p>
                         <p style="color: red;">${error.message}</p>
