@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Siswa</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        /* === CSS APLIKASI UTAMA === */
+        body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        .app-container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; margin-top: 5px; }
+
+        /* Tabel Data & Form */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;}
+        table, th, td { border: 1px solid #ddd; }
+        th, td { padding: 8px; text-align: left; }
+        th { background-color: #4CAF50; color: white; }
+        
+        /* Tombol Aksi Tabel */
+        .btn-edit { padding: 5px; background: #FFC107; color: black; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;}
+        .btn-hapus { padding: 5px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;}
+        
+        /* Tombol Toolbar Atas */
+        .toolbar { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;}
+        .btn-toolbar { padding: 10px 15px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-tambah { background: #4CAF50; }
+        .btn-sortir { background: #9C27B0; cursor: pointer; font-family: inherit; font-size: 14px; outline: none;}    
+        .btn-template { background: #2196F3; } 
+        .btn-excel { background: #1b7339; }    
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .form-group input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        
+        /* === CSS MODAL (POP-UP FORM) === */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fff; margin: 5% auto; padding: 20px; border-radius: 8px; width: 400px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between;}
+        .close-btn { cursor: pointer; color: red; font-weight: bold; font-size: 20px;}
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        .btn-batal { background: #ccc; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
+        .btn-simpan { padding: 10px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="app-container">
+    <h2>Data Siswa</h2>
+    
+    <div class="toolbar">
+        <button class="btn-toolbar btn-tambah" onclick="bukaModalForm()">➕ Tambah Siswa</button>
+        
+        <select class="btn-toolbar btn-sortir" id="filter-kelas" onchange="renderTabel()">
+            <option value="semua" style="color: black;">🔃 Filter Kelas (Semua)</option>
+            <option value="1" style="color: black;">Kelas 1</option>
+            <option value="2" style="color: black;">Kelas 2</option>
+            <option value="3" style="color: black;">Kelas 3</option>
+            <option value="4" style="color: black;">Kelas 4</option>
+            <option value="5" style="color: black;">Kelas 5</option>
+            <option value="6" style="color: black;">Kelas 6</option>
+        </select>
+
+        <button class="btn-toolbar btn-excel" onclick="document.getElementById('inputExcel').click()">📊 Impor dari Excel</button>
+        <input type="file" id="inputExcel" accept=".xlsx, .xls" style="display: none;" onchange="prosesImporExcel(event)">
+        
+        <button class="btn-toolbar btn-template" onclick="downloadTemplateExcel()">⬇️ Download Template</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nama</th>
+                <th>Tgl Lahir</th>
+                <th>No. Ujian</th>
+                <th>NISN</th>
+                <th>Kelas</th>
+                <th style="width: 80px; text-align:center;">Aksi</th>
+            </tr>
+        </thead>
+        <tbody id="tabel-body">
+            </tbody>
+    </table>
+</div>
+
+<div id="modalForm" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span id="modal-judul">Tambah Siswa</span>
+            <span class="close-btn" onclick="tutupModalForm()">&times;</span>
+        </div>
+        <input type="hidden" id="form-index" value=""> 
+        <div class="form-group"><label>Nama Peserta:</label><input type="text" id="form-nama" autocomplete="off"></div>
+        <div class="form-group"><label>Tanggal Lahir:</label><input type="text" id="form-tgl" placeholder="Contoh: 2006-03-08" autocomplete="off"></div>
+        <div class="form-group"><label>Nomor Ujian:</label><input type="text" id="form-no" autocomplete="off"></div>
+        <div class="form-group"><label>NISN:</label><input type="text" id="form-nisn" autocomplete="off"></div>
+        <div class="form-group"><label>Kelas:</label><input type="text" id="form-kelas" autocomplete="off"></div>
+        <div class="modal-footer">
+            <button class="btn-batal" onclick="tutupModalForm()">Batal</button>
+            <button class="btn-simpan" onclick="simpanSiswa()">Simpan Data</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- DATA PESERTA AWAL ---
+    let dataPeserta = [
+        { nama: "AFZAN MAULIDU ANAQIE", tglLahir: "2006-03-08", noUjian: "26-13-18-1-0167-0003", nisn: "131203", kelas: "6A" }
+    ];
+
+    // Fungsi Render Tabel dengan Filter Kelas
+    function renderTabel() {
+        const tbody = document.getElementById("tabel-body");
+        tbody.innerHTML = "";
+        
+        const filterValue = document.getElementById("filter-kelas").value;
+
+        dataPeserta.forEach((p, index) => {
+            let tampilkan = true;
+            
+            // Logika Penyaringan (Mencari angka dalam teks kelas, misal "6A" -> "6")
+            if (filterValue !== "semua") {
+                const matchNumber = p.kelas.match(/\d+/);
+                const classNumber = matchNumber ? matchNumber[0] : "";
+                if (classNumber !== filterValue) {
+                    tampilkan = false;
+                }
+            }
+
+            if (tampilkan) {
+                const tr = `<tr>
+                    <td>${p.nama}</td>
+                    <td>${p.tglLahir}</td>
+                    <td>${p.noUjian}</td>
+                    <td>${p.nisn}</td>
+                    <td>${p.kelas}</td>
+                    <td style="text-align:center;">
+                        <button class="btn-edit" onclick="bukaModalForm(${index})" title="Edit Data">✏️</button>
+                        <button class="btn-hapus" onclick="hapusSiswa(${index})" title="Hapus Data">🗑️</button>
+                    </td>
+                </tr>`;
+                tbody.innerHTML += tr;
+            }
+        });
+    }
+
+    // CRUD Siswa
+    function bukaModalForm(index = null) {
+        document.getElementById('modalForm').style.display = 'block';
+        if(index !== null) {
+            document.getElementById('modal-judul').innerText = "Edit Siswa";
+            document.getElementById('form-index').value = index;
+            document.getElementById('form-nama').value = dataPeserta[index].nama;
+            document.getElementById('form-tgl').value = dataPeserta[index].tglLahir;
+            document.getElementById('form-no').value = dataPeserta[index].noUjian;
+            document.getElementById('form-nisn').value = dataPeserta[index].nisn;
+            document.getElementById('form-kelas').value = dataPeserta[index].kelas;
+        } else {
+            document.getElementById('modal-judul').innerText = "Tambah Siswa Baru";
+            document.getElementById('form-index').value = "";
+            document.getElementById('form-nama').value = "";
+            document.getElementById('form-tgl').value = "";
+            document.getElementById('form-no').value = "";
+            document.getElementById('form-nisn').value = "";
+            document.getElementById('form-kelas').value = "";
+        }
+    }
+
+    function tutupModalForm() { document.getElementById('modalForm').style.display = 'none'; }
+
+    function simpanSiswa() {
+        const index = document.getElementById('form-index').value;
+        const dataBaru = {
+            nama: document.getElementById('form-nama').value.toUpperCase(),
+            tglLahir: document.getElementById('form-tgl').value,
+            noUjian: document.getElementById('form-no').value,
+            nisn: document.getElementById('form-nisn').value,
+            kelas: document.getElementById('form-kelas').value
+        };
+
+        if(dataBaru.nama === "" || dataBaru.nisn === "") { alert("Nama dan NISN tidak boleh kosong!"); return; }
+
+        if(index === "") dataPeserta.push(dataBaru); 
+        else dataPeserta[index] = dataBaru;
+        
+        tutupModalForm(); 
+        renderTabel();
+    }
+
+    function hapusSiswa(index) {
+        if(confirm(`Yakin ingin menghapus data ${dataPeserta[index].nama}?`)) {
+            dataPeserta.splice(index, 1); 
+            renderTabel();
+        }
+    }
+
+    // --- FUNGSI DOWNLOAD TEMPLATE EXCEL ---
+    function downloadTemplateExcel() {
+        const dataTemplate = [
+            ["Nama", "Tgl Lahir", "No. Ujian", "NISN", "Kelas"],
+            ["CONTOH NAMA SISWA", "2006-03-08", "26-13-18-1-0167-0003", "1234567890", "6A"]
+        ];
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.aoa_to_sheet(dataTemplate);
+        worksheet['!cols'] = [ { wch: 30 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 } ];
+        
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Siswa");
+        XLSX.writeFile(workbook, "Template_Data_Siswa.xlsx");
+    }
+
+    // --- FUNGSI IMPOR EXCEL ---
+    function prosesImporExcel(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const firstSheetName = workbook.SheetNames[0];
+            const jsonSheet = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {raw: false});
+            let berhasil = 0;
+
+            jsonSheet.forEach(row => {
+                const keys = Object.keys(row);
+                const getVal = (keywords) => {
+                    const matchKey = keys.find(k => keywords.some(word => k.toLowerCase().includes(word)));
+                    return matchKey ? row[matchKey] : "";
+                };
+
+                const nama = getVal(["nama"]);
+                const tgl = getVal(["lahir", "tanggal", "tgl", "ttl"]); 
+                const no = getVal(["ujian", "nomor", "peserta", "no. ", "no "]);
+                const nisn = getVal(["nisn"]);
+                const kelas = getVal(["kelas", "kls"]);
+
+                if(nama && nisn) { 
+                    dataPeserta.push({
+                        nama: nama.toUpperCase(), tglLahir: tgl, noUjian: no, nisn: nisn, kelas: kelas
+                    });
+                    berhasil++;
+                }
+            });
+
+            alert(`Selesai! Berhasil mengimpor ${berhasil} data siswa dari Excel.`);
+            renderTabel();
+            document.getElementById('inputExcel').value = ""; 
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    window.onload = renderTabel;
+</script>
+
+</body>
+</html>
