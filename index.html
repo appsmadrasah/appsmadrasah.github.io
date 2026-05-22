@@ -19,7 +19,7 @@
             display: flex;
             height: 100vh;
             background-color: #f0f7ff; 
-            overflow: hidden; /* Mencegah scroll ganda */
+            overflow: hidden;
         }
 
         /* Sidebar Styling */
@@ -82,19 +82,16 @@
             height: 100%;
         }
 
-        /* Halaman tunggal (Page) */
         .page {
-            display: none; /* Disembunyikan secara default */
+            display: none; 
             width: 100%;
             height: 100%;
         }
 
-        /* Halaman yang sedang aktif */
         .page.active-page {
             display: block; 
         }
 
-        /* Khusus Dashboard (karena bukan iframe) */
         #dashboard {
             padding: 30px;
             overflow-y: auto;
@@ -110,7 +107,6 @@
             max-width: 800px;
         }
 
-        /* Styling untuk Iframe agar penuh */
         iframe {
             width: 100%;
             height: 100%;
@@ -129,7 +125,6 @@
         </div>
 
         <div class="nav-menu">
-            <!-- Tombol Navigasi memanggil fungsi showPage() -->
             <div class="nav-item active" onclick="showPage('dashboard', this)">
                 <i class="fas fa-chart-pie"></i>
                 Dashboard Data Ujian
@@ -160,30 +155,31 @@
     <!-- AREA KANAN -->
     <div class="main-content">
         
-        <!-- 1. Halaman Dashboard (Tampil Default) -->
+        <!-- 1. Halaman Dashboard -->
         <div id="dashboard" class="page active-page">
             <h2>Dashboard Data Ujian</h2>
             <div class="chart-container">
+                <!-- Elemen Canvas tempat grafik digambar -->
                 <canvas id="grafikSiswa"></canvas>
             </div>
         </div>
 
-        <!-- 2. Halaman Data Siswa (Memuat Link Eksternal) -->
+        <!-- 2. Halaman Data Siswa -->
         <div id="siswa" class="page">
             <iframe src="https://appsmadrasah.github.io/datasiswa.html"></iframe>
         </div>
 
-        <!-- 3. Halaman Daftar Hadir (Link Telah Ditambahkan) -->
+        <!-- 3. Halaman Daftar Hadir -->
         <div id="hadir" class="page">
             <iframe src="https://appsmadrasah.github.io/daftarhadir.html"></iframe>
         </div>
 
-        <!-- 4. Halaman Ujian Nasional (Memuat Link Eksternal) -->
+        <!-- 4. Halaman Ujian Nasional -->
         <div id="un" class="page">
             <iframe src="https://appsmadrasah.github.io/kartu1.html"></iframe>
         </div>
 
-        <!-- 5. Halaman Ujian SAT (Memuat Link Eksternal) -->
+        <!-- 5. Halaman Ujian SAT -->
         <div id="sat" class="page">
             <iframe src="https://appsmadrasah.github.io/kartu2.html"></iframe>
         </div>
@@ -191,43 +187,63 @@
     </div>
 
     <script>
-        // FUNGSI NAVIGASI: Pindah menu tanpa reload
+        // FUNGSI NAVIGASI
         function showPage(pageId, element) {
-            // Sembunyikan semua konten
             document.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active-page');
             });
-
-            // Hilangkan status aktif dari semua tombol menu
             document.querySelectorAll('.nav-item').forEach(nav => {
                 nav.classList.remove('active');
             });
-
-            // Tampilkan konten yang diklik dan beri warna biru pada tombolnya
             document.getElementById(pageId).classList.add('active-page');
             element.classList.add('active');
         }
 
-        // FUNGSI DASHBOARD: Memuat grafik Firebase
+        // FUNGSI DASHBOARD: Mengolah Data Kelas
         window.onload = () => {
             const firebaseUrl = 'https://datasiswa-65abf-default-rtdb.asia-southeast1.firebasedatabase.app/.json';
 
             fetch(firebaseUrl)
                 .then(response => response.json())
                 .then(data => {
-                    let totalSiswa = 0;
-                    if (typeof data === 'object' && data !== null) {
-                        totalSiswa = Object.keys(data).length;
-                    }
+                    if (!data) return;
 
+                    // 1. Siapkan wadah untuk menghitung jumlah siswa per kelas
+                    const jumlahPerKelas = {};
+
+                    // 2. Ubah format data Firebase menjadi Array agar mudah dilooping
+                    // (Firebase bisa mengembalikan format Object atau Array tergantung cara Anda menyimpannya)
+                    const dataArray = Array.isArray(data) ? data : Object.values(data);
+
+                    // 3. Looping setiap data siswa
+                    dataArray.forEach(siswa => {
+                        if (siswa && typeof siswa === 'object') {
+                            // Cek properti kelas (huruf kecil atau besar)
+                            // CATATAN: Ubah "siswa.kelas" jika di database Anda namanya berbeda (misal: siswa.rombel)
+                            const namaKelas = siswa.kelas || siswa.Kelas || siswa.KELAS || "Tanpa Kelas";
+                            
+                            // Tambahkan hitungan untuk kelas tersebut
+                            if (jumlahPerKelas[namaKelas]) {
+                                jumlahPerKelas[namaKelas]++;
+                            } else {
+                                jumlahPerKelas[namaKelas] = 1;
+                            }
+                        }
+                    });
+
+                    // 4. Pisahkan hasil menjadi Label (Nama Kelas) dan Data (Jumlah Siswa)
+                    const labelKelas = Object.keys(jumlahPerKelas);
+                    const angkaSiswa = Object.values(jumlahPerKelas);
+
+                    // 5. Gambar Grafik dengan Chart.js
                     const ctx = document.getElementById('grafikSiswa').getContext('2d');
                     new Chart(ctx, {
                         type: 'bar',
                         data: {
-                            labels: ["Total Siswa Terdaftar"],
+                            labels: labelKelas, // Menampilkan nama-nama kelas di bawah grafik
                             datasets: [{
-                                label: 'Jumlah Siswa dari Firebase',
-                                data: [totalSiswa],
+                                label: 'Jumlah Siswa per Kelas',
+                                data: angkaSiswa, // Menampilkan tinggi batang berdasarkan jumlah siswa
                                 backgroundColor: 'rgba(54, 162, 235, 0.7)',
                                 borderColor: 'rgba(54, 162, 235, 1)',
                                 borderWidth: 1
@@ -235,7 +251,12 @@
                         },
                         options: {
                             responsive: true,
-                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                            scales: { 
+                                y: { 
+                                    beginAtZero: true, 
+                                    ticks: { stepSize: 1 } 
+                                } 
+                            }
                         }
                     });
                 })
