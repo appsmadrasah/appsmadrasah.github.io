@@ -383,10 +383,11 @@
                 if (!kelasSiswa.startsWith(filterValue)) return; 
             }
 
-            // Tanda tangan zigzag
+            // PERUBAHAN ADA DI SINI:
+            // Tanda tangan zigzag disesuaikan jaraknya (padding-left 15px & 50%)
             let ttdElement = (nomorUrut % 2 !== 0) 
-                ? `<div style="text-align: left;">${nomorUrut}.</div>` 
-                : `<div style="text-align: right; padding-right: 20px;">${nomorUrut}.</div>`;
+                ? `<div style="text-align: left; padding-left: 15px;">${nomorUrut}.</div>` 
+                : `<div style="text-align: left; padding-left: 50%;">${nomorUrut}.</div>`;
 
             tableRows += `
                 <tr>
@@ -394,7 +395,7 @@
                     <td style="text-align: center;">${p.noUjian || '-'}</td>
                     <td>${p.nama || '-'}</td>
                     <td style="text-align: center;">${p.kelas || '-'}</td>
-                    <td style="height: 35px; vertical-align: top;">${ttdElement}</td>
+                    <td style="height: 35px; vertical-align: middle;">${ttdElement}</td>
                     <td></td>
                 </tr>
             `;
