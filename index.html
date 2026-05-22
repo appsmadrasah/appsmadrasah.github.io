@@ -3,351 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Siswa</title>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <title>Aplikasi Madrasah Terpadu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* === CSS APLIKASI UTAMA === */
-        body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
-        .app-container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #333; margin-top: 5px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-        /* Tabel Data & Form */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;}
-        table, th, td { border: 1px solid #ddd; }
-        th, td { padding: 8px; text-align: left; }
-        th { background-color: #4CAF50; color: white; }
-        
-        /* Tombol Aksi Tabel */
-        .btn-edit { padding: 5px; background: #FFC107; color: black; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;}
-        .btn-hapus { padding: 5px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;}
-        
-        /* Tombol Toolbar Atas */
-        .toolbar { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;}
-        .btn-toolbar { padding: 10px 15px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-tambah { background: #4CAF50; }
-        .btn-sortir { background: #9C27B0; cursor: pointer; font-family: inherit; font-size: 14px; outline: none;}    
-        .btn-template { background: #2196F3; } 
-        .btn-excel { background: #1b7339; }    
-        .btn-hapus-massal { background: #f44336; } /* Warna merah untuk hapus massal */
-        
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
-        .form-group input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        
-        /* === CSS MODAL (POP-UP FORM) === */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fff; margin: 5% auto; padding: 20px; border-radius: 8px; width: 400px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-        .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between;}
-        .close-btn { cursor: pointer; color: red; font-weight: bold; font-size: 20px;}
-        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-        .btn-batal { background: #ccc; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
-        .btn-simpan { padding: 10px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        body {
+            display: flex;
+            height: 100vh;
+            background-color: #f0f7ff; 
+            overflow: hidden; /* Mencegah scroll ganda */
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 250px;
+            background-color: #ffffff;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .logo-container {
+            padding: 30px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .logo-box {
+            background-color: #004d40; 
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .logo-box i { font-size: 20px; color: #4db6ac; }
+        .logo-text { font-weight: bold; font-size: 14px; line-height: 1.2; text-transform: uppercase; }
+
+        .nav-menu { margin-top: 20px; display: flex; flex-direction: column; }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            text-decoration: none;
+            color: #5f6368; 
+            transition: background 0.3s;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: #f8f9fa;
+            color: #1a73e8;
+        }
+
+        .nav-item i { margin-right: 15px; width: 20px; text-align: center; font-size: 18px; }
+
+        /* Area Konten Kanan */
+        .main-content {
+            flex-grow: 1;
+            background-color: #f4f8fb;
+            position: relative;
+            height: 100%;
+        }
+
+        /* Halaman tunggal (Page) */
+        .page {
+            display: none; /* Disembunyikan secara default */
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Halaman yang sedang aktif */
+        .page.active-page {
+            display: block; 
+        }
+
+        /* Khusus Dashboard (karena bukan iframe) */
+        #dashboard {
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .chart-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #e0e0e0;
+            margin-top: 15px;
+            max-width: 800px;
+        }
+
+        /* Styling untuk Iframe agar penuh */
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 </head>
 <body>
 
-<div class="app-container" id="app-container">
-    <h2>Data Siswa</h2>
-    
-    <div class="toolbar">
-        <button class="btn-toolbar btn-tambah" onclick="bukaModalForm()">➕ Tambah Siswa</button>
-        
-        <select class="btn-toolbar btn-sortir" id="filter-kelas" onchange="renderTabel()">
-            <option value="semua" style="color: black;">🔃 Filter Kelas (Semua)</option>
-            <option value="1" style="color: black;">Kelas 1</option>
-            <option value="2" style="color: black;">Kelas 2</option>
-            <option value="3" style="color: black;">Kelas 3</option>
-            <option value="4" style="color: black;">Kelas 4</option>
-            <option value="5" style="color: black;">Kelas 5</option>
-            <option value="6" style="color: black;">Kelas 6</option>
-        </select>
-
-        <button class="btn-toolbar btn-excel" onclick="document.getElementById('inputExcel').click()">📊 Impor dari Excel</button>
-        <input type="file" id="inputExcel" accept=".xlsx, .xls" style="display: none;" onchange="prosesImporExcel(event)">
-        
-        <button class="btn-toolbar btn-template" onclick="downloadTemplateExcel()">⬇️ Download Template</button>
-        
-        <button class="btn-toolbar btn-hapus-massal" onclick="hapusTerpilih()">🗑️ Hapus Terpilih</button>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 30px; text-align: center;">
-                    <input type="checkbox" id="check-all" onclick="toggleSelectAll(this)" title="Pilih Semua">
-                </th>
-                <th style="width: 40px; text-align: center;">No.</th>
-                <th>Nama</th>
-                <th>Tgl Lahir</th>
-                <th>No. Ujian</th>
-                <th>NISN</th>
-                <th>Kelas</th>
-                <th style="width: 80px; text-align:center;">Aksi</th>
-            </tr>
-        </thead>
-        <tbody id="tabel-body">
-            </tbody>
-    </table>
-</div>
-
-<div id="modalForm" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <span id="modal-judul">Tambah Siswa</span>
-            <span class="close-btn" onclick="tutupModalForm()">&times;</span>
+    <div class="sidebar">
+        <div class="logo-container">
+            <div class="logo-box">
+                <i class="fas fa-book-open"></i>
+                <div class="logo-text">APLIKASI<br>MADRASAH</div>
+            </div>
         </div>
-        <input type="hidden" id="form-index" value=""> 
-        <div class="form-group"><label>Nama Peserta:</label><input type="text" id="form-nama" autocomplete="off"></div>
-        <div class="form-group"><label>Tanggal Lahir:</label><input type="text" id="form-tgl" placeholder="Contoh: 2006-03-08" autocomplete="off"></div>
-        <div class="form-group"><label>Nomor Ujian:</label><input type="text" id="form-no" autocomplete="off"></div>
-        <div class="form-group"><label>NISN:</label><input type="text" id="form-nisn" autocomplete="off"></div>
-        <div class="form-group"><label>Kelas:</label><input type="text" id="form-kelas" autocomplete="off"></div>
-        <div class="modal-footer">
-            <button class="btn-batal" onclick="tutupModalForm()">Batal</button>
-            <button class="btn-simpan" onclick="simpanSiswa()">Simpan Data</button>
+
+        <div class="nav-menu">
+            <!-- Tombol Navigasi memanggil fungsi showPage() -->
+            <div class="nav-item active" onclick="showPage('dashboard', this)">
+                <i class="fas fa-chart-pie"></i>
+                Dashboard Data Ujian
+            </div>
+
+            <div class="nav-item" onclick="showPage('siswa', this)">
+                <i class="fas fa-users"></i>
+                Data Siswa
+            </div>
+            
+            <div class="nav-item" onclick="showPage('hadir', this)">
+                <i class="fas fa-clipboard-list"></i>
+                Daftar Hadir
+            </div>
+            
+            <div class="nav-item" onclick="showPage('un', this)">
+                <i class="fas fa-address-card"></i>
+                Nomor Ujian Nasional
+            </div>
+            
+            <div class="nav-item" onclick="showPage('sat', this)">
+                <i class="fas fa-user-check"></i>
+                Nomor Ujian SAT
+            </div>
         </div>
     </div>
-</div>
 
-<script type="module">
-    // Import SDK Firebase yang diperlukan
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
-    import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
-
-    // Firebase configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyCae3CoI4eWy9T6yhf_yGvoHiyoAJ7gUyA",
-        authDomain: "datasiswa-65abf.firebaseapp.com",
-        databaseURL: "https://datasiswa-65abf-default-rtdb.asia-southeast1.firebasedatabase.app/",
-        projectId: "datasiswa-65abf",
-        storageBucket: "datasiswa-65abf.firebasestorage.app",
-        messagingSenderId: "1043621527533",
-        appId: "1:1043621527533:web:3e854e6c862709002731e4",
-        measurementId: "G-D6YZGM4KT5"
-    };
-
-    // Inisialisasi Firebase & Database
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const db = getDatabase(app);
-
-    window.dataPeserta = [];
-    window.dataKeys = [];
-
-    // Mendengarkan perubahan data secara Real-time dari Firebase ('siswa')
-    const siswaRef = ref(db, 'siswa');
-    onValue(siswaRef, (snapshot) => {
-        const data = snapshot.val();
-        window.dataPeserta = [];
-        window.dataKeys = [];
+    <!-- AREA KANAN -->
+    <div class="main-content">
         
-        if (data) {
-            Object.keys(data).forEach(key => {
-                window.dataPeserta.push(data[key]);
-                window.dataKeys.push(key);
+        <!-- 1. Halaman Dashboard (Tampil Default) -->
+        <div id="dashboard" class="page active-page">
+            <h2>Dashboard Data Ujian</h2>
+            <div class="chart-container">
+                <canvas id="grafikSiswa"></canvas>
+            </div>
+        </div>
+
+        <!-- 2. Halaman Data Siswa (Memuat Link Eksternal) -->
+        <div id="siswa" class="page">
+            <iframe src="https://appsmadrasah.github.io/datasiswa.html"></iframe>
+        </div>
+
+        <!-- 3. Halaman Daftar Hadir (Link Telah Ditambahkan) -->
+        <div id="hadir" class="page">
+            <iframe src="https://appsmadrasah.github.io/daftarhadir.html"></iframe>
+        </div>
+
+        <!-- 4. Halaman Ujian Nasional (Memuat Link Eksternal) -->
+        <div id="un" class="page">
+            <iframe src="https://appsmadrasah.github.io/kartu1.html"></iframe>
+        </div>
+
+        <!-- 5. Halaman Ujian SAT (Memuat Link Eksternal) -->
+        <div id="sat" class="page">
+            <iframe src="https://appsmadrasah.github.io/kartu2.html"></iframe>
+        </div>
+
+    </div>
+
+    <script>
+        // FUNGSI NAVIGASI: Pindah menu tanpa reload
+        function showPage(pageId, element) {
+            // Sembunyikan semua konten
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active-page');
             });
-        }
-        window.renderTabel();
-    });
 
-    // Fungsi Render Tabel
-    window.renderTabel = function() {
-        const tbody = document.getElementById("tabel-body");
-        tbody.innerHTML = "";
-        
-        // Reset centang "Pilih Semua" saat tabel diperbarui/difilter
-        const checkAll = document.getElementById("check-all");
-        if(checkAll) checkAll.checked = false;
-        
-        const filterValue = document.getElementById("filter-kelas").value;
-        let nomorUrut = 1;
-
-        window.dataPeserta.forEach((p, index) => {
-            let tampilkan = true;
-            
-            if (filterValue !== "semua") {
-                const matchNumber = p.kelas.match(/\d+/);
-                const classNumber = matchNumber ? matchNumber[0] : "";
-                if (classNumber !== filterValue) {
-                    tampilkan = false;
-                }
-            }
-
-            if (tampilkan) {
-                const tr = `<tr>
-                    <td style="text-align: center;">
-                        <input type="checkbox" class="check-item" value="${index}">
-                    </td>
-                    <td style="text-align: center;">${nomorUrut}</td>
-                    <td>${p.nama}</td>
-                    <td>${p.tglLahir}</td>
-                    <td>${p.noUjian}</td>
-                    <td>${p.nisn}</td>
-                    <td>${p.kelas}</td>
-                    <td style="text-align:center;">
-                        <button class="btn-edit" onclick="bukaModalForm(${index})" title="Edit Data">✏️</button>
-                        <button class="btn-hapus" onclick="hapusSiswa(${index})" title="Hapus Data">🗑️</button>
-                    </td>
-                </tr>`;
-                tbody.innerHTML += tr;
-                nomorUrut++;
-            }
-        });
-    }
-
-    // --- FUNGSI HAPUS MASSAL (CHECKBOX) ---
-    // Logika ketika kotak "Pilih Semua" diklik
-    window.toggleSelectAll = function(source) {
-        const checkboxes = document.querySelectorAll('.check-item');
-        checkboxes.forEach(cb => {
-            cb.checked = source.checked;
-        });
-    }
-
-    // Logika ketika tombol "Hapus Terpilih" diklik
-    window.hapusTerpilih = function() {
-        const checkboxes = document.querySelectorAll('.check-item:checked');
-        
-        if (checkboxes.length === 0) {
-            alert("Silakan pilih/centang data yang ingin dihapus terlebih dahulu!");
-            return;
-        }
-
-        if(confirm(`Peringatan: Anda yakin ingin menghapus ${checkboxes.length} data siswa yang terpilih secara permanen?`)) {
-            // Proses hapus ke Firebase berdasarkan item yang dicentang
-            checkboxes.forEach(cb => {
-                const index = cb.value; // Mengambil indeks data
-                const key = window.dataKeys[index]; // Mengambil kunci ID dari Firebase
-                if (key) {
-                    remove(ref(db, `siswa/${key}`)); // Hapus dari Firebase
-                }
+            // Hilangkan status aktif dari semua tombol menu
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                nav.classList.remove('active');
             });
-            
-            // Hapus centang "Pilih Semua" setelah proses selesai
-            document.getElementById('check-all').checked = false;
-        }
-    }
 
-    // CRUD Siswa - Buka Form Modal
-    window.bukaModalForm = function(index = null) {
-        document.getElementById('modalForm').style.display = 'block';
-        if(index !== null) {
-            document.getElementById('modal-judul').innerText = "Edit Siswa";
-            document.getElementById('form-index').value = index;
-            document.getElementById('form-nama').value = window.dataPeserta[index].nama;
-            document.getElementById('form-tgl').value = window.dataPeserta[index].tglLahir;
-            document.getElementById('form-no').value = window.dataPeserta[index].noUjian;
-            document.getElementById('form-nisn').value = window.dataPeserta[index].nisn;
-            document.getElementById('form-kelas').value = window.dataPeserta[index].kelas;
-        } else {
-            document.getElementById('modal-judul').innerText = "Tambah Siswa Baru";
-            document.getElementById('form-index').value = "";
-            document.getElementById('form-nama').value = "";
-            document.getElementById('form-tgl').value = "";
-            document.getElementById('form-no').value = "";
-            document.getElementById('form-nisn').value = "";
-            document.getElementById('form-kelas').value = "";
-        }
-    }
-
-    window.tutupModalForm = function() { 
-        document.getElementById('modalForm').style.display = 'none'; 
-    }
-
-    // CRUD Siswa - Simpan Data ke Firebase
-    window.simpanSiswa = function() {
-        const index = document.getElementById('form-index').value;
-        const dataBaru = {
-            nama: document.getElementById('form-nama').value.toUpperCase(),
-            tglLahir: document.getElementById('form-tgl').value,
-            noUjian: document.getElementById('form-no').value,
-            nisn: document.getElementById('form-nisn').value,
-            kelas: document.getElementById('form-kelas').value
-        };
-
-        if(dataBaru.nama === "" || dataBaru.nisn === "") { 
-            alert("Nama dan NISN tidak boleh kosong!"); 
-            return; 
+            // Tampilkan konten yang diklik dan beri warna biru pada tombolnya
+            document.getElementById(pageId).classList.add('active-page');
+            element.classList.add('active');
         }
 
-        if(index === "") {
-            const newSiswaRef = push(ref(db, 'siswa'));
-            set(newSiswaRef, dataBaru);
-        } else {
-            const key = window.dataKeys[index];
-            set(ref(db, `siswa/${key}`), dataBaru);
-        }
-        
-        window.tutupModalForm(); 
-    }
+        // FUNGSI DASHBOARD: Memuat grafik Firebase
+        window.onload = () => {
+            const firebaseUrl = 'https://datasiswa-65abf-default-rtdb.asia-southeast1.firebasedatabase.app/.json';
 
-    // CRUD Siswa - Hapus Data Satuan dari Firebase
-    window.hapusSiswa = function(index) {
-        const namaSiswa = window.dataPeserta[index].nama;
-        if(confirm(`Yakin ingin menghapus data ${namaSiswa}?`)) {
-            const key = window.dataKeys[index];
-            remove(ref(db, `siswa/${key}`));
-        }
-    }
+            fetch(firebaseUrl)
+                .then(response => response.json())
+                .then(data => {
+                    let totalSiswa = 0;
+                    if (typeof data === 'object' && data !== null) {
+                        totalSiswa = Object.keys(data).length;
+                    }
 
-    // --- FUNGSI DOWNLOAD TEMPLATE EXCEL ---
-    window.downloadTemplateExcel = function() {
-        const dataTemplate = [
-            ["Nama", "Tgl Lahir", "No. Ujian", "NISN", "Kelas"],
-            ["CONTOH NAMA SISWA", "2006-03-08", "26-13-18-1-0167-0003", "1234567890", "6A"]
-        ];
-        const workbook = window.XLSX.utils.book_new();
-        const worksheet = window.XLSX.utils.aoa_to_sheet(dataTemplate);
-        worksheet['!cols'] = [ { wch: 30 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 } ];
-        
-        window.XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Siswa");
-        window.XLSX.writeFile(workbook, "Template_Data_Siswa.xlsx");
-    }
-
-    // --- FUNGSI IMPOR EXCEL (Langsung Unggah ke Firebase) ---
-    window.prosesImporExcel = function(event) {
-        const file = event.target.files[0];
-        if(!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const workbook = window.XLSX.read(data, {type: 'array'});
-            const firstSheetName = workbook.SheetNames[0];
-            const jsonSheet = window.XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {raw: false});
-            let berhasil = 0;
-
-            jsonSheet.forEach(row => {
-                const keys = Object.keys(row);
-                const getVal = (keywords) => {
-                    const matchKey = keys.find(k => keywords.some(word => k.toLowerCase().includes(word)));
-                    return matchKey ? row[matchKey] : "";
-                };
-
-                const nama = getVal(["nama"]);
-                const tgl = getVal(["lahir", "tanggal", "tgl", "ttl"]); 
-                const no = getVal(["ujian", "nomor", "peserta", "no. ", "no "]);
-                const nisn = getVal(["nisn"]);
-                const kelas = getVal(["kelas", "kls"]);
-
-                if(nama && nisn) { 
-                    const newSiswaRef = push(ref(db, 'siswa'));
-                    set(newSiswaRef, {
-                        nama: nama.toUpperCase(), tglLahir: tgl, noUjian: no, nisn: nisn, kelas: kelas
+                    const ctx = document.getElementById('grafikSiswa').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ["Total Siswa Terdaftar"],
+                            datasets: [{
+                                label: 'Jumlah Siswa dari Firebase',
+                                data: [totalSiswa],
+                                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                        }
                     });
-                    berhasil++;
-                }
-            });
-
-            alert(`Selesai! Berhasil mengirimkan ${berhasil} data siswa baru ke cloud Firebase.`);
-            document.getElementById('inputExcel').value = ""; 
+                })
+                .catch(error => {
+                    console.error("Gagal memuat Firebase:", error);
+                });
         };
-        reader.readAsArrayBuffer(file);
-    }
-</script>
+    </script>
 
 </body>
 </html>
