@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Daftar Hadir Ujian - Realtime Database</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        /* === CSS APLIKASI UTAMA === */
+        body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        .app-container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; margin-bottom: 25px;}
+        
+        /* Navigasi / Tab */
+        .tab-menu { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .tab-btn { padding: 10px 20px; cursor: pointer; border: none; background: #eee; border-radius: 5px; font-weight: bold; }
+        .tab-btn.active { background: #4CAF50; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Tabel Data & Form */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;}
+        table, th, td { border: 1px solid #ddd; }
+        th, td { padding: 8px; text-align: left; }
+        th { background-color: #4CAF50; color: white; }
+        
+        /* Tombol Aksi Tabel */
+        .btn-edit { padding: 5px; background: #FFC107; color: black; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;}
+        .btn-hapus { padding: 5px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;}
+        
+        /* Tombol Toolbar Atas */
+        .toolbar { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;}
+        .btn-toolbar { padding: 10px 15px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        
+        .box-area { background: #e9f5e9; padding: 15px; border: 2px dashed #4CAF50; border-radius: 5px; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .form-group input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .btn-simpan { padding: 10px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        /* === CSS MODAL (POP-UP FORM) === */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fff; margin: 5% auto; padding: 20px; border-radius: 8px; width: 400px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between;}
+        .close-btn { cursor: pointer; color: red; font-weight: bold; font-size: 20px;}
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        .btn-batal { background: #ccc; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
+
+        /* === CSS DAFTAR HADIR (PREVIEW UI) === */
+        .preview-wrapper { display: flex; justify-content: center; padding: 20px; background: #ddd; border-radius: 5px;}
+        .preview-dokumen { width: 100%; background-color: #ffffff; border: 1px solid #000; padding: 20px; box-sizing: border-box; font-family: 'Times New Roman', Times, serif; }
+        .header { display: flex; align-items: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+        .logo { width: 70px; height: 70px; object-fit: contain; margin-right: 15px; }
+        .header-text { flex-grow: 1; text-align: center; line-height: 1.2; }
+        .header-text p { margin: 0; font-weight: bold; text-transform: uppercase; }
+        .teks-1 { font-size: 16px; } .teks-2 { font-size: 18px; } .teks-3 { font-size: 12px; } .teks-4 { font-size: 16px; }
+        
+        .footer { display: flex; justify-content: flex-end; align-items: flex-end; padding-top: 30px;}
+        .signature { text-align: left; width: 250px; font-size: 14px; line-height: 1.4;}
+        .signature p { margin: 0; } 
+        .ttd-box-area { height: 60px; margin: 5px 0; display: flex; align-items: center;}
+        .ttd-box-area img { max-height: 100%; max-width: 100%; object-fit: contain; display: none; }
+        .signature .name { font-weight: bold; text-decoration: underline;}
+
+        /* === AREA CETAK & KERTAS F4 === */
+        #area-cetak { display: none; }
+        
+        @page { 
+            size: 215mm 330mm; 
+            margin: 15mm; 
+        }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #area-cetak, #area-cetak * { visibility: visible; }
+            
+            #area-cetak { 
+                display: block; 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                box-sizing: border-box;
+                font-family: 'Times New Roman', Times, serif;
+            }
+
+            .tabel-cetak {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+                font-size: 12px;
+            }
+
+            .tabel-cetak th, .tabel-cetak td {
+                border: 1px solid #000;
+                padding: 6px 8px;
+            }
+
+            .tabel-cetak th {
+                background-color: #f0f0f0 !important;
+                -webkit-print-color-adjust: exact;
+                text-align: center;
+                font-weight: bold;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="app-container">
+    <h2>Sistem Manajemen Ujian Madrasah</h2>
+    
+    <div class="tab-menu">
+        <button class="tab-btn active" onclick="bukaTab('tab-data', this)">Daftar Data Peserta</button>
+        <button class="tab-btn" onclick="bukaTab('tab-pengaturan', this)">Pengaturan Kop & TTD</button>
+        <button class="tab-btn" onclick="bukaTab('tab-kartu', this)">Cetak Daftar Hadir</button>
+    </div>
+
+    <div id="tab-data" class="tab-content active">
+        
+        <div class="toolbar">
+            <select id="filter-kelas" class="btn-toolbar" onchange="renderTabel()" style="background: #fff; color: #333; border: 1px solid #ccc; cursor: pointer; padding: 9px 15px; font-weight: bold;">
+                <option value="Semua">Tampilkan Semua Kelas</option>
+                <option value="1">Kelas 1</option>
+                <option value="2">Kelas 2</option>
+                <option value="3">Kelas 3</option>
+                <option value="4">Kelas 4</option>
+                <option value="5">Kelas 5</option>
+                <option value="6">Kelas 6</option>
+            </select>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align:center;">No.</th>
+                    <th>Nama</th>
+                    <th>Tgl Lahir</th>
+                    <th>No. Ujian</th>
+                    <th>NISN</th>
+                    <th>Kelas</th>
+                    <th style="width: 80px; text-align:center;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tabel-body">
+                <tr><td colspan="7" style="text-align: center;">Menghubungkan & memuat Realtime Database...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="tab-pengaturan" class="tab-content">
+        <div class="box-area" style="background: #fff; border: 1px solid #ccc;">
+            <h3 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">Bagian Kop Surat</h3>
+            <div class="form-group"><label>Ganti Logo (Opsional):</label><input type="file" accept="image/*" id="input-logo" onchange="gantiLogo(event)"></div>
+            <div class="form-group"><label>Teks Baris 1:</label><input type="text" id="input-kop-1" value="Kementerian Agama Republik Indonesia"></div>
+            <div class="form-group"><label>Teks Baris 2:</label><input type="text" id="input-kop-2" value="Ujian Madrasah"></div>
+            <div class="form-group"><label>Teks Baris 3:</label><input type="text" id="input-kop-3" value="Tahun Pelajaran 2025/2026"></div>
+            <div class="form-group"><label>Teks Baris 4:</label><input type="text" id="input-kop-4" value="MI Hidayatus Shibyan"></div>
+            
+            <h3 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Bagian Tanda Tangan</h3>
+            <div class="form-group"><label>Tempat & Tanggal Surat:</label><input type="text" id="input-tgl-surat" value="Lamongan, 01 Mei 2026"></div>
+            
+            <div class="form-group">
+                <label>Upload Tanda Tangan (Opsional):</label>
+                <input type="file" accept="image/*" id="input-ttd" onchange="gantiTTD(event)">
+            </div>
+            
+            <div class="form-group"><label>Nama Kepala Madrasah:</label><input type="text" id="input-nama-kepsek" value="IMAM TAUFIQ, ST"></div>
+
+            <button class="btn-simpan" onclick="terapkanKop()" style="margin-top: 15px; width: 100%;">Terapkan Perubahan</button>
+        </div>
+    </div>
+
+    <div id="tab-kartu" class="tab-content">
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button onclick="cetakSemuaF4()" style="padding: 10px 15px; background: #E91E63; border: none; color: white; cursor: pointer; border-radius: 4px; font-weight: bold;">🖨️ Cetak Daftar Hadir</button>
+        </div>
+        
+        <div class="preview-wrapper">
+            <div class="preview-dokumen" id="kartu-preview">
+                <div class="header">
+                    <img id="img-logo-kop" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_Kementerian_Agama_Republik_Indonesia.svg/200px-Logo_Kementerian_Agama_Republik_Indonesia.svg.png" alt="Logo" class="logo">
+                    <div class="header-text">
+                        <p id="teks-kop-1" class="teks-1">Kementerian Agama Republik Indonesia</p>
+                        <p id="teks-kop-2" class="teks-2">Ujian Madrasah</p>
+                        <p id="teks-kop-3" class="teks-3">Tahun Pelajaran 2025/2026</p>
+                        <p id="teks-kop-4" class="teks-4">MI Hidayatus Shibyan</p>
+                    </div>
+                </div>
+                
+                <h3 style="text-align: center; text-decoration: underline; margin-bottom: 20px;">DAFTAR HADIR PESERTA UJIAN</h3>
+                
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">
+                    <thead>
+                        <tr>
+                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0;">NO</th>
+                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0;">NO UJIAN</th>
+                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0;">NAMA SISWA</th>
+                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0;">KELAS</th>
+                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0;">TANDA TANGAN</th>
+                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0;">KETERANGAN</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="6" style="border: 1px solid #000; padding: 25px; text-align: center; color: #666; font-style: italic;">(Data siswa berdasarkan filter kelas akan otomatis terisi di sini saat dicetak)</td></tr>
+                    </tbody>
+                </table>
+                
+                <div class="footer">
+                    <div class="signature">
+                        <p id="k-tgl-surat">Lamongan, 01 Mei 2026</p>
+                        <p>Kepala Madrasah</p>
+                        
+                        <div class="ttd-box-area">
+                            <img id="img-ttd-preview" src="" alt="TTD">
+                        </div>
+                        
+                        <p class="name" id="k-kepsek">IMAM TAUFIQ, ST</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modalForm" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span id="modal-judul">Edit Siswa</span>
+            <span class="close-btn" onclick="tutupModalForm()">&times;</span>
+        </div>
+        <input type="hidden" id="form-index" value=""> 
+        <div class="form-group"><label>Nama Peserta:</label><input type="text" id="form-nama" autocomplete="off"></div>
+        <div class="form-group"><label>Tanggal Lahir:</label><input type="text" id="form-tgl" placeholder="Contoh: 2006-03-08" autocomplete="off"></div>
+        <div class="form-group"><label>Nomor Ujian:</label><input type="text" id="form-no" autocomplete="off"></div>
+        <div class="form-group"><label>NISN:</label><input type="text" id="form-nisn" autocomplete="off"></div>
+        <div class="form-group"><label>Kelas:</label><input type="text" id="form-kelas" autocomplete="off"></div>
+        <div class="modal-footer">
+            <button class="btn-batal" onclick="tutupModalForm()">Batal</button>
+            <button class="btn-simpan" onclick="simpanSiswa()">Simpan Data</button>
+        </div>
+    </div>
+</div>
+
+<div id="area-cetak"></div>
+
+<script>
+    window.dataPeserta = [];
+    window.ttdGlobalSrc = "";
+
+    window.renderTabel = function() {
+        const tbody = document.getElementById("tabel-body");
+        tbody.innerHTML = "";
+        
+        const filterValue = document.getElementById("filter-kelas").value;
+
+        if(window.dataPeserta.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">Tidak ada data siswa. Silakan periksa database.</td></tr>`;
+            return;
+        }
+
+        let nomorUrut = 1;
+
+        window.dataPeserta.forEach((p, index) => {
+            if (filterValue !== "Semua") {
+                const kelasSiswa = p.kelas ? p.kelas.toString().toUpperCase() : "";
+                if (!kelasSiswa.startsWith(filterValue)) return; 
+            }
+
+            const tr = `<tr>
+                <td style="text-align:center;">${nomorUrut++}</td>
+                <td>${p.nama}</td>
+                <td>${p.tglLahir || '-'}</td>
+                <td>${p.noUjian || '-'}</td>
+                <td>${p.nisn || '-'}</td>
+                <td>${p.kelas || '-'}</td>
+                <td style="text-align:center;">
+                    <button class="btn-edit" onclick="bukaModalForm(${index})" title="Edit Data">✏️</button>
+                    <button class="btn-hapus" onclick="hapusSiswa(${index})" title="Hapus Data">🗑️</button>
+                </td>
+            </tr>`;
+            tbody.innerHTML += tr;
+        });
+    }
+
+    window.bukaModalForm = function(index) {
+        document.getElementById('modalForm').style.display = 'block';
+        document.getElementById('form-index').value = index;
+        document.getElementById('form-nama').value = window.dataPeserta[index].nama || "";
+        document.getElementById('form-tgl').value = window.dataPeserta[index].tglLahir || "";
+        document.getElementById('form-no').value = window.dataPeserta[index].noUjian || "";
+        document.getElementById('form-nisn').value = window.dataPeserta[index].nisn || "";
+        document.getElementById('form-kelas').value = window.dataPeserta[index].kelas || "";
+    }
+
+    window.tutupModalForm = function() { document.getElementById('modalForm').style.display = 'none'; }
+
+    window.simpanSiswa = async function() {
+        const index = document.getElementById('form-index').value;
+        const dataBaru = {
+            nama: document.getElementById('form-nama').value.toUpperCase(),
+            tglLahir: document.getElementById('form-tgl').value,
+            noUjian: document.getElementById('form-no').value,
+            nisn: document.getElementById('form-nisn').value,
+            kelas: document.getElementById('form-kelas').value
+        };
+
+        if(dataBaru.nama === "" || dataBaru.nisn === "") { alert("Nama dan NISN tidak boleh kosong!"); return; }
+        
+        document.getElementById("tabel-body").innerHTML = `<tr><td colspan="7" style="text-align: center;">Menyimpan perubahan ke Realtime Database...</td></tr>`;
+
+        const docId = window.dataPeserta[index].docId;
+        if (window.firebase_updateSiswa && docId) await window.firebase_updateSiswa(docId, dataBaru);
+        
+        tutupModalForm();
+        if (window.firebase_muatData) await window.firebase_muatData();
+    }
+
+    window.hapusSiswa = async function(index) {
+        const target = window.dataPeserta[index];
+        if(confirm(`Yakin ingin menghapus data ${target.nama}?`)) {
+            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="7" style="text-align: center;">Menghapus data dari Realtime Database...</td></tr>`;
+            if (window.firebase_hapusSiswa && target.docId) {
+                await window.firebase_hapusSiswa(target.docId);
+            }
+            if (window.firebase_muatData) await window.firebase_muatData();
+        }
+    }
+
+    window.bukaTab = function(tabId, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        if(btnElement) btnElement.classList.add('active');
+    }
+
+    window.terapkanKop = function() {
+        document.getElementById('teks-kop-1').innerText = document.getElementById('input-kop-1').value;
+        document.getElementById('teks-kop-2').innerText = document.getElementById('input-kop-2').value;
+        document.getElementById('teks-kop-3').innerText = document.getElementById('input-kop-3').value;
+        document.getElementById('teks-kop-4').innerText = document.getElementById('input-kop-4').value;
+        document.getElementById('k-tgl-surat').innerText = document.getElementById('input-tgl-surat').value;
+        document.getElementById('k-kepsek').innerText = document.getElementById('input-nama-kepsek').value;
+        alert("Kop surat berhasil diperbarui!"); bukaTab('tab-kartu');
+    }
+    
+    window.gantiLogo = function(event) {
+        if(event.target.files[0]) document.getElementById('img-logo-kop').src = URL.createObjectURL(event.target.files[0]);
+    }
+
+    window.gantiTTD = function(event) {
+        if(event.target.files[0]) {
+            window.ttdGlobalSrc = URL.createObjectURL(event.target.files[0]);
+            const imgTtdPreview = document.getElementById('img-ttd-preview');
+            imgTtdPreview.src = window.ttdGlobalSrc;
+            imgTtdPreview.style.display = 'block'; 
+        }
+    }
+
+    window.cetakSemuaF4 = function() {
+        const areaCetak = document.getElementById('area-cetak');
+        areaCetak.innerHTML = ''; 
+        
+        const logoSrc = document.getElementById('img-logo-kop').src;
+        const t1 = document.getElementById('teks-kop-1').innerText;
+        const t2 = document.getElementById('teks-kop-2').innerText;
+        const t3 = document.getElementById('teks-kop-3').innerText;
+        const t4 = document.getElementById('teks-kop-4').innerText;
+        const tglSurat = document.getElementById('k-tgl-surat').innerText;
+        const kepsek = document.getElementById('k-kepsek').innerText;
+        const elemenTtd = window.ttdGlobalSrc ? `<img src="${window.ttdGlobalSrc}" style="display:block; max-height: 60px;">` : ``;
+        const filterValue = document.getElementById("filter-kelas").value;
+
+        let tableRows = '';
+        let nomorUrut = 1;
+
+        window.dataPeserta.forEach(p => {
+            if (filterValue !== "Semua") {
+                const kelasSiswa = p.kelas ? p.kelas.toString().toUpperCase() : "";
+                if (!kelasSiswa.startsWith(filterValue)) return; 
+            }
+
+            // Tanda tangan zigzag
+            let ttdElement = (nomorUrut % 2 !== 0) 
+                ? `<div style="text-align: left;">${nomorUrut}.</div>` 
+                : `<div style="text-align: right; padding-right: 20px;">${nomorUrut}.</div>`;
+
+            tableRows += `
+                <tr>
+                    <td style="text-align: center;">${nomorUrut}</td>
+                    <td style="text-align: center;">${p.noUjian || '-'}</td>
+                    <td>${p.nama || '-'}</td>
+                    <td style="text-align: center;">${p.kelas || '-'}</td>
+                    <td style="height: 35px; vertical-align: top;">${ttdElement}</td>
+                    <td></td>
+                </tr>
+            `;
+            nomorUrut++;
+        });
+
+        let printHTML = `
+        <div>
+            <div class="header" style="display: flex; align-items: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+                <img src="${logoSrc}" style="width: 70px; height: 70px; object-fit: contain; margin-right: 15px;">
+                <div class="header-text" style="flex-grow: 1; text-align: center; line-height: 1.2;">
+                    <p style="margin: 0; font-weight: bold; text-transform: uppercase; font-size: 16px;">${t1}</p>
+                    <p style="margin: 0; font-weight: bold; text-transform: uppercase; font-size: 18px;">${t2}</p>
+                    <p style="margin: 0; font-size: 12px;">${t3}</p>
+                    <p style="margin: 0; font-weight: bold; text-transform: uppercase; font-size: 16px;">${t4}</p>
+                </div>
+            </div>
+            
+            <h3 style="text-align: center; text-decoration: underline; margin-bottom: 20px;">DAFTAR HADIR PESERTA UJIAN</h3>
+            
+            <table class="tabel-cetak">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">NO</th>
+                        <th style="width: 15%;">NO UJIAN</th>
+                        <th style="width: 35%;">NAMA SISWA</th>
+                        <th style="width: 10%;">KELAS</th>
+                        <th style="width: 20%;">TANDA TANGAN</th>
+                        <th style="width: 15%;">KETERANGAN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRows}
+                </tbody>
+            </table>
+            
+            <div class="footer" style="display: flex; justify-content: flex-end; padding-top: 20px;">
+                <div class="signature" style="text-align: left; width: 250px; font-size: 14px; line-height: 1.4;">
+                    <p style="margin: 0;">${tglSurat}</p>
+                    <p style="margin: 0;">Kepala Madrasah</p>
+                    <div style="height: 60px; margin: 5px 0; display: flex; align-items: center;">${elemenTtd}</div>
+                    <p style="margin: 0; font-weight: bold; text-decoration: underline;">${kepsek}</p>
+                </div>
+            </div>
+        </div>`;
+
+        areaCetak.innerHTML = printHTML;
+        window.print();
+    }
+</script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, get, set, remove, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCae3CoI4eWy9T6yhf_yGvoHiyoAJ7gUyA",
+      authDomain: "datasiswa-65abf.firebaseapp.com",
+      databaseURL: "https://datasiswa-65abf-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "datasiswa-65abf",
+      storageBucket: "datasiswa-65abf.firebasestorage.app",
+      messagingSenderId: "1043621527533",
+      appId: "1:1043621527533:web:3e854e6c862709002731e4",
+      measurementId: "G-D6YZGM4KT5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const dbRef = ref(db);
+
+    // 1. Fungsi Menarik Data dari REALTIME DATABASE
+    async function muatDataFirebase() {
+        try {
+            const snapshot = await get(child(dbRef, `siswa`));
+            let dataOnline = [];
+            
+            if (snapshot.exists()) {
+                snapshot.forEach((childSnapshot) => {
+                    let item = childSnapshot.val();
+                    item.docId = childSnapshot.key; 
+                    
+                    if (item.username && !item.nisn) item.nisn = item.username;
+                    if (item.password && !item.kelas) item.kelas = item.password;
+                    
+                    dataOnline.push(item);
+                });
+            }
+
+            window.dataPeserta = dataOnline;
+            window.renderTabel();
+        } catch (error) {
+            console.error("Firebase Error: ", error);
+            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">Gagal memuat dari Realtime Database. Pastikan koneksi benar.</td></tr>`;
+        }
+    }
+
+    // 2. Fungsi Update Data ke REALTIME DATABASE
+    async function updateSiswa(docId, data) {
+        try {
+            const siswaRef = ref(db, 'siswa/' + docId);
+            await set(siswaRef, {
+                nama: data.nama,
+                tglLahir: data.tglLahir,
+                noUjian: data.noUjian,
+                nisn: data.nisn,
+                kelas: data.kelas
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    // 3. Fungsi Menghapus Data dari REALTIME DATABASE
+    async function hapusSiswa(docId) {
+        try {
+            const siswaRef = ref(db, 'siswa/' + docId);
+            await remove(siswaRef);
+        } catch (e) { console.error(e); }
+    }
+
+    window.firebase_muatData = muatDataFirebase;
+    window.firebase_updateSiswa = updateSiswa;
+    window.firebase_hapusSiswa = hapusSiswa;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        muatDataFirebase();
+    });
+</script>
+
+</body>
+</html>
