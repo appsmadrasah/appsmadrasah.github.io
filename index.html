@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sidebar Aplikasi Madrasah</title>
+    <title>Aplikasi Madrasah Terpadu</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Menambahkan Library Chart.js untuk membuat grafik -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -21,6 +19,7 @@
             display: flex;
             height: 100vh;
             background-color: #f0f7ff; 
+            overflow: hidden; /* Mencegah scroll ganda */
         }
 
         /* Sidebar Styling */
@@ -30,9 +29,9 @@
             border-right: 1px solid #e0e0e0;
             display: flex;
             flex-direction: column;
+            z-index: 10;
         }
 
-        /* Bagian Logo */
         .logo-container {
             padding: 30px 20px;
             display: flex;
@@ -52,24 +51,10 @@
             width: 100%;
         }
 
-        .logo-box i {
-            font-size: 20px;
-            color: #4db6ac;
-        }
+        .logo-box i { font-size: 20px; color: #4db6ac; }
+        .logo-text { font-weight: bold; font-size: 14px; line-height: 1.2; text-transform: uppercase; }
 
-        .logo-text {
-            font-weight: bold;
-            font-size: 14px;
-            line-height: 1.2;
-            text-transform: uppercase;
-        }
-
-        /* Navigasi Menu */
-        .nav-menu {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-        }
+        .nav-menu { margin-top: 20px; display: flex; flex-direction: column; }
 
         .nav-item {
             display: flex;
@@ -87,31 +72,49 @@
             color: #1a73e8;
         }
 
-        .nav-item i {
-            margin-right: 15px;
-            width: 20px;
-            text-align: center;
-            font-size: 18px;
-        }
+        .nav-item i { margin-right: 15px; width: 20px; text-align: center; font-size: 18px; }
 
-        /* Area Konten (Kanan) */
+        /* Area Konten Kanan */
         .main-content {
             flex-grow: 1;
             background-color: #f4f8fb;
+            position: relative;
+            height: 100%;
+        }
+
+        /* Halaman tunggal (Page) */
+        .page {
+            display: none; /* Disembunyikan secara default */
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Halaman yang sedang aktif */
+        .page.active-page {
+            display: block; 
+        }
+
+        /* Khusus Dashboard (karena bukan iframe) */
+        #dashboard {
             padding: 30px;
             overflow-y: auto;
         }
 
-        /* Styling untuk wadah tampilan grafik */
-        #display-data {
+        .chart-container {
             background-color: #ffffff;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             border: 1px solid #e0e0e0;
             margin-top: 15px;
+            max-width: 800px;
+        }
+
+        /* Styling untuk Iframe agar penuh */
+        iframe {
             width: 100%;
-            max-width: 800px; /* Membatasi lebar grafik agar proporsional */
+            height: 100%;
+            border: none;
         }
     </style>
 </head>
@@ -126,147 +129,122 @@
         </div>
 
         <div class="nav-menu">
-            <!-- 1. Tombol Dashboard (Di atas Data Siswa) -->
-            <a href="#" class="nav-item active" onclick="loadDashboard(this)">
+            <!-- Tombol Navigasi memanggil fungsi showPage() -->
+            <div class="nav-item active" onclick="showPage('dashboard', this)">
                 <i class="fas fa-chart-pie"></i>
                 Dashboard Data Ujian
-            </a>
+            </div>
 
-            <!-- Tombol Data Siswa -->
-            <a href="https://appsmadrasah.github.io/datasiswa.html" class="nav-item">
+            <div class="nav-item" onclick="showPage('siswa', this)">
                 <i class="fas fa-users"></i>
                 Data Siswa
-            </a>
+            </div>
             
-            <!-- 3. Tombol Daftar Hadir (Di bawah Data Siswa) -->
-            <a href="#" class="nav-item">
+            <div class="nav-item" onclick="showPage('hadir', this)">
                 <i class="fas fa-clipboard-list"></i>
                 Daftar Hadir
-            </a>
+            </div>
             
-            <a href="https://appsmadrasah.github.io/kartu1.html" class="nav-item">
+            <div class="nav-item" onclick="showPage('un', this)">
                 <i class="fas fa-address-card"></i>
                 Nomor Ujian Nasional
-            </a>
+            </div>
             
-            <a href="https://appsmadrasah.github.io/kartu2.html" class="nav-item">
+            <div class="nav-item" onclick="showPage('sat', this)">
                 <i class="fas fa-user-check"></i>
                 Nomor Ujian SAT
-            </a>
+            </div>
         </div>
     </div>
 
+    <!-- AREA KANAN -->
     <div class="main-content">
-        <h2>Dashboard Data Ujian</h2>
-        <div id="display-data">
-            <!-- Area ini akan diisi oleh grafik (Canvas) -->
-            <p style="color: #1a73e8;">Memuat data dari Firebase...</p>
+        
+        <!-- 1. Halaman Dashboard (Tampil Default) -->
+        <div id="dashboard" class="page active-page">
+            <h2>Dashboard Data Ujian</h2>
+            <div class="chart-container">
+                <canvas id="grafikSiswa"></canvas>
+            </div>
         </div>
+
+        <!-- 2. Halaman Data Siswa (Memuat Link Eksternal) -->
+        <div id="siswa" class="page">
+            <iframe src="https://appsmadrasah.github.io/datasiswa.html"></iframe>
+        </div>
+
+        <!-- 3. Halaman Daftar Hadir (Masih Kosong/Placeholder) -->
+        <div id="hadir" class="page">
+            <div style="padding: 30px;">
+                <h2>Daftar Hadir</h2>
+                <p>Halaman daftar hadir belum ditautkan ke link manapun.</p>
+            </div>
+        </div>
+
+        <!-- 4. Halaman Ujian Nasional (Memuat Link Eksternal) -->
+        <div id="un" class="page">
+            <iframe src="https://appsmadrasah.github.io/kartu1.html"></iframe>
+        </div>
+
+        <!-- 5. Halaman Ujian SAT (Memuat Link Eksternal) -->
+        <div id="sat" class="page">
+            <iframe src="https://appsmadrasah.github.io/kartu2.html"></iframe>
+        </div>
+
     </div>
 
     <script>
-        // Menyimpan instance chart agar bisa di-reset saat tombol diklik ulang
-        let myChart = null;
+        // FUNGSI NAVIGASI: Pindah menu tanpa reload
+        function showPage(pageId, element) {
+            // Sembunyikan semua konten
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active-page');
+            });
 
-        // Fungsi ini akan berjalan otomatis saat halaman dimuat, 
-        // dan saat tombol "Dashboard Data Ujian" diklik
-        function loadDashboard(element) {
-            // Ubah warna tombol aktif
-            if(element) {
-                const allNavItems = document.querySelectorAll('.nav-item');
-                allNavItems.forEach(nav => nav.classList.remove('active'));
-                element.classList.add('active');
-            }
+            // Hilangkan status aktif dari semua tombol menu
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                nav.classList.remove('active');
+            });
 
-            const displayArea = document.getElementById('display-data');
-            
-            // 2. Mengambil data dari Firebase
-            // Catatan: Anda WAJIB menambahkan '.json' di akhir URL Firebase untuk mengambil datanya via Fetch API
-            // Jika data tersimpan di folder tertentu, misalnya /siswa, maka URL menjadi ...app/siswa.json
+            // Tampilkan konten yang diklik dan beri warna biru pada tombolnya
+            document.getElementById(pageId).classList.add('active-page');
+            element.classList.add('active');
+        }
+
+        // FUNGSI DASHBOARD: Memuat grafik Firebase
+        window.onload = () => {
             const firebaseUrl = 'https://datasiswa-65abf-default-rtdb.asia-southeast1.firebasedatabase.app/.json';
 
             fetch(firebaseUrl)
-                .then(response => {
-                    if (!response.ok) throw new Error("Gagal terhubung ke Firebase");
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
-                    if (!data) {
-                        displayArea.innerHTML = '<p style="color: red;">Database Firebase Anda masih kosong.</p>';
-                        return;
-                    }
-
-                    // Membuat elemen Canvas untuk Chart.js
-                    displayArea.innerHTML = '<canvas id="grafikSiswa"></canvas>';
-                    const ctx = document.getElementById('grafikSiswa').getContext('2d');
-
-                    // ==========================================
-                    // LOGIKA PENGOLAHAN DATA GRAFIK
-                    // ==========================================
-                    // Karena struktur data Anda di Firebase belum diketahui spesifiknya, 
-                    // ini adalah contoh dasar. Script ini mencoba membaca data yang berbentuk Object/Array.
-                    
                     let totalSiswa = 0;
-                    
-                    // Asumsi 1: Jika data berbentuk array atau object, kita hitung jumlahnya
-                    if (typeof data === 'object') {
+                    if (typeof data === 'object' && data !== null) {
                         totalSiswa = Object.keys(data).length;
                     }
 
-                    // Menyiapkan label dan angka untuk grafik (Contoh: Total Data Masuk)
-                    const labels = ["Total Siswa Terdaftar"];
-                    const dataAngka = [totalSiswa];
-
-                    // ==========================================
-
-                    // Hapus chart lama jika ada agar tidak menumpuk
-                    if(myChart) {
-                        myChart.destroy();
-                    }
-
-                    // Render Grafik menggunakan Chart.js
-                    myChart = new Chart(ctx, {
-                        type: 'bar', // Bisa diganti 'pie', 'line', 'doughnut'
+                    const ctx = document.getElementById('grafikSiswa').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
                         data: {
-                            labels: labels,
+                            labels: ["Total Siswa Terdaftar"],
                             datasets: [{
-                                label: 'Statistik Data Firebase',
-                                data: dataAngka,
-                                backgroundColor: ['rgba(54, 162, 235, 0.7)'],
-                                borderColor: ['rgba(54, 162, 235, 1)'],
+                                label: 'Jumlah Siswa dari Firebase',
+                                data: [totalSiswa],
+                                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
                                 borderWidth: 1
                             }]
                         },
                         options: {
                             responsive: true,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: {
-                                        stepSize: 1 // Skala angka genap bulat
-                                    }
-                                }
-                            }
+                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
                         }
                     });
                 })
                 .catch(error => {
-                    displayArea.innerHTML = `
-                        <p style="color: red; font-weight: bold;">Gagal Memuat Grafik!</p>
-                        <p style="font-size: 14px; color: #555;">
-                            <b>Alasan:</b> Akses ditolak atau link salah.<br>
-                            <b>Solusi:</b> Buka Firebase Console > Realtime Database > Rules. Ubah menjadi:<br>
-                            <code>".read": true</code>
-                        </p>
-                    `;
-                    console.error("Error Firebase:", error);
+                    console.error("Gagal memuat Firebase:", error);
                 });
-        }
-
-        // Panggil fungsi secara otomatis ketika halaman pertama kali dibuka
-        window.onload = () => {
-            const btnDashboard = document.querySelector('.nav-item.active');
-            loadDashboard(btnDashboard);
         };
     </script>
 
