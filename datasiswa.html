@@ -30,6 +30,7 @@
         .btn-sortir { background: #9C27B0; cursor: pointer; font-family: inherit; font-size: 14px; outline: none;}    
         .btn-template { background: #2196F3; } 
         .btn-excel { background: #1b7339; }    
+        .btn-hapus-massal { background: #f44336; } /* Warna merah untuk hapus massal */
         
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
@@ -67,11 +68,16 @@
         <input type="file" id="inputExcel" accept=".xlsx, .xls" style="display: none;" onchange="prosesImporExcel(event)">
         
         <button class="btn-toolbar btn-template" onclick="downloadTemplateExcel()">⬇️ Download Template</button>
+        
+        <button class="btn-toolbar btn-hapus-massal" onclick="hapusTerpilih()">🗑️ Hapus Terpilih</button>
     </div>
 
     <table>
         <thead>
             <tr>
+                <th style="width: 30px; text-align: center;">
+                    <input type="checkbox" id="check-all" onclick="toggleSelectAll(this)" title="Pilih Semua">
+                </th>
                 <th style="width: 40px; text-align: center;">No.</th>
                 <th>Nama</th>
                 <th>Tgl Lahir</th>
@@ -152,8 +158,12 @@
         const tbody = document.getElementById("tabel-body");
         tbody.innerHTML = "";
         
+        // Reset centang "Pilih Semua" saat tabel diperbarui/difilter
+        const checkAll = document.getElementById("check-all");
+        if(checkAll) checkAll.checked = false;
+        
         const filterValue = document.getElementById("filter-kelas").value;
-        let nomorUrut = 1; // Variabel untuk menghitung nomor urut
+        let nomorUrut = 1;
 
         window.dataPeserta.forEach((p, index) => {
             let tampilkan = true;
@@ -168,6 +178,9 @@
 
             if (tampilkan) {
                 const tr = `<tr>
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="check-item" value="${index}">
+                    </td>
                     <td style="text-align: center;">${nomorUrut}</td>
                     <td>${p.nama}</td>
                     <td>${p.tglLahir}</td>
@@ -180,9 +193,42 @@
                     </td>
                 </tr>`;
                 tbody.innerHTML += tr;
-                nomorUrut++; // Nomor urut ditambah setiap kali ada baris yang ditampilkan
+                nomorUrut++;
             }
         });
+    }
+
+    // --- FUNGSI HAPUS MASSAL (CHECKBOX) ---
+    // Logika ketika kotak "Pilih Semua" diklik
+    window.toggleSelectAll = function(source) {
+        const checkboxes = document.querySelectorAll('.check-item');
+        checkboxes.forEach(cb => {
+            cb.checked = source.checked;
+        });
+    }
+
+    // Logika ketika tombol "Hapus Terpilih" diklik
+    window.hapusTerpilih = function() {
+        const checkboxes = document.querySelectorAll('.check-item:checked');
+        
+        if (checkboxes.length === 0) {
+            alert("Silakan pilih/centang data yang ingin dihapus terlebih dahulu!");
+            return;
+        }
+
+        if(confirm(`Peringatan: Anda yakin ingin menghapus ${checkboxes.length} data siswa yang terpilih secara permanen?`)) {
+            // Proses hapus ke Firebase berdasarkan item yang dicentang
+            checkboxes.forEach(cb => {
+                const index = cb.value; // Mengambil indeks data
+                const key = window.dataKeys[index]; // Mengambil kunci ID dari Firebase
+                if (key) {
+                    remove(ref(db, `siswa/${key}`)); // Hapus dari Firebase
+                }
+            });
+            
+            // Hapus centang "Pilih Semua" setelah proses selesai
+            document.getElementById('check-all').checked = false;
+        }
     }
 
     // CRUD Siswa - Buka Form Modal
@@ -238,7 +284,7 @@
         window.tutupModalForm(); 
     }
 
-    // CRUD Siswa - Hapus Data dari Firebase
+    // CRUD Siswa - Hapus Data Satuan dari Firebase
     window.hapusSiswa = function(index) {
         const namaSiswa = window.dataPeserta[index].nama;
         if(confirm(`Yakin ingin menghapus data ${namaSiswa}?`)) {
