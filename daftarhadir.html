@@ -20,11 +20,11 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Tabel Data & Form */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;}
-        table, th, td { border: 1px solid #ddd; }
-        th, td { padding: 8px; text-align: left; }
-        th { background-color: #4CAF50; color: white; }
+        /* Tabel Data & Form (Khusus Aplikasi, bukan cetak) */
+        #tab-data table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;}
+        #tab-data table, #tab-data th, #tab-data td { border: 1px solid #ddd; }
+        #tab-data th, #tab-data td { padding: 8px; text-align: left; }
+        #tab-data th { background-color: #4CAF50; color: white; } /* Teks putih hanya untuk tabel aplikasi */
         
         /* Tombol Aksi Tabel */
         .btn-edit { padding: 5px; background: #FFC107; color: black; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;}
@@ -51,9 +51,8 @@
         /* === CSS DAFTAR HADIR (PREVIEW UI) === */
         .preview-wrapper { display: flex; justify-content: center; padding: 20px; background: #ddd; border-radius: 5px;}
         .preview-dokumen { width: 100%; background-color: #ffffff; border: 1px solid #000; padding: 20px; box-sizing: border-box; font-family: 'Times New Roman', Times, serif; }
-        .header { display: flex; align-items: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
-        .logo { width: 70px; height: 70px; object-fit: contain; margin-right: 15px; }
-        .header-text { flex-grow: 1; text-align: center; line-height: 1.2; }
+        .header { position: relative; display: flex; align-items: center; justify-content: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 15px; min-height: 80px; }
+        .header-text { width: 100%; text-align: center; line-height: 1.2; }
         .header-text p { margin: 0; font-weight: bold; text-transform: uppercase; }
         .teks-1 { font-size: 16px; } .teks-2 { font-size: 18px; } .teks-3 { font-size: 12px; } .teks-4 { font-size: 16px; }
         
@@ -100,7 +99,9 @@
 
             .tabel-cetak th {
                 background-color: #f0f0f0 !important;
+                color: #000 !important; /* Dipaksa hitam */
                 -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
                 text-align: center;
                 font-weight: bold;
             }
@@ -182,7 +183,7 @@
         <div class="preview-wrapper">
             <div class="preview-dokumen" id="kartu-preview">
                 <div class="header">
-                    <img id="img-logo-kop" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_Kementerian_Agama_Republik_Indonesia.svg/200px-Logo_Kementerian_Agama_Republik_Indonesia.svg.png" alt="Logo" class="logo">
+                    <img id="img-logo-kop" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_Kementerian_Agama_Republik_Indonesia.svg/200px-Logo_Kementerian_Agama_Republik_Indonesia.svg.png" alt="Logo" style="position: absolute; left: 0; width: 70px; height: 70px; object-fit: contain;">
                     <div class="header-text">
                         <p id="teks-kop-1" class="teks-1">Kementerian Agama Republik Indonesia</p>
                         <p id="teks-kop-2" class="teks-2">Ujian Madrasah</p>
@@ -196,12 +197,12 @@
                 <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">
                     <thead>
                         <tr>
-                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0;">NO</th>
-                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0;">NO UJIAN</th>
-                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0;">NAMA SISWA</th>
-                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0;">KELAS</th>
-                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0;">TANDA TANGAN</th>
-                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0;">KETERANGAN</th>
+                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0; color: #000;">NO</th>
+                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0; color: #000;">NO UJIAN</th>
+                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0; color: #000;">NAMA SISWA</th>
+                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0; color: #000;">KELAS</th>
+                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0; color: #000;">TANDA TANGAN</th>
+                            <th style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0; color: #000;">KETERANGAN</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -383,8 +384,6 @@
                 if (!kelasSiswa.startsWith(filterValue)) return; 
             }
 
-            // PERUBAHAN ADA DI SINI:
-            // Tanda tangan zigzag disesuaikan jaraknya (padding-left 15px & 50%)
             let ttdElement = (nomorUrut % 2 !== 0) 
                 ? `<div style="text-align: left; padding-left: 15px;">${nomorUrut}.</div>` 
                 : `<div style="text-align: left; padding-left: 50%;">${nomorUrut}.</div>`;
@@ -402,11 +401,12 @@
             nomorUrut++;
         });
 
+        // PRINT HTML DENGAN POSISI LOGO ABSOLUTE & TEKS KOP TENGAH PENUH
         let printHTML = `
         <div>
-            <div class="header" style="display: flex; align-items: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
-                <img src="${logoSrc}" style="width: 70px; height: 70px; object-fit: contain; margin-right: 15px;">
-                <div class="header-text" style="flex-grow: 1; text-align: center; line-height: 1.2;">
+            <div class="header" style="position: relative; display: flex; align-items: center; justify-content: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 15px; min-height: 80px;">
+                <img src="${logoSrc}" style="position: absolute; left: 0; width: 70px; height: 70px; object-fit: contain;">
+                <div class="header-text" style="width: 100%; text-align: center; line-height: 1.2;">
                     <p style="margin: 0; font-weight: bold; text-transform: uppercase; font-size: 16px;">${t1}</p>
                     <p style="margin: 0; font-weight: bold; text-transform: uppercase; font-size: 18px;">${t2}</p>
                     <p style="margin: 0; font-size: 12px;">${t3}</p>
