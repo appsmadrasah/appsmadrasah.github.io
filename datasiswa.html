@@ -30,7 +30,7 @@
         .btn-sortir { background: #9C27B0; cursor: pointer; font-family: inherit; font-size: 14px; outline: none;}    
         .btn-template { background: #2196F3; } 
         .btn-excel { background: #1b7339; }    
-        .btn-hapus-massal { background: #f44336; } /* Warna merah untuk hapus massal */
+        .btn-hapus-massal { background: #f44336; } 
         
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
@@ -54,6 +54,7 @@
     <div class="toolbar">
         <button class="btn-toolbar btn-tambah" onclick="bukaModalForm()">➕ Tambah Siswa</button>
         
+        <!-- Fitur Dropdown Sortir Kelas -->
         <select class="btn-toolbar btn-sortir" id="filter-kelas" onchange="renderTabel()">
             <option value="semua" style="color: black;">🔃 Filter Kelas (Semua)</option>
             <option value="1" style="color: black;">Kelas 1</option>
@@ -68,7 +69,6 @@
         <input type="file" id="inputExcel" accept=".xlsx, .xls" style="display: none;" onchange="prosesImporExcel(event)">
         
         <button class="btn-toolbar btn-template" onclick="downloadTemplateExcel()">⬇️ Download Template</button>
-        
         <button class="btn-toolbar btn-hapus-massal" onclick="hapusTerpilih()">🗑️ Hapus Terpilih</button>
     </div>
 
@@ -88,10 +88,12 @@
             </tr>
         </thead>
         <tbody id="tabel-body">
-            </tbody>
+            <!-- Data akan dimuat secara otomatis dari Firebase -->
+        </tbody>
     </table>
 </div>
 
+<!-- Modal Tambah / Edit Siswa -->
 <div id="modalForm" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -101,7 +103,11 @@
         <input type="hidden" id="form-index" value=""> 
         <div class="form-group"><label>Nama Peserta:</label><input type="text" id="form-nama" autocomplete="off"></div>
         <div class="form-group"><label>Tanggal Lahir:</label><input type="text" id="form-tgl" placeholder="Contoh: 2006-03-08" autocomplete="off"></div>
-        <div class="form-group"><label>Nomor Ujian:</label><input type="text" id="form-no" autocomplete="off"></div>
+        <div class="form-group">
+            <label>Nomor Ujian:</label>
+            <!-- Menambahkan placeholder instruksi -->
+            <input type="text" id="form-no" autocomplete="off" placeholder="Kosongkan agar terisi otomatis (6 Digit)">
+        </div>
         <div class="form-group"><label>NISN:</label><input type="text" id="form-nisn" autocomplete="off"></div>
         <div class="form-group"><label>Kelas:</label><input type="text" id="form-kelas" autocomplete="off"></div>
         <div class="modal-footer">
@@ -112,7 +118,7 @@
 </div>
 
 <script type="module">
-    // Import SDK Firebase yang diperlukan
+    // Import SDK Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
     import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
@@ -137,7 +143,7 @@
     window.dataPeserta = [];
     window.dataKeys = [];
 
-    // Mendengarkan perubahan data secara Real-time dari Firebase ('siswa')
+    // Listener Real-time Firebase
     const siswaRef = ref(db, 'siswa');
     onValue(siswaRef, (snapshot) => {
         const data = snapshot.val();
@@ -158,7 +164,6 @@
         const tbody = document.getElementById("tabel-body");
         tbody.innerHTML = "";
         
-        // Reset centang "Pilih Semua" saat tabel diperbarui/difilter
         const checkAll = document.getElementById("check-all");
         if(checkAll) checkAll.checked = false;
         
@@ -198,40 +203,30 @@
         });
     }
 
-    // --- FUNGSI HAPUS MASSAL (CHECKBOX) ---
-    // Logika ketika kotak "Pilih Semua" diklik
+    // Fungsi Hapus Massal (Checkbox)
     window.toggleSelectAll = function(source) {
         const checkboxes = document.querySelectorAll('.check-item');
-        checkboxes.forEach(cb => {
-            cb.checked = source.checked;
-        });
+        checkboxes.forEach(cb => cb.checked = source.checked);
     }
 
-    // Logika ketika tombol "Hapus Terpilih" diklik
     window.hapusTerpilih = function() {
         const checkboxes = document.querySelectorAll('.check-item:checked');
-        
         if (checkboxes.length === 0) {
             alert("Silakan pilih/centang data yang ingin dihapus terlebih dahulu!");
             return;
         }
 
         if(confirm(`Peringatan: Anda yakin ingin menghapus ${checkboxes.length} data siswa yang terpilih secara permanen?`)) {
-            // Proses hapus ke Firebase berdasarkan item yang dicentang
             checkboxes.forEach(cb => {
-                const index = cb.value; // Mengambil indeks data
-                const key = window.dataKeys[index]; // Mengambil kunci ID dari Firebase
-                if (key) {
-                    remove(ref(db, `siswa/${key}`)); // Hapus dari Firebase
-                }
+                const index = cb.value;
+                const key = window.dataKeys[index];
+                if (key) remove(ref(db, `siswa/${key}`)); 
             });
-            
-            // Hapus centang "Pilih Semua" setelah proses selesai
             document.getElementById('check-all').checked = false;
         }
     }
 
-    // CRUD Siswa - Buka Form Modal
+    // Modal
     window.bukaModalForm = function(index = null) {
         document.getElementById('modalForm').style.display = 'block';
         if(index !== null) {
@@ -253,17 +248,40 @@
         }
     }
 
-    window.tutupModalForm = function() { 
-        document.getElementById('modalForm').style.display = 'none'; 
+    window.tutupModalForm = function() { document.getElementById('modalForm').style.display = 'none'; }
+
+    // --- FUNGSI GENERATE NOMOR UJIAN OTOMATIS ---
+    window.generateNoUjian = function(currentMaxOverride = null) {
+        let maxNo = currentMaxOverride || 0;
+        
+        // Cari angka terbesar dari data yang sudah ada di memori
+        if (currentMaxOverride === null) {
+            window.dataPeserta.forEach(p => {
+                let num = parseInt(p.noUjian, 10);
+                if (!isNaN(num) && num > maxNo) {
+                    maxNo = num;
+                }
+            });
+        }
+        
+        // Tambah 1 dan jadikan format 6 digit (contoh: 000001)
+        return String(maxNo + 1).padStart(6, '0');
     }
 
-    // CRUD Siswa - Simpan Data ke Firebase
+    // Simpan Data Manual
     window.simpanSiswa = function() {
         const index = document.getElementById('form-index').value;
+        let inputNoUjian = document.getElementById('form-no').value.trim();
+        
+        // Jika kolom No Ujian dikosongkan, buat otomatis 6 digit
+        if (inputNoUjian === "") {
+            inputNoUjian = window.generateNoUjian();
+        }
+
         const dataBaru = {
             nama: document.getElementById('form-nama').value.toUpperCase(),
             tglLahir: document.getElementById('form-tgl').value,
-            noUjian: document.getElementById('form-no').value,
+            noUjian: inputNoUjian,
             nisn: document.getElementById('form-nisn').value,
             kelas: document.getElementById('form-kelas').value
         };
@@ -284,7 +302,6 @@
         window.tutupModalForm(); 
     }
 
-    // CRUD Siswa - Hapus Data Satuan dari Firebase
     window.hapusSiswa = function(index) {
         const namaSiswa = window.dataPeserta[index].nama;
         if(confirm(`Yakin ingin menghapus data ${namaSiswa}?`)) {
@@ -293,11 +310,10 @@
         }
     }
 
-    // --- FUNGSI DOWNLOAD TEMPLATE EXCEL ---
     window.downloadTemplateExcel = function() {
         const dataTemplate = [
             ["Nama", "Tgl Lahir", "No. Ujian", "NISN", "Kelas"],
-            ["CONTOH NAMA SISWA", "2006-03-08", "26-13-18-1-0167-0003", "1234567890", "6A"]
+            ["CONTOH NAMA SISWA", "2006-03-08", "", "1234567890", "6A"] // No Ujian sengaja dikosongkan untuk contoh
         ];
         const workbook = window.XLSX.utils.book_new();
         const worksheet = window.XLSX.utils.aoa_to_sheet(dataTemplate);
@@ -307,7 +323,7 @@
         window.XLSX.writeFile(workbook, "Template_Data_Siswa.xlsx");
     }
 
-    // --- FUNGSI IMPOR EXCEL (Langsung Unggah ke Firebase) ---
+    // Impor Excel
     window.prosesImporExcel = function(event) {
         const file = event.target.files[0];
         if(!file) return;
@@ -318,7 +334,17 @@
             const workbook = window.XLSX.read(data, {type: 'array'});
             const firstSheetName = workbook.SheetNames[0];
             const jsonSheet = window.XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {raw: false});
+            
             let berhasil = 0;
+            
+            // Cari nilai maksimum No Ujian saat ini untuk persiapan impor massal
+            let currentMaxNo = 0;
+            window.dataPeserta.forEach(p => {
+                let num = parseInt(p.noUjian, 10);
+                if (!isNaN(num) && num > currentMaxNo) {
+                    currentMaxNo = num;
+                }
+            });
 
             jsonSheet.forEach(row => {
                 const keys = Object.keys(row);
@@ -329,20 +355,33 @@
 
                 const nama = getVal(["nama"]);
                 const tgl = getVal(["lahir", "tanggal", "tgl", "ttl"]); 
-                const no = getVal(["ujian", "nomor", "peserta", "no. ", "no "]);
+                let no = getVal(["ujian", "nomor", "peserta", "no. ", "no "]);
                 const nisn = getVal(["nisn"]);
                 const kelas = getVal(["kelas", "kls"]);
+                
+                // Jika No Ujian di Excel kosong atau tidak terbaca, buatkan otomatis 6 digit
+                if(!no || String(no).trim() === "") {
+                    no = window.generateNoUjian(currentMaxNo);
+                    currentMaxNo++; // Tambah counter agar tidak ada nomor yang kembar saat di-loop
+                } else {
+                    // Jika di Excel sudah ada nomornya, pastikan formatnya string
+                    no = String(no).trim();
+                }
 
                 if(nama && nisn) { 
                     const newSiswaRef = push(ref(db, 'siswa'));
                     set(newSiswaRef, {
-                        nama: nama.toUpperCase(), tglLahir: tgl, noUjian: no, nisn: nisn, kelas: kelas
+                        nama: String(nama).toUpperCase(), 
+                        tglLahir: tgl || "", 
+                        noUjian: no, 
+                        nisn: nisn, 
+                        kelas: kelas || ""
                     });
                     berhasil++;
                 }
             });
 
-            alert(`Selesai! Berhasil mengirimkan ${berhasil} data siswa baru ke cloud Firebase.`);
+            alert(`Selesai! Berhasil mengirimkan ${berhasil} data siswa baru ke cloud Firebase.\nNomor ujian yang kosong otomatis dibuatkan 6 Digit.`);
             document.getElementById('inputExcel').value = ""; 
         };
         reader.readAsArrayBuffer(file);
