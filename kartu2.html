@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Kartu Peserta Ujian - Realtime Database</title>
+    <title>Aplikasi Kartu Peserta Ujian - Realtime Database Permanent Settings</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -169,7 +169,7 @@
             
             <div class="form-group"><label>Nama Kepala Madrasah:</label><input type="text" id="input-nama-kepsek" value="IMAM TAUFIQ, ST"></div>
 
-            <button class="btn-simpan" onclick="terapkanKop()" style="margin-top: 15px; width: 100%;">Terapkan Perubahan</button>
+            <button class="btn-simpan" onclick="terapkanKop()" style="margin-top: 15px; width: 100%;">Terapkan Perubahan & Simpan ke Firebase</button>
         </div>
     </div>
 
@@ -238,6 +238,7 @@
 
 <script>
     window.dataPeserta = [];
+    window.logoGlobalSrc = "";
     window.ttdGlobalSrc = "";
 
     window.renderTabel = function() {
@@ -337,26 +338,60 @@
         bukaTab('tab-kartu');
     }
 
-    window.terapkanKop = function() {
-        document.getElementById('teks-kop-1').innerText = document.getElementById('input-kop-1').value;
-        document.getElementById('teks-kop-2').innerText = document.getElementById('input-kop-2').value;
-        document.getElementById('teks-kop-3').innerText = document.getElementById('input-kop-3').value;
-        document.getElementById('teks-kop-4').innerText = document.getElementById('input-kop-4').value;
-        document.getElementById('k-tgl-surat').innerText = document.getElementById('input-tgl-surat').value;
-        document.getElementById('k-kepsek').innerText = document.getElementById('input-nama-kepsek').value;
-        alert("Kop surat berhasil diperbarui!"); bukaTab('tab-kartu');
+    // OTOMATIS PERMANEN: Fungsi simpan Kop sekarang mengirim teks & gambar Base64 ke Firebase
+    window.terapkanKop = async function() {
+        const dataKop = {
+            t1: document.getElementById('input-kop-1').value,
+            t2: document.getElementById('input-kop-2').value,
+            t3: document.getElementById('input-kop-3').value,
+            t4: document.getElementById('input-kop-4').value,
+            tglSurat: document.getElementById('input-tgl-surat').value,
+            kepsek: document.getElementById('input-nama-kepsek').value,
+            logo: window.logoGlobalSrc || "",
+            ttd: window.ttdGlobalSrc || ""
+        };
+
+        // Sinkronisasi ke Firebase
+        if (window.firebase_simpanPengaturan) {
+            await window.firebase_simpanPengaturan(dataKop);
+        }
+
+        // Tampilkan langsung di kartu preview
+        document.getElementById('teks-kop-1').innerText = dataKop.t1;
+        document.getElementById('teks-kop-2').innerText = dataKop.t2;
+        document.getElementById('teks-kop-3').innerText = dataKop.t3;
+        document.getElementById('teks-kop-4').innerText = dataKop.t4;
+        document.getElementById('k-tgl-surat').innerText = dataKop.tglSurat;
+        document.getElementById('k-kepsek').innerText = dataKop.kepsek;
+        
+        alert("Pengaturan Kop & TTD berhasil disimpan secara permanen di Firebase!");
+        bukaTab('tab-kartu');
     }
     
+    // OTOMATIS PERMANEN: Gambar diconvert ke Base64 Teks agar bisa masuk database
     window.gantiLogo = function(event) {
-        if(event.target.files[0]) document.getElementById('img-logo-kop').src = URL.createObjectURL(event.target.files[0]);
+        const file = event.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                window.logoGlobalSrc = e.target.result; 
+                document.getElementById('img-logo-kop').src = window.logoGlobalSrc;
+            }
+            reader.readAsDataURL(file);
+        }
     }
 
     window.gantiTTD = function(event) {
-        if(event.target.files[0]) {
-            window.ttdGlobalSrc = URL.createObjectURL(event.target.files[0]);
-            const imgTtdPreview = document.getElementById('img-ttd-preview');
-            imgTtdPreview.src = window.ttdGlobalSrc;
-            imgTtdPreview.style.display = 'block'; 
+        const file = event.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                window.ttdGlobalSrc = e.target.result; 
+                const imgTtdPreview = document.getElementById('img-ttd-preview');
+                imgTtdPreview.src = window.ttdGlobalSrc;
+                imgTtdPreview.style.display = 'block'; 
+            }
+            reader.readAsDataURL(file);
         }
     }
 
@@ -432,7 +467,7 @@
     const db = getDatabase(app);
     const dbRef = ref(db);
 
-    // 1. Fungsi Menarik Data dari REALTIME DATABASE
+    // 1. Fungsi Menarik Data Siswa
     async function muatDataFirebase() {
         try {
             const snapshot = await get(child(dbRef, `siswa`));
@@ -453,16 +488,57 @@
             window.dataPeserta = dataOnline;
             window.renderTabel();
         } catch (error) {
-            console.error("Firebase Error: ", error);
-            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">Gagal memuat dari Realtime Database. Pastikan koneksi benar.</td></tr>`;
+            console.error(error);
         }
     }
 
-    // 2. Fungsi Update Data ke REALTIME DATABASE
+    // OTOMATIS PERMANEN: Fungsi untuk menarik data pengaturan Kop & TTD saat halaman dibuka
+    async function muatPengaturanKop() {
+        try {
+            const snapshot = await get(child(dbRef, `pengaturan/kop`));
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                
+                // Isi ke kolom input
+                document.getElementById('input-kop-1').value = data.t1 || "";
+                document.getElementById('input-kop-2').value = data.t2 || "";
+                document.getElementById('input-kop-3').value = data.t3 || "";
+                document.getElementById('input-kop-4').value = data.t4 || "";
+                document.getElementById('input-tgl-surat').value = data.tglSurat || "";
+                document.getElementById('input-nama-kepsek').value = data.kepsek || "";
+                
+                // Tampilkan ke preview kartu
+                document.getElementById('teks-kop-1').innerText = data.t1 || "";
+                document.getElementById('teks-kop-2').innerText = data.t2 || "";
+                document.getElementById('teks-kop-3').innerText = data.t3 || "";
+                document.getElementById('teks-kop-4').innerText = data.t4 || "";
+                document.getElementById('k-tgl-surat').innerText = data.tglSurat || "";
+                document.getElementById('k-kepsek').innerText = data.kepsek || "";
+                
+                if(data.logo) {
+                    window.logoGlobalSrc = data.logo;
+                    document.getElementById('img-logo-kop').src = data.logo;
+                }
+                if(data.ttd) {
+                    window.ttdGlobalSrc = data.ttd;
+                    const imgTtdPreview = document.getElementById('img-ttd-preview');
+                    imgTtdPreview.src = data.ttd;
+                    imgTtdPreview.style.display = 'block';
+                }
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    // OTOMATIS PERMANEN: Fungsi untuk mengunggah pengaturan Kop ke Firebase
+    async function simpanPengaturanKop(dataKop) {
+        try {
+            await set(ref(db, 'pengaturan/kop'), dataKop);
+        } catch (e) { console.error(e); }
+    }
+
     async function updateSiswa(docId, data) {
         try {
-            const siswaRef = ref(db, 'siswa/' + docId);
-            await set(siswaRef, {
+            await set(ref(db, 'siswa/' + docId), {
                 nama: data.nama,
                 tglLahir: data.tglLahir,
                 noUjian: data.noUjian,
@@ -472,20 +548,21 @@
         } catch (e) { console.error(e); }
     }
 
-    // 3. Fungsi Menghapus Data dari REALTIME DATABASE
     async function hapusSiswa(docId) {
         try {
-            const siswaRef = ref(db, 'siswa/' + docId);
-            await remove(siswaRef);
+            await remove(ref(db, 'siswa/' + docId));
         } catch (e) { console.error(e); }
     }
 
     window.firebase_muatData = muatDataFirebase;
     window.firebase_updateSiswa = updateSiswa;
     window.firebase_hapusSiswa = hapusSiswa;
+    window.firebase_simpanPengaturan = simpanPengaturanKop;
 
+    // Load data siswa dan pengaturan Kop sekaligus saat startup
     window.addEventListener('DOMContentLoaded', () => {
         muatDataFirebase();
+        muatPengaturanKop();
     });
 </script>
 
