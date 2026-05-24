@@ -152,34 +152,27 @@
         </div>
     </div>
 
-    <!-- AREA KANAN -->
     <div class="main-content">
         
-        <!-- 1. Halaman Dashboard -->
         <div id="dashboard" class="page active-page">
             <h2>Dashboard Data Ujian</h2>
             <div class="chart-container">
-                <!-- Elemen Canvas tempat grafik digambar -->
                 <canvas id="grafikSiswa"></canvas>
             </div>
         </div>
 
-        <!-- 2. Halaman Data Siswa -->
         <div id="siswa" class="page">
             <iframe src="https://appsmadrasah.github.io/datasiswa.html"></iframe>
         </div>
 
-        <!-- 3. Halaman Daftar Hadir -->
         <div id="hadir" class="page">
             <iframe src="https://appsmadrasah.github.io/daftarhadir.html"></iframe>
         </div>
 
-        <!-- 4. Halaman Ujian Nasional -->
         <div id="un" class="page">
             <iframe src="https://appsmadrasah.github.io/kartu1.html"></iframe>
         </div>
 
-        <!-- 5. Halaman Ujian SAT -->
         <div id="sat" class="page">
             <iframe src="https://appsmadrasah.github.io/kartu2.html"></iframe>
         </div>
@@ -187,20 +180,43 @@
     </div>
 
     <script>
-        // FUNGSI NAVIGASI
+        let myChart = null; // Variabel global untuk menyimpan grafik
+
+        // FUNGSI NAVIGASI DAN AUTO-RELOAD
         function showPage(pageId, element) {
+            // 1. Sembunyikan semua halaman
             document.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active-page');
             });
+
+            // 2. Hilangkan warna aktif dari semua tombol
             document.querySelectorAll('.nav-item').forEach(nav => {
                 nav.classList.remove('active');
             });
-            document.getElementById(pageId).classList.add('active-page');
+
+            // 3. Tampilkan halaman yang dipilih dan warnai tombolnya
+            const selectedPage = document.getElementById(pageId);
+            selectedPage.classList.add('active-page');
             element.classList.add('active');
+
+            // 4. LOGIKA AUTO-RELOAD
+            if (pageId === 'dashboard') {
+                // Jika menu Dashboard diklik, gambar ulang grafiknya dengan data terbaru
+                loadDashboardData(); 
+            } else {
+                // Jika menu lain diklik, cari <iframe> di dalamnya dan paksa reload
+                const iframe = selectedPage.querySelector('iframe');
+                if (iframe) {
+                    // Trik untuk memaksa iframe memuat ulang konten terbarunya
+                    const currentSrc = iframe.src;
+                    iframe.src = ''; // Kosongkan sejenak
+                    setTimeout(() => { iframe.src = currentSrc; }, 50); // Isi kembali
+                }
+            }
         }
 
-        // FUNGSI DASHBOARD: Mengolah Data Kelas
-        window.onload = () => {
+        // FUNGSI KHUSUS MENGAMBIL DATA & MENGGAMBAR GRAFIK
+        function loadDashboardData() {
             const firebaseUrl = 'https://datasiswa-65abf-default-rtdb.asia-southeast1.firebasedatabase.app/.json';
 
             fetch(firebaseUrl)
@@ -208,21 +224,12 @@
                 .then(data => {
                     if (!data) return;
 
-                    // 1. Siapkan wadah untuk menghitung jumlah siswa per kelas
                     const jumlahPerKelas = {};
-
-                    // 2. Ubah format data Firebase menjadi Array agar mudah dilooping
-                    // (Firebase bisa mengembalikan format Object atau Array tergantung cara Anda menyimpannya)
                     const dataArray = Array.isArray(data) ? data : Object.values(data);
 
-                    // 3. Looping setiap data siswa
                     dataArray.forEach(siswa => {
                         if (siswa && typeof siswa === 'object') {
-                            // Cek properti kelas (huruf kecil atau besar)
-                            // CATATAN: Ubah "siswa.kelas" jika di database Anda namanya berbeda (misal: siswa.rombel)
                             const namaKelas = siswa.kelas || siswa.Kelas || siswa.KELAS || "Tanpa Kelas";
-                            
-                            // Tambahkan hitungan untuk kelas tersebut
                             if (jumlahPerKelas[namaKelas]) {
                                 jumlahPerKelas[namaKelas]++;
                             } else {
@@ -231,19 +238,23 @@
                         }
                     });
 
-                    // 4. Pisahkan hasil menjadi Label (Nama Kelas) dan Data (Jumlah Siswa)
                     const labelKelas = Object.keys(jumlahPerKelas);
                     const angkaSiswa = Object.values(jumlahPerKelas);
 
-                    // 5. Gambar Grafik dengan Chart.js
                     const ctx = document.getElementById('grafikSiswa').getContext('2d');
-                    new Chart(ctx, {
+                    
+                    // Hancurkan grafik lama sebelum membuat yang baru agar tidak tumpang tindih
+                    if (myChart) {
+                        myChart.destroy();
+                    }
+
+                    myChart = new Chart(ctx, {
                         type: 'bar',
                         data: {
-                            labels: labelKelas, // Menampilkan nama-nama kelas di bawah grafik
+                            labels: labelKelas,
                             datasets: [{
                                 label: 'Jumlah Siswa per Kelas',
-                                data: angkaSiswa, // Menampilkan tinggi batang berdasarkan jumlah siswa
+                                data: angkaSiswa,
                                 backgroundColor: 'rgba(54, 162, 235, 0.7)',
                                 borderColor: 'rgba(54, 162, 235, 1)',
                                 borderWidth: 1
@@ -263,6 +274,11 @@
                 .catch(error => {
                     console.error("Gagal memuat Firebase:", error);
                 });
+        }
+
+        // Muat grafik secara otomatis saat aplikasi pertama kali dibuka
+        window.onload = () => {
+            loadDashboardData();
         };
     </script>
 
