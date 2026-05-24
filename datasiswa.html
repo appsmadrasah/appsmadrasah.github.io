@@ -208,15 +208,16 @@
             }
 
             if (tampilkan) {
+                // Di sini ada tepat 8 <td> sesuai dengan 8 <th> di atas
                 const tr = `<tr>
                     <td style="text-align: center;">
                         <input type="checkbox" class="check-item" value="${index}">
                     </td>
                     <td style="text-align: center;">${nomorUrut}</td>
-                    <td>${p.nama}</td>
-                    <td>${p.tglLahir}</td>
-                    <td>${p.noUjian}</td>
-                    <td>${p.nisn}</td> <!-- BAGIAN INI YANG SEBELUMNYA TERLEWAT -->
+                    <td>${p.nama || ''}</td>
+                    <td>${p.tglLahir || ''}</td>
+                    <td>${p.noUjian || ''}</td>
+                    <td>${p.nisn || ''}</td>
                     <td>${displayKelas}</td>
                     <td style="text-align:center;">
                         <button class="btn-edit" onclick="bukaModalForm(${index})" title="Edit Data">✏️</button>
@@ -258,10 +259,10 @@
         if(index !== null) {
             document.getElementById('modal-judul').innerText = "Edit Siswa";
             document.getElementById('form-index').value = index;
-            document.getElementById('form-nama').value = window.dataPeserta[index].nama;
-            document.getElementById('form-tgl').value = window.dataPeserta[index].tglLahir;
-            document.getElementById('form-no').value = window.dataPeserta[index].noUjian;
-            document.getElementById('form-nisn').value = window.dataPeserta[index].nisn;
+            document.getElementById('form-nama').value = window.dataPeserta[index].nama || '';
+            document.getElementById('form-tgl').value = window.dataPeserta[index].tglLahir || '';
+            document.getElementById('form-no').value = window.dataPeserta[index].noUjian || '';
+            document.getElementById('form-nisn').value = window.dataPeserta[index].nisn || '';
             document.getElementById('form-kelas').value = window.formatKelasBaku(window.dataPeserta[index].kelas);
         } else {
             document.getElementById('modal-judul').innerText = "Tambah Siswa Baru";
