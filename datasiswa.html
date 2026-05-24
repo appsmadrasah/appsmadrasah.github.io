@@ -164,8 +164,6 @@
     // --- FUNGSI FORMAT KELAS: 1 -> 1 (Satu) ---
     window.formatKelasBaku = function(input) {
         let str = String(input || "").trim();
-        
-        // Hapus kata "kelas" jika pengguna/excel terlanjur menginputkannya
         str = str.replace(/kelas/i, "").trim();
         
         const mapKata = {
@@ -177,9 +175,7 @@
         if (match) {
             let num = match[0];
             if (mapKata[num]) {
-                // Jika belum ada ejaan kurungnya, kita buatkan
                 if (!str.toLowerCase().includes(mapKata[num].toLowerCase())) {
-                    // Contoh: "1" -> "1 (Satu)", "6A" -> "6 (Enam) A"
                     str = str.replace(num, `${num} (${mapKata[num]}) `).trim();
                 }
             }
@@ -200,11 +196,8 @@
 
         window.dataPeserta.forEach((p, index) => {
             let tampilkan = true;
-            
-            // Rapikan format kelas sebelum ditampilkan
             let displayKelas = window.formatKelasBaku(p.kelas);
             
-            // Logika Penyaringan (Filter) - Ekstrak angka saja
             if (filterValue !== "semua") {
                 const matchNumber = displayKelas.match(/\d+/);
                 const classNumber = matchNumber ? matchNumber[0] : "";
@@ -223,6 +216,7 @@
                     <td>${p.nama}</td>
                     <td>${p.tglLahir}</td>
                     <td>${p.noUjian}</td>
+                    <td>${p.nisn}</td> <!-- BAGIAN INI YANG SEBELUMNYA TERLEWAT -->
                     <td>${displayKelas}</td>
                     <td style="text-align:center;">
                         <button class="btn-edit" onclick="bukaModalForm(${index})" title="Edit Data">✏️</button>
@@ -268,8 +262,6 @@
             document.getElementById('form-tgl').value = window.dataPeserta[index].tglLahir;
             document.getElementById('form-no').value = window.dataPeserta[index].noUjian;
             document.getElementById('form-nisn').value = window.dataPeserta[index].nisn;
-            
-            // Format tampilan modal agar muncul "1 (Satu)"
             document.getElementById('form-kelas').value = window.formatKelasBaku(window.dataPeserta[index].kelas);
         } else {
             document.getElementById('modal-judul').innerText = "Tambah Siswa Baru";
@@ -306,12 +298,10 @@
         let inputNoUjian = document.getElementById('form-no').value.trim();
         let inputKelas = document.getElementById('form-kelas').value.trim();
         
-        // Otomatis 6 digit
         if (inputNoUjian === "") {
             inputNoUjian = window.generateNoUjian();
         }
 
-        // Otomatis ubah "1" jadi "1 (Satu)"
         inputKelas = window.formatKelasBaku(inputKelas);
 
         const dataBaru = {
@@ -394,7 +384,6 @@
                 const nisn = getVal(["nisn"]);
                 let kelas = getVal(["kelas", "kls"]);
                 
-                // Urus Nomor Ujian Otomatis
                 if(!no || String(no).trim() === "") {
                     no = window.generateNoUjian(currentMaxNo);
                     currentMaxNo++; 
@@ -402,7 +391,6 @@
                     no = String(no).trim();
                 }
 
-                // Otomatis ubah format kelas misal 1 jadi 1 (Satu) saat diimpor
                 let stringKelas = window.formatKelasBaku(kelas);
 
                 if(nama && nisn) { 
@@ -418,7 +406,7 @@
                 }
             });
 
-            alert(`Selesai! Berhasil mengirimkan ${berhasil} data siswa baru ke cloud Firebase.\nNomor ujian otomatis dibuatkan.\nFormat kelas otomatis disesuaikan (Contoh: 1 menjadi 1 (Satu)).`);
+            alert(`Selesai! Berhasil mengirimkan ${berhasil} data siswa baru ke cloud Firebase.\nNomor ujian otomatis dibuatkan.\nFormat kelas otomatis disesuaikan.`);
             document.getElementById('inputExcel').value = ""; 
         };
         reader.readAsArrayBuffer(file);
