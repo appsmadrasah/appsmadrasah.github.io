@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen Jadwal Ujian - Firebase Realtime Database</title>
+    <title>Manajemen Jadwal Ujian - Perbaikan Menu & Firebase</title>
     
-    <script src="https://code.google.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
@@ -141,7 +141,7 @@
                 </tr>
             </thead>
             <tbody id="tabel-jadwal-body">
-                <tr><td colspan="7" style="text-align: center;">Menghubungkan & memuat data dari Firebase...</td></tr>
+                <tr><td colspan="7" style="text-align: center;">Menghubungkan & memuat data...</td></tr>
             </tbody>
         </table>
     </div>
@@ -280,25 +280,14 @@
         </div>
         <div class="modal-footer">
             <button class="btn-batal" onclick="tutupModalJadwal()">Batal</button>
-            <button class="btn-simpan" onclick="simpanDataJadwal()">Simpan Data</button>
+            <button class="btn-simpan" onclick="window.simpanDataJadwal()">Simpan Data</button>
         </div>
     </div>
 </div>
 
 <div id="area-cetak"></div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, get, set, remove, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-
-    const firebaseConfig = {
-      databaseURL: "https://jadwal-1f492-default-rtdb.asia-southeast1.firebasedatabase.app/"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const dbRef = ref(db);
-
+<script>
     window.dbJadwal = [];
     window.logoGlobalSrc = "";
     window.ttdGlobalSrc = "";
@@ -322,15 +311,15 @@
         return `${String(d.getDate()).padStart(2, '0')}-${listBulan[d.getMonth()]}-${d.getFullYear()}`;
     }
 
-    window.bukaTab = function(tabId, btnElement) {
+    function bukaTab(tabId, btnElement) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
         btnElement.classList.add('active');
-        if(tabId === 'tab-cetak') { generateTampilanF4(); }
+        if(tabId === 'tab-cetak') { window.generateTampilanF4(); }
     }
 
-    window.bukaModalJadwal = function(idEdit = null) {
+    function bukaModalJadwal(idEdit = null) {
         document.getElementById('modalFormJadwal').style.display = 'block';
         if(idEdit !== null) {
             let data = window.dbJadwal.find(d => d.id == idEdit);
@@ -348,121 +337,10 @@
             document.getElementById('modal-judul').innerText = "Tambah Jadwal Baru";
         }
     }
-    window.tutupModalJadwal = function() { document.getElementById('modalFormJadwal').style.display = 'none'; }
 
-    async function muatDataFirebase() {
-        try {
-            const snapshot = await get(child(dbRef, 'jadwal'));
-            let dataOnline = [];
-            if (snapshot.exists()) {
-                snapshot.forEach((childSnapshot) => {
-                    dataOnline.push(childSnapshot.val());
-                });
-            }
-            window.dbJadwal = dataOnline;
-            window.renderTabelApp();
-        } catch (error) { console.error("Gagal muat jadwal:", error); }
-    }
+    function tutupModalJadwal() { document.getElementById('modalFormJadwal').style.display = 'none'; }
 
-    async function muatPengaturanKop() {
-        try {
-            const snapshot = await get(child(dbRef, 'pengaturan/kop'));
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                for(let i=1; i<=5; i++) {
-                    if(data['t'+i]) document.getElementById('input-kop-'+i).value = data['t'+i];
-                }
-                if(data.judul) document.getElementById('input-judul-jadwal').value = data.judul;
-                if(data.tglSurat) document.getElementById('input-tgl-surat').value = data.tglSurat;
-                if(data.jabatan) document.getElementById('input-jabatan').value = data.jabatan;
-                if(data.kepsek) document.getElementById('input-nama-kepsek').value = data.kepsek;
-                
-                if(data.logo) {
-                    window.logoGlobalSrc = data.logo;
-                    document.getElementById('img-logo-kop').src = data.logo;
-                }
-                if(data.ttd) {
-                    window.ttdGlobalSrc = data.ttd;
-                    const imgTtd = document.getElementById('img-ttd-preview');
-                    imgTtd.src = data.ttd;
-                    imgTtd.style.display = 'block';
-                }
-                terapkanTeksKopKePreview(data);
-            }
-        } catch (e) { console.error("Gagal muat Kop:", e); }
-    }
-
-    function terapkanTeksKopKePreview(data) {
-        for(let i=1; i<=5; i++) { document.getElementById('teks-kop-'+i).innerText = data['t'+i] || ''; }
-        document.getElementById('teks-judul-jadwal').innerText = data.judul || 'JADWAL SUMATIF AKHIR SEMESTER GANJIL TAHUN PELAJARAN 2025/2026';
-        document.getElementById('k-tgl-surat').innerText = data.tglSurat || '';
-        document.getElementById('k-jabatan').innerText = data.jabatan || '';
-        document.getElementById('k-kepsek').innerText = data.kepsek || '';
-    }
-
-    window.simpanDataJadwal = async function() {
-        const inputId = document.getElementById('form-id').value;
-        const pKelas = document.getElementById('form-kelas').value;
-        const pTanggal = document.getElementById('form-tanggal').value; 
-        const pSesi = parseInt(document.getElementById('form-sesi').value);
-        const pMapel = document.getElementById('form-mapel').value;
-        const pKode = document.getElementById('form-kode').value;
-
-        if(!pTanggal || !pMapel || !pKode) { alert("Semua kolom formulir wajib diisi!"); return; }
-
-        const bentrok = window.dbJadwal.find(j => j.tanggal === pTanggal && j.sesi === pSesi && j.kodeGuru === pKode && j.id != inputId);
-        if(bentrok) {
-            alert(`⚠️ BENTROK JADWAL GURU!\nGuru Kode "${pKode}" sudah terdaftar mengajar di Kelas ${bentrok.kelas} pada hari dan sesi jam yang sama.`);
-            return;
-        }
-
-        window.lastSelectedDate = pTanggal;
-        const targetId = inputId === "" ? new Date().getTime() : parseInt(inputId);
-        const dataJadwalBaru = { id: targetId, kelas: pKelas, tanggal: pTanggal, sesi: pSesi, mapel: pMapel, kodeGuru: pKode };
-
-        document.getElementById('tabel-jadwal-body').innerHTML = `<tr><td colspan="7" style="text-align:center;">Menyimpan data ke Firebase...</td></tr>`;
-        
-        try {
-            await set(ref(db, 'jadwal/' + targetId), dataJadwalBaru);
-            tutupModalJadwal();
-            await muatDataFirebase();
-        } catch (e) { alert("Gagal menyimpan ke Firebase!"); }
-    }
-
-    window.hapusDataJadwal = async function(id) {
-        if(confirm("Hapus jadwal ini secara permanen dari Firebase?")) {
-            document.getElementById('tabel-jadwal-body').innerHTML = `<tr><td colspan="7" style="text-align:center;">Menghapus data dari Firebase...</td></tr>`;
-            try {
-                await remove(ref(db, 'jadwal/' + id));
-                await muatDataFirebase();
-            } catch (e) { alert("Gagal menghapus!"); }
-        }
-    }
-
-    window.terapkanKop = async function() {
-        const dataKop = {
-            t1: document.getElementById('input-kop-1').value,
-            t2: document.getElementById('input-kop-2').value,
-            t3: document.getElementById('input-kop-3').value,
-            t4: document.getElementById('input-kop-4').value,
-            t5: document.getElementById('input-kop-5').value,
-            judul: document.getElementById('input-judul-jadwal').value, // Mengambil nilai judul jadwal baru
-            tglSurat: document.getElementById('input-tgl-surat').value,
-            jabatan: document.getElementById('input-jabatan').value,
-            kepsek: document.getElementById('input-nama-kepsek').value,
-            logo: window.logoGlobalSrc || "",
-            ttd: window.ttdGlobalSrc || ""
-        };
-
-        try {
-            await set(ref(db, 'pengaturan/kop'), dataKop);
-            terapkanTeksKopKePreview(dataKop);
-            alert("Pengaturan Kop & TTD berhasil disimpan permanen di Firebase!");
-            bukaTab('tab-cetak', document.querySelectorAll('.tab-btn')[2]);
-        } catch (e) { alert("Gagal menyimpan pengaturan!"); }
-    }
-
-    window.gantiLogo = function(event) {
+    function gantiLogo(event) {
         const file = event.target.files[0];
         if(file) {
             const reader = new FileReader();
@@ -474,7 +352,7 @@
         }
     }
 
-    window.gantiTTD = function(event) {
+    function gantiTTD(event) {
         const file = event.target.files[0];
         if(file) {
             const reader = new FileReader();
@@ -488,7 +366,7 @@
         }
     }
 
-    window.renderTabelApp = function() {
+    function renderTabelApp() {
         const tbody = document.getElementById('tabel-jadwal-body');
         tbody.innerHTML = '';
         const filterValue = document.getElementById('filter-kelas-app').value;
@@ -518,14 +396,14 @@
                     <td style="text-align:center; font-weight:bold;">${d.kodeGuru}</td>
                     <td style="text-align:center; white-space: nowrap;">
                         <button class="btn-edit" onclick="bukaModalJadwal(${d.id})">✏️</button>
-                        <button class="btn-hapus" onclick="hapusDataJadwal(${d.id})">🗑️</button>
+                        <button class="btn-hapus" onclick="window.hapusDataJadwal(${d.id})">🗑️</button>
                     </td>
                 </tr>`;
         });
         if (!adaData) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada data jadwal untuk kelas ini.</td></tr>`;
     }
 
-    window.generateTampilanF4 = function() {
+    function generateTampilanF4() {
         let tanggalUnikSelesai = [...new Set(window.dbJadwal.map(j => j.tanggal))].sort();
         if(tanggalUnikSelesai.length === 0) tanggalUnikSelesai = [new Date().toISOString().split('T')[0]];
 
@@ -563,10 +441,130 @@
         document.getElementById('area-cetak').innerHTML = document.getElementById('kertas-preview').outerHTML;
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-        muatDataFirebase();
-        muatPengaturanKop();
-    });
+    function terapkanTeksKopKePreview(data) {
+        for(let i=1; i<=5; i++) { document.getElementById('teks-kop-'+i).innerText = data['t'+i] || ''; }
+        document.getElementById('teks-judul-jadwal').innerText = data.judul || 'JADWAL SUMATIF AKHIR SEMESTER GANJIL TAHUN PELAJARAN 2025/2026';
+        document.getElementById('k-tgl-surat').innerText = data.tglSurat || '';
+        document.getElementById('k-jabatan').innerText = data.jabatan || '';
+        document.getElementById('k-kepsek').innerText = data.kepsek || '';
+    }
+</script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, get, set, remove, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    const firebaseConfig = {
+      databaseURL: "https://jadwal-1f492-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const dbRef = ref(db);
+
+    async function muatDataFirebase() {
+        try {
+            const snapshot = await get(child(dbRef, 'jadwal'));
+            let dataOnline = [];
+            if (snapshot.exists()) {
+                snapshot.forEach((childSnapshot) => { dataOnline.push(childSnapshot.val()); });
+            }
+            window.dbJadwal = dataOnline;
+            renderTabelApp();
+        } catch (error) { console.error("Gagal sinkronisasi data:", error); }
+    }
+
+    async function muatPengaturanKop() {
+        try {
+            const snapshot = await get(child(dbRef, 'pengaturan/kop'));
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                for(let i=1; i<=5; i++) { if(data['t'+i]) document.getElementById('input-kop-'+i).value = data['t'+i]; }
+                if(data.judul) document.getElementById('input-judul-jadwal').value = data.judul;
+                if(data.tglSurat) document.getElementById('input-tgl-surat').value = data.tglSurat;
+                if(data.jabatan) document.getElementById('input-jabatan').value = data.jabatan;
+                if(data.kepsek) document.getElementById('input-nama-kepsek').value = data.kepsek;
+                
+                if(data.logo) {
+                    window.logoGlobalSrc = data.logo;
+                    document.getElementById('img-logo-kop').src = data.logo;
+                }
+                if(data.ttd) {
+                    window.ttdGlobalSrc = data.ttd;
+                    const imgTtd = document.getElementById('img-ttd-preview');
+                    imgTtd.src = data.ttd;
+                    imgTtd.style.display = 'block';
+                }
+                terapkanTeksKopKePreview(data);
+            }
+        } catch (e) { console.error("Gagal muat Kop:", e); }
+    }
+
+    window.simpanDataJadwal = async function() {
+        const inputId = document.getElementById('form-id').value;
+        const pKelas = document.getElementById('form-kelas').value;
+        const pTanggal = document.getElementById('form-tanggal').value; 
+        const pSesi = parseInt(document.getElementById('form-sesi').value);
+        const pMapel = document.getElementById('form-mapel').value;
+        const pKode = document.getElementById('form-kode').value;
+
+        if(!pTanggal || !pMapel || !pKode) { alert("Semua kolom formulir wajib diisi!"); return; }
+
+        const bentrok = window.dbJadwal.find(j => j.tanggal === pTanggal && j.sesi === pSesi && j.kodeGuru === pKode && j.id != inputId);
+        if(bentrok) {
+            alert(`⚠️ BENTROK JADWAL GURU!\nGuru Kode "${pKode}" sudah terdaftar mengajar di Kelas ${bentrok.kelas} pada hari dan sesi jam yang sama.`);
+            return;
+        }
+
+        window.lastSelectedDate = pTanggal;
+        const targetId = inputId === "" ? new Date().getTime() : parseInt(inputId);
+        const dataJadwalBaru = { id: targetId, kelas: pKelas, tanggal: pTanggal, sesi: pSesi, mapel: pMapel, kodeGuru: pKode };
+
+        document.getElementById('tabel-jadwal-body').innerHTML = `<tr><td colspan="7" style="text-align:center;">Menyimpan data...</td></tr>`;
+        
+        try {
+            await set(ref(db, 'jadwal/' + targetId), dataJadwalBaru);
+            tutupModalJadwal();
+            await muatDataFirebase();
+        } catch (e) { alert("Gagal menyimpan ke Firebase!"); }
+    }
+
+    window.hapusDataJadwal = async function(id) {
+        if(confirm("Hapus jadwal ini secara permanen?")) {
+            document.getElementById('tabel-jadwal-body').innerHTML = `<tr><td colspan="7" style="text-align:center;">Menghapus data...</td></tr>`;
+            try {
+                await remove(ref(db, 'jadwal/' + id));
+                await muatDataFirebase();
+            } catch (e) { alert("Gagal menghapus!"); }
+        }
+    }
+
+    window.terapkanKop = async function() {
+        const dataKop = {
+            t1: document.getElementById('input-kop-1').value,
+            t2: document.getElementById('input-kop-2').value,
+            t3: document.getElementById('input-kop-3').value,
+            t4: document.getElementById('input-kop-4').value,
+            t5: document.getElementById('input-kop-5').value,
+            judul: document.getElementById('input-judul-jadwal').value, 
+            tglSurat: document.getElementById('input-tgl-surat').value,
+            jabatan: document.getElementById('input-jabatan').value,
+            kepsek: document.getElementById('input-nama-kepsek').value,
+            logo: window.logoGlobalSrc || "",
+            ttd: window.ttdGlobalSrc || ""
+        };
+
+        try {
+            await set(ref(db, 'pengaturan/kop'), dataKop);
+            terapkanTeksKopKePreview(dataKop);
+            alert("Pengaturan Berhasil Disimpan!");
+            bukaTab('tab-cetak', document.querySelectorAll('.tab-btn')[2]);
+        } catch (e) { alert("Gagal menyimpan pengaturan!"); }
+    }
+
+    // Jalankan Sinkronisasi Latar Belakang saat startup selesai dimuat
+    muatDataFirebase();
+    muatPengaturanKop();
 </script>
 </body>
 </html>
