@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen Jadwal Ujian - Filter Ceklis Cetak F4</title>
+    <title>Manajemen Jadwal Ujian - Rekapan Jumlah Jam Guru</title>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -118,8 +118,9 @@
     
     <div class="tab-menu">
         <button class="tab-btn active" onclick="bukaTab('tab-data', this)">1. Input Data Jadwal</button>
-        <button class="tab-btn" onclick="bukaTab('tab-pengaturan', this)">2. Pengaturan Kop & TTD</button>
-        <button class="tab-btn" onclick="bukaTab('tab-cetak', this)">3. Tampilan & Cetak Jadwal (F4)</button>
+        <button class="tab-btn" onclick="bukaTab('tab-jumlah-jam', this)">2. Jumlah Jam</button>
+        <button class="tab-btn" onclick="bukaTab('tab-pengaturan', this)">3. Pengaturan Kop & TTD</button>
+        <button class="tab-btn" onclick="bukaTab('tab-cetak', this)">4. Tampilan & Cetak Jadwal (F4)</button>
     </div>
 
     <div id="tab-data" class="tab-content active">
@@ -151,6 +152,23 @@
         </table>
     </div>
 
+    <div id="tab-jumlah-jam" class="tab-content">
+        <h3 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee; color: #333;">Rekapan Akumulasi Sesi Mengajar Guru</h3>
+        <p style="font-size: 13px; color: #666; margin-bottom: 15px;"><i>*Jumlah jam di bawah ini dihitung otomatis berdasarkan jadwal yang aktif di database.</i></p>
+        <table class="table-app" style="max-width: 650px;">
+            <thead>
+                <tr>
+                    <th style="width: 50px; text-align: center;">No.</th>
+                    <th style="width: 100px; text-align: center;">Kode Guru</th>
+                    <th>Nama Lengkap Guru</th>
+                    <th style="width: 150px; text-align: center;">Total Mengajar</th>
+                </tr>
+            </thead>
+            <tbody id="tabel-jumlah-jam-body">
+                </tbody>
+        </table>
+    </div>
+
     <div id="tab-pengaturan" class="tab-content">
         <div class="box-area" style="background: #fff; border: 1px solid #ccc;">
             <h3 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #333;">Bagian Kop Surat Jadwal</h3>
@@ -178,10 +196,8 @@
     </div>
 
     <div id="tab-cetak" class="tab-content">
-        
         <div class="action-header-bar">
             <button onclick="window.print()" class="btn-tambah" style="background-color: #E91E63;">🖨️ Cetak Jadwal (Kertas F4)</button>
-            
             <div class="box-filter-ceklis">
                 <span style="margin-right: 5px; color: #555;">Tampilkan Kelas:</span>
                 <label><input type="checkbox" class="chk-kelas-cetak" value="I" checked onchange="window.generateTampilanF4()"> I</label>
@@ -312,6 +328,16 @@
     window.lastSelectedDate = "";
     const daftarKelas = ['I', 'II', 'III', 'IV', 'V', 'VI'];
 
+    // Peta Nama Guru Asli untuk Rekapan
+    const namaGuruMap = {
+        "A": "IMAM TAUFIQ, ST", "B": "SUBIANTO, S.Pd", "C": "MUHAMMAD NURIL, S.AG",
+        "D": "YUSUF, S.Pd", "E": "MOH. YASIN", "F": "Dra. UMU SYAROFAH",
+        "G": "MUSTIKA, S.Pd", "H": "MUNAFIAH, S.Pd", "I": "MUHAIMINAH, S.Pd",
+        "J": "INDARSIH, S.Pd", "K": "IMAM HAROMEN, SE", "L": "ANDY KUR, S.Pd",
+        "M": "M. ZAINUL A", "N": "FITROTIN A", "O": "CHANDRA ARIES, S.Pd",
+        "P": "YUSHIFUL ILMIY, S.Pd", "Q": "LATHIFATU NUR NISA, S.Pd", "R": "ANDRYAN BAYU PRATAMA, S.Pd"
+    };
+
     $(document).ready(function() {
         $('#form-mapel').select2({ dropdownParent: $('#modalFormJadwal'), placeholder: "Ketik nama pelajaran..." });
         $('#form-kode').select2({ dropdownParent: $('#modalFormJadwal'), placeholder: "Ketik nama/kode guru..." });
@@ -334,7 +360,9 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
         btnElement.classList.add('active');
+        
         if(tabId === 'tab-cetak') { window.generateTampilanF4(); }
+        if(tabId === 'tab-jumlah-jam') { window.renderJumlahJam(); } // Trigger hitung rekapan jam saat tab dibuka
     }
 
     function bukaModalJadwal(idEdit = null) {
@@ -368,6 +396,34 @@
             }
             reader.readAsDataURL(file);
         }
+    }
+
+    /* BARU: Fungsi untuk Mengkalkulasi Rekapan Jam Kerja Seluruh Guru Secara Realtime */
+    window.renderJumlahJam = function() {
+        const tbody = document.getElementById('tabel-jumlah-jam-body');
+        tbody.innerHTML = '';
+        
+        const hitungJam = {};
+        Object.keys(namaGuruMap).forEach(kode => { hitungJam[kode] = 0; }); // Set awal 0 jam
+
+        // Hitung kemunculan kode guru di database
+        window.dbJadwal.forEach(j => {
+            if (j.kodeGuru && hitungJam[j.kodeGuru] !== undefined) {
+                hitungJam[j.kodeGuru]++;
+            }
+        });
+
+        let nomor = 1;
+        Object.keys(namaGuruMap).forEach(kode => {
+            tbody.innerHTML += `
+                <tr>
+                    <td style="text-align: center;">${nomor++}</td>
+                    <td style="text-align: center; font-weight: bold; background: #fafafa;">${kode}</td>
+                    <td>${namaGuruMap[kode]}</td>
+                    <td style="text-align: center; font-weight: bold; color: #2196F3;">${hitungJam[kode]} Sesi (Jam)</td>
+                </tr>
+            `;
+        });
     }
 
     function gantiTTD(event) {
@@ -421,7 +477,6 @@
         if (!adaData) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada data jadwal untuk kelas ini.</td></tr>`;
     }
 
-    // PERBAIKAN FITUR: Render Matriks F4 Berdasarkan Pilihan Ceklis Kelas Secara Dinamis
     function generateTampilanF4() {
         let tanggalUnikSelesai = [...new Set(window.dbJadwal.map(j => j.tanggal))].sort();
         if(tanggalUnikSelesai.length === 0) tanggalUnikSelesai = [new Date().toISOString().split('T')[0]];
@@ -439,16 +494,12 @@
         const tbody = document.getElementById('tabel-render-jadwal');
         tbody.innerHTML = '';
 
-        // Mengumpulkan daftar kelas yang diberi tanda ceklis oleh pengguna
         let kelasTerpilih = [];
-        document.querySelectorAll('.chk-kelas-cetak:checked').forEach(chk => {
-            kelasTerpilih.push(chk.value);
-        });
+        document.querySelectorAll('.chk-kelas-cetak:checked').forEach(chk => { kelasTerpilih.push(chk.value); });
 
         let nomorUrutCetak = 1;
 
         daftarKelas.forEach((kelas) => {
-            // JIKA KELAS TIDAK DICEKLIS, JANGAN RENDER BARISNYA KE JADWAL F4
             if (!kelasTerpilih.includes(kelas)) return;
 
             let rowSesi1 = `<tr><td rowspan="3">${nomorUrutCetak}</td><td rowspan="3">${kelas}</td><td>07.00 - 08.30</td>`;
@@ -466,8 +517,7 @@
                 rowSesi2 += jCell ? `<td><div class="cell-wrapper"><div class="kode-guru">${jCell.kodeGuru}</div><div class="mapel">${jCell.mapel}</div></div></td>` : `<td></td>`;
             });
             tbody.appendChild(Object.assign(document.createElement('tr'), {innerHTML: rowSesi2 + `</tr>`}));
-            
-            nomorUrutCetak++; // Naikkan nomor urut otomatis hanya jika kelas ditampilkan
+            nomorUrutCetak++;
         });
 
         document.getElementById('area-cetak').innerHTML = document.getElementById('kertas-preview').outerHTML;
@@ -503,6 +553,7 @@
             }
             window.dbJadwal = dataOnline;
             renderTabelApp();
+            window.renderJumlahJam(); // Update tabel rekapan jam setiap ada pembaruan data
         } catch (error) { console.error("Gagal sinkronisasi data:", error); }
     }
 
@@ -590,7 +641,7 @@
             await set(ref(db, 'pengaturan/kop'), dataKop);
             terapkanTeksKopKePreview(dataKop);
             alert("Pengaturan Berhasil Disimpan!");
-            bukaTab('tab-cetak', document.querySelectorAll('.tab-btn')[2]);
+            bukaTab('tab-cetak', document.querySelectorAll('.tab-btn')[3]); // Lompat ke tab cetak (indeks ke-3)
         } catch (e) { alert("Gagal menyimpan pengaturan!"); }
     }
 
