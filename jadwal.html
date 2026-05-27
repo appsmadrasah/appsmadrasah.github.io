@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen Jadwal Ujian - Perbaikan Menu & Firebase</title>
+    <title>Manajemen Jadwal Ujian - Filter Ceklis Cetak F4</title>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -50,6 +50,11 @@
         .close-btn { cursor: pointer; color: red; font-weight: bold; font-size: 20px;}
         .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
         .btn-batal { background: #ccc; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; height: 35px;}
+
+        /* Kotak Filter Ceklis di Tab Cetak */
+        .box-filter-ceklis { display: inline-flex; gap: 15px; align-items: center; background: #fff; padding: 0 15px; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; font-size: 14px; height: 36px; color: #333; }
+        .box-filter-ceklis label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+        .box-filter-ceklis input[type="checkbox"] { cursor: pointer; width: 16px; height: 16px; margin: 0; }
 
         /* Select2 Style Override */
         .select2-container .select2-selection--single { height: 35px; border: 1px solid #ccc; border-radius: 4px; }
@@ -173,7 +178,20 @@
     </div>
 
     <div id="tab-cetak" class="tab-content">
-        <button onclick="window.print()" class="btn-tambah" style="background-color: #E91E63;">🖨️ Cetak Jadwal (Kertas F4)</button>
+        
+        <div class="action-header-bar">
+            <button onclick="window.print()" class="btn-tambah" style="background-color: #E91E63;">🖨️ Cetak Jadwal (Kertas F4)</button>
+            
+            <div class="box-filter-ceklis">
+                <span style="margin-right: 5px; color: #555;">Tampilkan Kelas:</span>
+                <label><input type="checkbox" class="chk-kelas-cetak" value="I" checked onchange="window.generateTampilanF4()"> I</label>
+                <label><input type="checkbox" class="chk-kelas-cetak" value="II" checked onchange="window.generateTampilanF4()"> II</label>
+                <label><input type="checkbox" class="chk-kelas-cetak" value="III" checked onchange="window.generateTampilanF4()"> III</label>
+                <label><input type="checkbox" class="chk-kelas-cetak" value="IV" checked onchange="window.generateTampilanF4()"> IV</label>
+                <label><input type="checkbox" class="chk-kelas-cetak" value="V" checked onchange="window.generateTampilanF4()"> V</label>
+                <label><input type="checkbox" class="chk-kelas-cetak" value="VI" checked onchange="window.generateTampilanF4()"> VI</label>
+            </div>
+        </div>
         
         <div class="preview-area">
             <div class="kertas-f4" id="kertas-preview">
@@ -403,6 +421,7 @@
         if (!adaData) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada data jadwal untuk kelas ini.</td></tr>`;
     }
 
+    // PERBAIKAN FITUR: Render Matriks F4 Berdasarkan Pilihan Ceklis Kelas Secara Dinamis
     function generateTampilanF4() {
         let tanggalUnikSelesai = [...new Set(window.dbJadwal.map(j => j.tanggal))].sort();
         if(tanggalUnikSelesai.length === 0) tanggalUnikSelesai = [new Date().toISOString().split('T')[0]];
@@ -420,8 +439,19 @@
         const tbody = document.getElementById('tabel-render-jadwal');
         tbody.innerHTML = '';
 
-        daftarKelas.forEach((kelas, index) => {
-            let rowSesi1 = `<tr><td rowspan="3">${index+1}</td><td rowspan="3">${kelas}</td><td>07.00 - 08.30</td>`;
+        // Mengumpulkan daftar kelas yang diberi tanda ceklis oleh pengguna
+        let kelasTerpilih = [];
+        document.querySelectorAll('.chk-kelas-cetak:checked').forEach(chk => {
+            kelasTerpilih.push(chk.value);
+        });
+
+        let nomorUrutCetak = 1;
+
+        daftarKelas.forEach((kelas) => {
+            // JIKA KELAS TIDAK DICEKLIS, JANGAN RENDER BARISNYA KE JADWAL F4
+            if (!kelasTerpilih.includes(kelas)) return;
+
+            let rowSesi1 = `<tr><td rowspan="3">${nomorUrutCetak}</td><td rowspan="3">${kelas}</td><td>07.00 - 08.30</td>`;
             tanggalUnikSelesai.forEach(tglStr => {
                 let jCell = window.dbJadwal.find(j => j.kelas === kelas && j.tanggal === tglStr && j.sesi === 1);
                 rowSesi1 += jCell ? `<td><div class="cell-wrapper"><div class="kode-guru">${jCell.kodeGuru}</div><div class="mapel">${jCell.mapel}</div></div></td>` : `<td></td>`;
@@ -436,6 +466,8 @@
                 rowSesi2 += jCell ? `<td><div class="cell-wrapper"><div class="kode-guru">${jCell.kodeGuru}</div><div class="mapel">${jCell.mapel}</div></div></td>` : `<td></td>`;
             });
             tbody.appendChild(Object.assign(document.createElement('tr'), {innerHTML: rowSesi2 + `</tr>`}));
+            
+            nomorUrutCetak++; // Naikkan nomor urut otomatis hanya jika kelas ditampilkan
         });
 
         document.getElementById('area-cetak').innerHTML = document.getElementById('kertas-preview').outerHTML;
@@ -562,7 +594,6 @@
         } catch (e) { alert("Gagal menyimpan pengaturan!"); }
     }
 
-    // Jalankan Sinkronisasi Latar Belakang saat startup selesai dimuat
     muatDataFirebase();
     muatPengaturanKop();
 </script>
