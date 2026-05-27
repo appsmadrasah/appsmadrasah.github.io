@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen Jadwal Ujian - Rekapan Jumlah Jam Guru</title>
+    <title>Manajemen Jadwal Ujian - Lapisan Cetak Tebal & Kop Besar</title>
     
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.google.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
@@ -77,20 +77,27 @@
             color: black;
         }
 
-        .kop-surat { text-align: center; color: #008000; font-weight: bold; margin-bottom: 15px; line-height: 1.2; position: relative;}
-        .kop-surat .logo-cetak { position: absolute; left: 20px; top: -5px; width: 65px; height: 65px; object-fit: contain; }
-        .judul-jadwal { text-align: center; font-weight: bold; margin: 15px 0 10px 0; font-size: 12px; color: black; text-transform: uppercase;}
+        /* PERBAIKAN 1: Logo & Teks KOP Diperbesar */
+        .kop-surat { text-align: center; color: #008000; font-weight: bold; margin-bottom: 20px; line-height: 1.3; position: relative;}
+        .kop-surat .logo-cetak { position: absolute; left: 35px; top: 0px; width: 85px; height: 85px; object-fit: contain; }
+        .judul-jadwal { text-align: center; font-weight: bold; margin: 15px 0 15px 0; font-size: 13px; color: black; text-transform: uppercase; letter-spacing: 0.5px;}
         
-        .tabel-jadwal { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-        .tabel-jadwal th, .tabel-jadwal td { border: 1px solid black; text-align: center; padding: 0; height: 22px; }
-        .tabel-jadwal th { background-color: #e9ecef; }
+        /* PERBAIKAN 2: Setting Garis Tepi Semua Tebal (3px) & internal Tipis (1px) */
+        .tabel-jadwal { width: 100%; border-collapse: collapse; margin-bottom: 15px; border: 3px solid black; }
+        .tabel-jadwal td { border: 1px solid black; text-align: center; padding: 0; height: 23px; }
+        
+        /* PERBAIKAN 3: Setting Kolom Header Atas Tebal (2.5px) */
+        .tabel-jadwal th { border: 2.5px solid black; background-color: #e9ecef; text-align: center; font-weight: bold; }
+        
+        /* PERBAIKAN 4: Variabel Garis Pemisah Antar Kelas Tebal (3px) */
+        .border-bawah-tebal { border-bottom: 3px solid black !important; }
         
         .cell-wrapper { display: flex; height: 100%; align-items: stretch; }
         .kode-guru { width: 25px; border-right: 1px solid black; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; justify-content: center; background: #f9f9f9;}
         .mapel { flex-grow: 1; text-align: left; padding-left: 5px; display: flex; align-items: center;}
         .istirahat { letter-spacing: 5px; font-weight: bold; background-color: #f8f9fa;}
 
-        .footer-section { display: flex; justify-content: space-between; margin-top: 10px; }
+        .footer-section { display: flex; justify-content: space-between; margin-top: 15px; }
         .grid-guru { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px 15px; text-align: left; font-size: 11px;}
         .ttd-box-area { height: 45px; margin: 2px 0; display: flex; align-items: center; justify-content: center;}
         .ttd-box-area img { max-height: 100%; max-width: 100%; object-fit: contain; }
@@ -98,7 +105,7 @@
         .ttd-panitia p { margin: 0; }
         .ttd-panitia .name { font-weight: bold; text-decoration: underline;}
 
-        /* AREA CETAK */
+        /* AREA CETAK PRINTER */
         #area-cetak { display: none; }
         @media print {
             @page { size: 330mm 215mm; margin: 5mm; }
@@ -213,11 +220,11 @@
             <div class="kertas-f4" id="kertas-preview">
                 <div class="kop-surat">
                     <img id="img-logo-kop" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_Kementerian_Agama_Republik_Indonesia.svg/200px-Logo_Kementerian_Agama_Republik_Indonesia.svg.png" alt="Logo" class="logo-cetak">
-                    <div id="teks-kop-1">LEMBAGA PENDIDIKAN MA'ARIF NU</div>
-                    <div id="teks-kop-2">MI. HIDAYATUS SHIBYAN</div>
-                    <div id="teks-kop-3">KENDALKEMLAGI KARANGGENENG LAMONGAN</div>
-                    <div id="teks-kop-4">STATUS : TERAKRIDITASI "A" NSM : 111235240168</div>
-                    <div id="teks-kop-5">BHPNU SK. Kemenkumham RI. Nomor AHU-119.AH.01.08 Tahun 2013</div>
+                    <div id="teks-kop-1" style="font-size: 15px;">LEMBAGA PENDIDIKAN MA'ARIF NU</div>
+                    <div id="teks-kop-2" style="font-size: 20px; font-weight: 900; letter-spacing: 0.5px;">MI. HIDAYATUS SHIBYAN</div>
+                    <div id="teks-kop-3" style="font-size: 13px;">KENDALKEMLAGI KARANGGENENG LAMONGAN</div>
+                    <div id="teks-kop-4" style="font-size: 11px; font-weight: normal;">STATUS : TERAKRIDITASI "A" NSM : 111235240168</div>
+                    <div id="teks-kop-5" style="font-size: 10px; font-weight: normal; font-style: italic;">BHPNU SK. Kemenkumham RI. Nomor AHU-119.AH.01.08 Tahun 2013</div>
                 </div>
                 
                 <div class="judul-jadwal" id="teks-judul-jadwal">JADWAL SUMATIF AKHIR SEMESTER GANJIL TAHUN PELAJARAN 2025/2026</div>
@@ -225,9 +232,9 @@
                 <table class="tabel-jadwal">
                     <thead>
                         <tr>
-                            <th rowspan="3" style="width: 30px;">NO</th>
-                            <th rowspan="3" style="width: 50px;">KELAS</th>
-                            <th rowspan="3" style="width: 90px;">JAM</th>
+                            <th rowspan="3" style="width: 35px;">NO</th>
+                            <th rowspan="3" style="width: 55px;">KELAS</th>
+                            <th rowspan="3" style="width: 95px;">JAM</th>
                             <th id="header-hari-tanggal-utama" colspan="1">HARI/TANGGAL</th>
                         </tr>
                         <tr id="header-tanggal"></tr>
@@ -328,7 +335,6 @@
     window.lastSelectedDate = "";
     const daftarKelas = ['I', 'II', 'III', 'IV', 'V', 'VI'];
 
-    // Peta Nama Guru Asli untuk Rekapan
     const namaGuruMap = {
         "A": "IMAM TAUFIQ, ST", "B": "SUBIANTO, S.Pd", "C": "MUHAMMAD NURIL, S.AG",
         "D": "YUSUF, S.Pd", "E": "MOH. YASIN", "F": "Dra. UMU SYAROFAH",
@@ -362,7 +368,7 @@
         btnElement.classList.add('active');
         
         if(tabId === 'tab-cetak') { window.generateTampilanF4(); }
-        if(tabId === 'tab-jumlah-jam') { window.renderJumlahJam(); } // Trigger hitung rekapan jam saat tab dibuka
+        if(tabId === 'tab-jumlah-jam') { window.renderJumlahJam(); }
     }
 
     function bukaModalJadwal(idEdit = null) {
@@ -398,19 +404,14 @@
         }
     }
 
-    /* BARU: Fungsi untuk Mengkalkulasi Rekapan Jam Kerja Seluruh Guru Secara Realtime */
     window.renderJumlahJam = function() {
         const tbody = document.getElementById('tabel-jumlah-jam-body');
         tbody.innerHTML = '';
-        
         const hitungJam = {};
-        Object.keys(namaGuruMap).forEach(kode => { hitungJam[kode] = 0; }); // Set awal 0 jam
+        Object.keys(namaGuruMap).forEach(kode => { hitungJam[kode] = 0; });
 
-        // Hitung kemunculan kode guru di database
         window.dbJadwal.forEach(j => {
-            if (j.kodeGuru && hitungJam[j.kodeGuru] !== undefined) {
-                hitungJam[j.kodeGuru]++;
-            }
+            if (j.kodeGuru && hitungJam[j.kodeGuru] !== undefined) { hitungJam[j.kodeGuru]++; }
         });
 
         let nomor = 1;
@@ -421,8 +422,7 @@
                     <td style="text-align: center; font-weight: bold; background: #fafafa;">${kode}</td>
                     <td>${namaGuruMap[kode]}</td>
                     <td style="text-align: center; font-weight: bold; color: #2196F3;">${hitungJam[kode]} Sesi (Jam)</td>
-                </tr>
-            `;
+                </tr>`;
         });
     }
 
@@ -477,7 +477,8 @@
         if (!adaData) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada data jadwal untuk kelas ini.</td></tr>`;
     }
 
-    function generateTampilanF4() {
+    // PERBAIKAN FITUR: Render Garis Tebal Pemisah Antar Kelas & Bingkai Tebal
+    window.generateTampilanF4 = function() {
         let tanggalUnikSelesai = [...new Set(window.dbJadwal.map(j => j.tanggal))].sort();
         if(tanggalUnikSelesai.length === 0) tanggalUnikSelesai = [new Date().toISOString().split('T')[0]];
 
@@ -502,19 +503,22 @@
         daftarKelas.forEach((kelas) => {
             if (!kelasTerpilih.includes(kelas)) return;
 
-            let rowSesi1 = `<tr><td rowspan="3">${nomorUrutCetak}</td><td rowspan="3">${kelas}</td><td>07.00 - 08.30</td>`;
+            // Baris Sesi 1 (Menambahkan class border-bawah-tebal pada sel No & Kelas yang di-rowspan)
+            let rowSesi1 = `<tr><td rowspan="3" class="border-bawah-tebal">${nomorUrutCetak}</td><td rowspan="3" class="border-bawah-tebal">${kelas}</td><td>07.00 - 08.30</td>`;
             tanggalUnikSelesai.forEach(tglStr => {
                 let jCell = window.dbJadwal.find(j => j.kelas === kelas && j.tanggal === tglStr && j.sesi === 1);
                 rowSesi1 += jCell ? `<td><div class="cell-wrapper"><div class="kode-guru">${jCell.kodeGuru}</div><div class="mapel">${jCell.mapel}</div></div></td>` : `<td></td>`;
             });
             tbody.appendChild(Object.assign(document.createElement('tr'), {innerHTML: rowSesi1 + `</tr>`}));
 
+            // Baris Istirahat
             tbody.appendChild(Object.assign(document.createElement('tr'), {innerHTML: `<td>08.30 - 09.00</td><td colspan="${tanggalUnikSelesai.length}" class="istirahat">ISTIRAHAT</td>`}));
 
-            let rowSesi2 = `<tr><td>09.00 - 10.30</td>`;
+            // Baris Sesi 2 (Menambahkan class border-bawah-tebal pada semua sel baris terakhir kelas)
+            let rowSesi2 = `<tr><td class="border-bawah-tebal">09.00 - 10.30</td>`;
             tanggalUnikSelesai.forEach(tglStr => {
                 let jCell = window.dbJadwal.find(j => j.kelas === kelas && j.tanggal === tglStr && j.sesi === 2);
-                rowSesi2 += jCell ? `<td><div class="cell-wrapper"><div class="kode-guru">${jCell.kodeGuru}</div><div class="mapel">${jCell.mapel}</div></div></td>` : `<td></td>`;
+                rowSesi2 += jCell ? `<td class="border-bawah-tebal"><div class="cell-wrapper"><div class="kode-guru">${jCell.kodeGuru}</div><div class="mapel">${jCell.mapel}</div></div></td>` : `<td class="border-bawah-tebal"></td>`;
             });
             tbody.appendChild(Object.assign(document.createElement('tr'), {innerHTML: rowSesi2 + `</tr>`}));
             nomorUrutCetak++;
@@ -553,7 +557,7 @@
             }
             window.dbJadwal = dataOnline;
             renderTabelApp();
-            window.renderJumlahJam(); // Update tabel rekapan jam setiap ada pembaruan data
+            window.renderJumlahJam();
         } catch (error) { console.error("Gagal sinkronisasi data:", error); }
     }
 
@@ -641,7 +645,7 @@
             await set(ref(db, 'pengaturan/kop'), dataKop);
             terapkanTeksKopKePreview(dataKop);
             alert("Pengaturan Berhasil Disimpan!");
-            bukaTab('tab-cetak', document.querySelectorAll('.tab-btn')[3]); // Lompat ke tab cetak (indeks ke-3)
+            bukaTab('tab-cetak', document.querySelectorAll('.tab-btn')[3]);
         } catch (e) { alert("Gagal menyimpan pengaturan!"); }
     }
 
