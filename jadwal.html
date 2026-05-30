@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen Jadwal Ujian - Perbaikan Tampilan Jadwal</title>
+    <title>Manajemen Jadwal Ujian & Daftar Hadir Pengawas</title>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -16,7 +16,7 @@
         h2 { text-align: center; color: #333; margin-bottom: 25px;}
         
         /* Navigasi / Tab */
-        .tab-menu { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .tab-menu { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; flex-wrap: wrap; }
         .tab-btn { padding: 10px 20px; cursor: pointer; border: none; background: #eee; border-radius: 5px; font-weight: bold; }
         .tab-btn.active { background: #4CAF50; color: white; }
         .tab-content { display: none; }
@@ -77,7 +77,6 @@
             color: black;
         }
 
-        /* Logo & Teks KOP Diperbesar */
         .kop-surat { text-align: center; color: #008000; font-weight: bold; margin-bottom: 20px; line-height: 1.3; position: relative;}
         .kop-surat .logo-cetak { position: absolute; left: 35px; top: 0px; width: 85px; height: 85px; object-fit: contain; }
         .judul-jadwal { text-align: center; font-weight: bold; margin: 15px 0 15px 0; font-size: 13px; color: black; text-transform: uppercase; letter-spacing: 0.5px;}
@@ -127,7 +126,8 @@
         <button class="tab-btn active" onclick="bukaTab('tab-data', this)">1. Input Data Jadwal</button>
         <button class="tab-btn" onclick="bukaTab('tab-jumlah-jam', this)">2. Jumlah Jam</button>
         <button class="tab-btn" onclick="bukaTab('tab-pengaturan', this)">3. Pengaturan Kop & TTD</button>
-        <button class="tab-btn" onclick="bukaTab('tab-cetak', this)">4. Tampilan & Cetak Jadwal (F4)</button>
+        <button class="tab-btn" onclick="bukaTab('tab-cetak', this)">4. Cetak Jadwal (F4)</button>
+        <button class="tab-btn" onclick="bukaTab('tab-daftar-hadir', this)" style="background: #FF9800; color: white;">5. Daftar Hadir Pengawas</button>
     </div>
 
     <div id="tab-data" class="tab-content active">
@@ -156,7 +156,6 @@
 
     <div id="tab-jumlah-jam" class="tab-content">
         <h3 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee; color: #333;">Rekapan Akumulasi Sesi Mengajar Guru</h3>
-        <p style="font-size: 13px; color: #666; margin-bottom: 15px;"><i>*Jumlah jam di bawah ini dihitung otomatis berdasarkan jadwal yang aktif di database.</i></p>
         <table class="table-app" style="max-width: 650px;">
             <thead>
                 <tr>
@@ -180,14 +179,14 @@
             <div class="form-group"><label>Teks Baris 4:</label><input type="text" id="input-kop-4" value="STATUS : TERAKRIDITASI &quot;A&quot; NSM : 111235240168"></div>
             <div class="form-group"><label>Teks Baris 5:</label><input type="text" id="input-kop-5" value="BHPNU SK. Kemenkumham RI. Nomor AHU-119.AH.01.08 Tahun 2013"></div>
             
-            <h3 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #333;">Bagian Judul Jadwal</h3>
+            <h3 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #333;">Bagian Judul Jadwal Utama</h3>
             <div class="form-group">
-                <label>Judul Jadwal Utama:</label>
+                <label>Judul Jadwal:</label>
                 <input type="text" id="input-judul-jadwal" value="JADWAL SUMATIF AKHIR SEMESTER GANJIL TAHUN PELAJARAN 2025/2026">
             </div>
 
             <h3 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #333;">Bagian Tanda Tangan</h3>
-            <div class="form-group"><label>Tempat & Tanggal Jadwal:</label><input type="text" id="input-tgl-surat" value="Lamongan, 27 Mei 2026"></div>
+            <div class="form-group"><label>Tempat & Tanggal Dokumen:</label><input type="text" id="input-tgl-surat" value="Lamongan, 27 Mei 2026"></div>
             <div class="form-group"><label>Jabatan Penandatangan:</label><input type="text" id="input-jabatan" value="Panitia SAS"></div>
             <div class="form-group"><label>Upload Tanda Tangan (Opsional):</label><input type="file" accept="image/*" id="input-ttd" onchange="gantiTTD(event)"></div>
             <div class="form-group"><label>Nama Kepala Sekolah / Panitia:</label><input type="text" id="input-nama-kepsek" value="IMAM TAUFIQ, ST"></div>
@@ -198,7 +197,7 @@
 
     <div id="tab-cetak" class="tab-content">
         <div class="action-header-bar">
-            <button onclick="window.print()" class="btn-tambah" style="background-color: #E91E63;">🖨️ Cetak Jadwal (Kertas F4)</button>
+            <button onclick="window.cetakJadwal()" class="btn-tambah" style="background-color: #E91E63;">🖨️ Cetak Jadwal (Kertas F4)</button>
             <div class="box-filter-ceklis">
                 <span style="margin-right: 5px; color: #555;">Tampilkan Kelas:</span>
                 <label><input type="checkbox" class="chk-kelas-cetak" value="I" checked onchange="window.generateTampilanF4()"> I</label>
@@ -211,14 +210,14 @@
         </div>
         
         <div class="preview-area">
-            <div class="kertas-f4" id="kertas-preview">
+            <div class="kertas-f4" id="kertas-preview-jadwal">
                 <div class="kop-surat">
-                    <img id="img-logo-kop" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_Kementerian_Agama_Republik_Indonesia.svg/200px-Logo_Kementerian_Agama_Republik_Indonesia.svg.png" alt="Logo" class="logo-cetak">
-                    <div id="teks-kop-1" style="font-size: 15px;">LEMBAGA PENDIDIKAN MA'ARIF NU</div>
-                    <div id="teks-kop-2" style="font-size: 20px; font-weight: 900; letter-spacing: 0.5px;">MI. HIDAYATUS SHIBYAN</div>
-                    <div id="teks-kop-3" style="font-size: 13px;">KENDALKEMLAGI KARANGGENENG LAMONGAN</div>
-                    <div id="teks-kop-4" style="font-size: 11px; font-weight: normal;">STATUS : TERAKRIDITASI "A" NSM : 111235240168</div>
-                    <div id="teks-kop-5" style="font-size: 10px; font-weight: normal; font-style: italic;">BHPNU SK. Kemenkumham RI. Nomor AHU-119.AH.01.08 Tahun 2013</div>
+                    <img id="img-logo-kop-jadwal" src="" alt="Logo" class="logo-cetak" style="display:none;">
+                    <div id="teks-kop-1-jadwal" style="font-size: 15px;">LEMBAGA PENDIDIKAN MA'ARIF NU</div>
+                    <div id="teks-kop-2-jadwal" style="font-size: 20px; font-weight: 900; letter-spacing: 0.5px;">MI. HIDAYATUS SHIBYAN</div>
+                    <div id="teks-kop-3-jadwal" style="font-size: 13px;">KENDALKEMLAGI KARANGGENENG LAMONGAN</div>
+                    <div id="teks-kop-4-jadwal" style="font-size: 11px; font-weight: normal;">STATUS : TERAKRIDITASI "A" NSM : 111235240168</div>
+                    <div id="teks-kop-5-jadwal" style="font-size: 10px; font-weight: normal; font-style: italic;">BHPNU SK. Kemenkumham RI. Nomor AHU-119.AH.01.08 Tahun 2013</div>
                 </div>
                 
                 <div class="judul-jadwal" id="teks-judul-jadwal">JADWAL SUMATIF AKHIR SEMESTER GANJIL TAHUN PELAJARAN 2025/2026</div>
@@ -250,10 +249,72 @@
                         </div>
                     </div>
                     <div class="ttd-panitia">
-                        <p id="k-tgl-surat">Lamongan, 27 Mei 2026</p>
-                        <p id="k-jabatan">Panitia SAS</p>
-                        <div class="ttd-box-area"><img id="img-ttd-preview" src="" alt="TTD" style="display: none;"></div>
-                        <p class="name" id="k-kepsek">IMAM TAUFIQ, ST</p>
+                        <p id="k-tgl-surat-jadwal">Lamongan, 27 Mei 2026</p>
+                        <p id="k-jabatan-jadwal">Panitia SAS</p>
+                        <div class="ttd-box-area"><img id="img-ttd-preview-jadwal" src="" alt="TTD" style="display: none;"></div>
+                        <p class="name" id="k-kepsek-jadwal">IMAM TAUFIQ, ST</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-daftar-hadir" class="tab-content">
+        <div class="action-header-bar">
+            <select id="filter-tanggal-hadir" class="select-filter-kelas" style="width: 250px;" onchange="window.renderDaftarHadir()">
+                <option value="">-- Pilih Tanggal --</option>
+            </select>
+            <button onclick="window.cetakDaftarHadir()" class="btn-tambah" style="background-color: #2196F3;">🖨️ Cetak Daftar Hadir (F4)</button>
+        </div>
+
+        <div class="preview-area">
+            <div class="kertas-f4" id="kertas-preview-hadir">
+                <div class="kop-surat">
+                    <img id="img-logo-kop-hadir" src="" alt="Logo" class="logo-cetak" style="display:none;">
+                    <div id="teks-kop-1-hadir" style="font-size: 15px;">LEMBAGA PENDIDIKAN MA'ARIF NU</div>
+                    <div id="teks-kop-2-hadir" style="font-size: 20px; font-weight: 900; letter-spacing: 0.5px;">MI. HIDAYATUS SHIBYAN</div>
+                    <div id="teks-kop-3-hadir" style="font-size: 13px;">KENDALKEMLAGI KARANGGENENG LAMONGAN</div>
+                    <div id="teks-kop-4-hadir" style="font-size: 11px; font-weight: normal;">STATUS : TERAKRIDITASI "A" NSM : 111235240168</div>
+                    <div id="teks-kop-5-hadir" style="font-size: 10px; font-weight: normal; font-style: italic;">BHPNU SK. Kemenkumham RI. Nomor AHU-119.AH.01.08 Tahun 2013</div>
+                </div>
+                
+                <div style="text-align: center; font-weight: bold; margin: 20px 0; font-size: 14px; line-height: 1.4;">
+                    DAFTAR HADIR PENGAWAS<br>
+                    SUMATIF AKHIR SEMESTER GANJIL<br>
+                    TAHUN AJARAN 2025/2026
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <table style="border: none; font-weight: bold; font-size: 12px;">
+                        <tr><td style="border: none; padding: 3px 10px 3px 0;">Hari</td><td style="border: none; padding: 3px;">: <span id="hadir-hari-teks">-</span></td></tr>
+                        <tr><td style="border: none; padding: 3px 10px 3px 0;">Tanggal</td><td style="border: none; padding: 3px;">: <span id="hadir-tanggal-teks">-</span></td></tr>
+                    </table>
+                </div>
+
+                <table class="tabel-jadwal">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 40px; padding: 5px;">NO</th>
+                            <th rowspan="2" style="padding: 5px;">NAMA</th>
+                            <th colspan="2" style="padding: 5px;">TANDA TANGAN</th>
+                            <th rowspan="2" style="width: 100px; padding: 5px;">KET</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 120px; padding: 5px;">JAM 1</th>
+                            <th style="width: 120px; padding: 5px;">JAM 2</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-daftar-hadir">
+                        <tr><td colspan="5" style="text-align:center; height: 35px;">Pilih tanggal terlebih dahulu</td></tr>
+                    </tbody>
+                </table>
+                
+                <div class="footer-section" style="justify-content: flex-end;">
+                    <div class="ttd-panitia">
+                        <p id="k-tgl-surat-hadir">Lamongan, 27 Mei 2026</p>
+                        <p id="k-jabatan-hadir">Panitia SAS</p>
+                        <div class="ttd-box-area"><img id="img-ttd-preview-hadir" src="" alt="TTD" style="display: none;"></div>
+                        <p class="name" id="k-kepsek-hadir">IMAM TAUFIQ, ST</p>
                     </div>
                 </div>
             </div>
@@ -329,7 +390,7 @@
     window.lastSelectedDate = "";
     const daftarKelas = ['I', 'II', 'III', 'IV', 'V', 'VI'];
 
-    const namaGuruMap = {
+    window.namaGuruMap = {
         "A": "IMAM TAUFIQ, ST", "B": "SUBIANTO, S.Pd", "C": "MUHAMMAD NURIL, S.AG",
         "D": "YUSUF, S.Pd", "E": "MOH. YASIN", "F": "Dra. UMU SYAROFAH",
         "G": "MUSTIKA, S.Pd", "H": "MUNAFIAH, S.Pd", "I": "MUHAIMINAH, S.Pd",
@@ -353,7 +414,7 @@
         if(!dateString) return '';
         const listBulan = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AGU', 'SEP', 'OKT', 'NOV', 'DES'];
         const d = new Date(dateString);
-        return `${String(d.getDate()).padStart(2, '0')}-${listBulan[d.getMonth()]}-${d.getFullYear()}`;
+        return `${String(d.getDate()).padStart(2, '0')} ${listBulan[d.getMonth()]} ${d.getFullYear()}`;
     }
 
     function bukaTab(tabId, btnElement) {
@@ -364,6 +425,7 @@
         
         if(tabId === 'tab-cetak') { window.generateTampilanF4(); }
         if(tabId === 'tab-jumlah-jam') { window.renderJumlahJam(); }
+        if(tabId === 'tab-daftar-hadir') { window.renderDropdownTanggalHadir(); }
     }
 
     function bukaModalJadwal(idEdit = null) {
@@ -393,7 +455,25 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 window.logoGlobalSrc = e.target.result; 
-                document.getElementById('img-logo-kop').src = window.logoGlobalSrc;
+                document.getElementById('img-logo-kop-jadwal').src = window.logoGlobalSrc;
+                document.getElementById('img-logo-kop-jadwal').style.display = 'block';
+                document.getElementById('img-logo-kop-hadir').src = window.logoGlobalSrc;
+                document.getElementById('img-logo-kop-hadir').style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function gantiTTD(event) {
+        const file = event.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                window.ttdGlobalSrc = e.target.result; 
+                const imgTtdJadwal = document.getElementById('img-ttd-preview-jadwal');
+                imgTtdJadwal.src = window.ttdGlobalSrc; imgTtdJadwal.style.display = 'block';
+                const imgTtdHadir = document.getElementById('img-ttd-preview-hadir');
+                imgTtdHadir.src = window.ttdGlobalSrc; imgTtdHadir.style.display = 'block';
             }
             reader.readAsDataURL(file);
         }
@@ -403,36 +483,22 @@
         const tbody = document.getElementById('tabel-jumlah-jam-body');
         tbody.innerHTML = '';
         const hitungJam = {};
-        Object.keys(namaGuruMap).forEach(kode => { hitungJam[kode] = 0; });
+        Object.keys(window.namaGuruMap).forEach(kode => { hitungJam[kode] = 0; });
 
         window.dbJadwal.forEach(j => {
             if (j.kodeGuru && hitungJam[j.kodeGuru] !== undefined) { hitungJam[j.kodeGuru]++; }
         });
 
         let nomor = 1;
-        Object.keys(namaGuruMap).forEach(kode => {
+        Object.keys(window.namaGuruMap).forEach(kode => {
             tbody.innerHTML += `
                 <tr>
                     <td style="text-align: center;">${nomor++}</td>
                     <td style="text-align: center; font-weight: bold; background: #fafafa;">${kode}</td>
-                    <td>${namaGuruMap[kode]}</td>
+                    <td>${window.namaGuruMap[kode]}</td>
                     <td style="text-align: center; font-weight: bold; color: #2196F3;">${hitungJam[kode]} Sesi (Jam)</td>
                 </tr>`;
         });
-    }
-
-    function gantiTTD(event) {
-        const file = event.target.files[0];
-        if(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                window.ttdGlobalSrc = e.target.result; 
-                const imgTtd = document.getElementById('img-ttd-preview');
-                imgTtd.src = window.ttdGlobalSrc;
-                imgTtd.style.display = 'block';
-            }
-            reader.readAsDataURL(file);
-        }
     }
 
     window.renderTabelApp = function() {
@@ -446,9 +512,7 @@
             return a.tanggal.localeCompare(b.tanggal) || a.sesi - b.sesi;
         });
 
-        let nomorUrut = 1;
-        let adaData = false;
-
+        let nomorUrut = 1; let adaData = false;
         dbJadwalDiurutkan.forEach((d) => {
             if (filterValue !== "Semua" && d.kelas !== filterValue) return; 
             adaData = true;
@@ -458,11 +522,8 @@
             tbody.innerHTML += `
                 <tr>
                     <td style="text-align:center;">${nomorUrut++}</td>
-                    <td>Kelas ${d.kelas}</td>
-                    <td>${hariTgl}</td>
-                    <td>Sesi ${d.sesi} (${jamText})</td>
-                    <td>${d.mapel}</td>
-                    <td style="text-align:center; font-weight:bold;">${d.kodeGuru}</td>
+                    <td>Kelas ${d.kelas}</td><td>${hariTgl}</td><td>Sesi ${d.sesi} (${jamText})</td>
+                    <td>${d.mapel}</td><td style="text-align:center; font-weight:bold;">${d.kodeGuru}</td>
                     <td style="text-align:center; white-space: nowrap;">
                         <button class="btn-edit" onclick="bukaModalJadwal(${d.id})">✏️</button>
                         <button class="btn-hapus" onclick="window.hapusDataJadwal(${d.id})">🗑️</button>
@@ -472,16 +533,74 @@
         if (!adaData) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada data jadwal untuk kelas ini.</td></tr>`;
     }
 
-    // PERBAIKAN: Fungsi Generate Matriks Tabel TanPA "TR di dalam TR"
+    // FUNGSI BARU: Render Dropdown Tanggal untuk Daftar Hadir
+    window.renderDropdownTanggalHadir = function() {
+        const select = document.getElementById('filter-tanggal-hadir');
+        const prevValue = select.value;
+        let tanggalUnik = [...new Set(window.dbJadwal.map(j => j.tanggal))].sort();
+        
+        select.innerHTML = '<option value="">-- Pilih Tanggal Ujian --</option>';
+        tanggalUnik.forEach(tgl => {
+            if(!tgl) return;
+            const text = `${dapatkanNamaHari(tgl)}, ${formatTanggalIndo(tgl)}`;
+            select.innerHTML += `<option value="${tgl}">${text}</option>`;
+        });
+
+        if(tanggalUnik.includes(prevValue)) { select.value = prevValue; }
+        else if (tanggalUnik.length > 0) { select.value = tanggalUnik[0]; }
+        window.renderDaftarHadir();
+    }
+
+    // FUNGSI BARU: Render Isi Tabel Daftar Hadir
+    window.renderDaftarHadir = function() {
+        const tgl = document.getElementById('filter-tanggal-hadir').value;
+        const tbody = document.getElementById('tbody-daftar-hadir');
+        const spanHari = document.getElementById('hadir-hari-teks');
+        const spanTanggal = document.getElementById('hadir-tanggal-teks');
+
+        if(!tgl) {
+            spanHari.innerText = "-"; spanTanggal.innerText = "-";
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; height: 35px;">Pilih tanggal terlebih dahulu</td></tr>';
+            return;
+        }
+
+        spanHari.innerText = dapatkanNamaHari(tgl);
+        spanTanggal.innerText = formatTanggalIndo(tgl);
+
+        const jadwalHariIni = window.dbJadwal.filter(j => j.tanggal === tgl);
+        const guruSet = new Set();
+        jadwalHariIni.forEach(j => { if(j.kodeGuru) guruSet.add(j.kodeGuru); });
+
+        let guruList = Array.from(guruSet).map(kode => {
+            return { kode: kode, nama: window.namaGuruMap[kode] || kode };
+        });
+        guruList.sort((a,b) => a.nama.localeCompare(b.nama));
+
+        tbody.innerHTML = '';
+        if(guruList.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; height: 35px;">Tidak ada pengawas di tanggal ini</td></tr>';
+            return;
+        }
+
+        let no = 1;
+        guruList.forEach(g => {
+            tbody.innerHTML += `
+                <tr>
+                    <td style="text-align:center; height: 40px;">${no}</td>
+                    <td style="text-align:left; padding-left: 10px;">${g.nama}</td>
+                    <td style="text-align:left; padding-left: 8px; font-size: 11px;">${no}.</td>
+                    <td style="text-align:left; padding-left: 8px; font-size: 11px;">${no}.</td>
+                    <td></td>
+                </tr>
+            `;
+            no++;
+        });
+    }
+
     window.generateTampilanF4 = function() {
-        // Ambil list tanggal unik yang terisi
         let filterTglRaw = window.dbJadwal.map(j => j.tanggal).filter(t => t);
         let tanggalUnikSelesai = [...new Set(filterTglRaw)].sort();
-        
-        // Jika database kosong, beri 1 kolom default agar tabel tidak hancur
-        if(tanggalUnikSelesai.length === 0) {
-            tanggalUnikSelesai = [new Date().toISOString().split('T')[0]];
-        }
+        if(tanggalUnikSelesai.length === 0) tanggalUnikSelesai = [new Date().toISOString().split('T')[0]];
 
         document.getElementById('header-hari-tanggal-utama').setAttribute('colspan', tanggalUnikSelesai.length);
         const trTgl = document.getElementById('header-tanggal');
@@ -498,50 +617,66 @@
 
         let kelasTerpilih = [];
         document.querySelectorAll('.chk-kelas-cetak:checked').forEach(chk => { kelasTerpilih.push(chk.value); });
-
         let nomorUrutCetak = 1;
 
         daftarKelas.forEach((kelas) => {
-            if (!kelasTerpilih.includes(kelas)) return; // Jangan tampilkan jika tidak di-ceklis
+            if (!kelasTerpilih.includes(kelas)) return;
 
-            // PEMBUATAN BARIS SESI 1
             let rowSesi1HTML = `<td rowspan="3" class="border-bawah-tebal">${nomorUrutCetak}</td><td rowspan="3" class="border-bawah-tebal">${kelas}</td><td>07.00 - 08.30</td>`;
             tanggalUnikSelesai.forEach(tglStr => {
                 let jCell = window.dbJadwal.find(j => j.kelas === kelas && j.tanggal === tglStr && j.sesi === 1);
                 rowSesi1HTML += jCell ? `<td><div class="cell-wrapper"><div class="kode-guru">${jCell.kodeGuru}</div><div class="mapel">${jCell.mapel}</div></div></td>` : `<td></td>`;
             });
-            let tr1 = document.createElement('tr');
-            tr1.innerHTML = rowSesi1HTML;
-            tbody.appendChild(tr1);
+            let tr1 = document.createElement('tr'); tr1.innerHTML = rowSesi1HTML; tbody.appendChild(tr1);
 
-            // PEMBUATAN BARIS ISTIRAHAT
             let tr2 = document.createElement('tr');
             tr2.innerHTML = `<td>08.30 - 09.00</td><td colspan="${tanggalUnikSelesai.length}" class="istirahat">ISTIRAHAT</td>`;
             tbody.appendChild(tr2);
 
-            // PEMBUATAN BARIS SESI 2 (Mengandung Garis Bawah Tebal)
             let rowSesi2HTML = `<td class="border-bawah-tebal">09.00 - 10.30</td>`;
             tanggalUnikSelesai.forEach(tglStr => {
                 let jCell = window.dbJadwal.find(j => j.kelas === kelas && j.tanggal === tglStr && j.sesi === 2);
                 rowSesi2HTML += jCell ? `<td class="border-bawah-tebal"><div class="cell-wrapper"><div class="kode-guru">${jCell.kodeGuru}</div><div class="mapel">${jCell.mapel}</div></div></td>` : `<td class="border-bawah-tebal"></td>`;
             });
-            let tr3 = document.createElement('tr');
-            tr3.innerHTML = rowSesi2HTML;
-            tbody.appendChild(tr3);
+            let tr3 = document.createElement('tr'); tr3.innerHTML = rowSesi2HTML; tbody.appendChild(tr3);
             
             nomorUrutCetak++;
         });
+    }
 
-        // Duplikat Tampilan Layar ke Area Cetak Khusus Print
-        document.getElementById('area-cetak').innerHTML = document.getElementById('kertas-preview').outerHTML;
+    // FUNGSI PRINT KHUSUS JADWAL
+    window.cetakJadwal = function() {
+        window.generateTampilanF4(); // Pastikan update
+        document.getElementById('area-cetak').innerHTML = document.getElementById('kertas-preview-jadwal').outerHTML;
+        window.print();
+    }
+
+    // FUNGSI PRINT KHUSUS DAFTAR HADIR
+    window.cetakDaftarHadir = function() {
+        window.renderDaftarHadir(); // Pastikan update
+        document.getElementById('area-cetak').innerHTML = document.getElementById('kertas-preview-hadir').outerHTML;
+        window.print();
     }
 
     function terapkanTeksKopKePreview(data) {
-        for(let i=1; i<=5; i++) { document.getElementById('teks-kop-'+i).innerText = data['t'+i] || ''; }
+        for(let i=1; i<=5; i++) { 
+            let val = data['t'+i] || '';
+            document.getElementById('teks-kop-'+i+'-jadwal').innerText = val; 
+            document.getElementById('teks-kop-'+i+'-hadir').innerText = val; 
+        }
         document.getElementById('teks-judul-jadwal').innerText = data.judul || 'JADWAL SUMATIF AKHIR SEMESTER GANJIL TAHUN PELAJARAN 2025/2026';
-        document.getElementById('k-tgl-surat').innerText = data.tglSurat || '';
-        document.getElementById('k-jabatan').innerText = data.jabatan || '';
-        document.getElementById('k-kepsek').innerText = data.kepsek || '';
+        
+        const tglSurat = data.tglSurat || '';
+        document.getElementById('k-tgl-surat-jadwal').innerText = tglSurat;
+        document.getElementById('k-tgl-surat-hadir').innerText = tglSurat;
+        
+        const jabatan = data.jabatan || '';
+        document.getElementById('k-jabatan-jadwal').innerText = jabatan;
+        document.getElementById('k-jabatan-hadir').innerText = jabatan;
+        
+        const kepsek = data.kepsek || '';
+        document.getElementById('k-kepsek-jadwal').innerText = kepsek;
+        document.getElementById('k-kepsek-hadir').innerText = kepsek;
     }
 </script>
 
@@ -569,7 +704,8 @@
             // Auto Update UI Setelah Data Dimuat
             window.renderTabelApp();
             window.renderJumlahJam();
-            window.generateTampilanF4(); 
+            window.generateTampilanF4();
+            window.renderDropdownTanggalHadir();
         } catch (error) { console.error("Gagal sinkronisasi data:", error); }
     }
 
@@ -586,16 +722,19 @@
                 
                 if(data.logo) {
                     window.logoGlobalSrc = data.logo;
-                    document.getElementById('img-logo-kop').src = data.logo;
+                    document.getElementById('img-logo-kop-jadwal').src = data.logo;
+                    document.getElementById('img-logo-kop-jadwal').style.display = 'block';
+                    document.getElementById('img-logo-kop-hadir').src = data.logo;
+                    document.getElementById('img-logo-kop-hadir').style.display = 'block';
                 }
                 if(data.ttd) {
                     window.ttdGlobalSrc = data.ttd;
-                    const imgTtd = document.getElementById('img-ttd-preview');
-                    imgTtd.src = data.ttd;
-                    imgTtd.style.display = 'block';
+                    const imgTtdJadwal = document.getElementById('img-ttd-preview-jadwal');
+                    imgTtdJadwal.src = data.ttd; imgTtdJadwal.style.display = 'block';
+                    const imgTtdHadir = document.getElementById('img-ttd-preview-hadir');
+                    imgTtdHadir.src = data.ttd; imgTtdHadir.style.display = 'block';
                 }
                 terapkanTeksKopKePreview(data);
-                window.generateTampilanF4(); // Re-render preview text
             }
         } catch (e) { console.error("Gagal muat Kop:", e); }
     }
@@ -625,7 +764,7 @@
         try {
             await set(ref(db, 'jadwal/' + targetId), dataJadwalBaru);
             tutupModalJadwal();
-            await muatDataFirebase(); // Trigger muat ulang dan generate ulang UI otomatis
+            await muatDataFirebase();
         } catch (e) { alert("Gagal menyimpan ke Firebase!"); }
     }
 
@@ -634,7 +773,7 @@
             document.getElementById('tabel-jadwal-body').innerHTML = `<tr><td colspan="7" style="text-align:center;">Menghapus data...</td></tr>`;
             try {
                 await remove(ref(db, 'jadwal/' + id));
-                await muatDataFirebase(); // Trigger muat ulang otomatis
+                await muatDataFirebase();
             } catch (e) { alert("Gagal menghapus!"); }
         }
     }
@@ -659,11 +798,11 @@
             terapkanTeksKopKePreview(dataKop);
             window.generateTampilanF4();
             alert("Pengaturan Berhasil Disimpan!");
-            bukaTab('tab-cetak', document.querySelectorAll('.tab-btn')[3]);
+            bukaTab('tab-cetak', document.querySelectorAll('.tab-btn')[3]); 
         } catch (e) { alert("Gagal menyimpan pengaturan!"); }
     }
 
-    // Auto-load ketika halaman pertama kali dibuka
+    // Auto-load saat pertama kali dibuka
     muatDataFirebase();
     muatPengaturanKop();
 </script>
