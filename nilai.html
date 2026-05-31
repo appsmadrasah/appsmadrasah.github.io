@@ -288,7 +288,6 @@
     async function initializeApp() {
       showFullPageLoading("Menghubungkan ke Firebase...");
       
-      // Fetch default data needed everywhere
       const [setRes, studRes, subjRes] = await Promise.all([
         fbRequest('settings'),
         fbRequest('students'),
@@ -319,6 +318,94 @@
       var num = Number(val);
       if (isNaN(num)) return val;
       return dbSettings.format_nilai === 'Bulat' ? Math.round(num) : num.toFixed(2);
+    }
+
+    // --- EXCEL LOGIC ---
+    function exportToExcel(dataArray, filename) {
+      try {
+        if(typeof XLSX === 'undefined') {
+          Swal.fire('Error', 'Library SheetJS gagal dimuat. Periksa koneksi internet Anda.', 'error');
+          return;
+        }
+        var ws = XLSX.utils.json_to_sheet(dataArray); 
+        var wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, "Template"); 
+        XLSX.writeFile(wb, filename + ".xlsx");
+        
+        Swal.fire({
+          icon: 'success', 
+          title: 'File Diunduh', 
+          toast: true, 
+          position: 'top-end', 
+          timer: 2000, 
+          showConfirmButton: false
+        });
+      } catch (e) {
+        console.error("Excel Export Error: ", e);
+        Swal.fire('Error', 'Gagal membuat file Excel: ' + e.message, 'error');
+      }
+    }
+
+    function downloadTemplateSiswa() { 
+      var data = [{
+        "NISN": "0012345678", 
+        "Nama Lengkap": "Contoh Nama Siswa", 
+        "Kelas": "XII-IPA 1", 
+        "Tahun Ajaran": "2025/2026", 
+        "Status": "Aktif"
+      }]; 
+      exportToExcel(data, "Template_Import_Siswa"); 
+    }
+
+    function downloadTemplateMapel() { 
+      var data = [{
+        "Kode": "PAI", 
+        "Nama Mata Pelajaran": "Pendidikan Agama Islam", 
+        "Kelompok": "A", 
+        "Urutan": 1, 
+        "Status Aktif": "Ya"
+      }]; 
+      exportToExcel(data, "Template_Import_Mapel"); 
+    }
+
+    function downloadTemplateRapor() { 
+      var mapel = document.getElementById('filterMapelRapor'); 
+      var mapelText = mapel && mapel.options.length > 0 ? mapel.options[mapel.selectedIndex].text : 'Mapel_Unknown'; 
+      if(dbRapor.length === 0) {
+        return Swal.fire('Peringatan', 'Belum ada data siswa di halaman ini.', 'warning'); 
+      }
+      var data = dbRapor.map(function(r) { 
+        return { 
+          "ID_Siswa (Jangan Diubah)": r.student_id, 
+          "NISN": r.nisn, 
+          "Nama Siswa": r.nama, 
+          "Kelas": r.kelas, 
+          "Semester 1": r.s1||0, 
+          "Semester 2": r.s2||0, 
+          "Semester 3": r.s3||0, 
+          "Semester 4": r.s4||0, 
+          "Semester 5": r.s5||0 
+        }; 
+      }); 
+      exportToExcel(data, "Template_Rapor_" + mapelText.replace(/[^a-zA-Z0-9]/g, "_")); 
+    }
+
+    function downloadTemplateUjian() { 
+      var mapel = document.getElementById('filterMapelUjian'); 
+      var mapelText = mapel && mapel.options.length > 0 ? mapel.options[mapel.selectedIndex].text : 'Mapel_Unknown'; 
+      if(dbUjian.length === 0) {
+        return Swal.fire('Peringatan', 'Belum ada data siswa di halaman ini.', 'warning'); 
+      }
+      var data = dbUjian.map(function(u) { 
+        return { 
+          "ID_Siswa (Jangan Diubah)": u.student_id, 
+          "NISN": u.nisn, 
+          "Nama Siswa": u.nama, 
+          "Kelas": u.kelas, 
+          "Nilai Ujian Akhir": u.nilai_ujian||0 
+        }; 
+      }); 
+      exportToExcel(data, "Template_Ujian_" + mapelText.replace(/[^a-zA-Z0-9]/g, "_")); 
     }
 
     // --- NAVIGATION ---
