@@ -991,7 +991,15 @@
       if(filteredStudents.length === 0) return Swal.fire('Warning', 'Tidak ada data siswa pada kelas terpilih.', 'warning');
       filteredStudents.sort(function(a, b) { return b.rata_ijazah - a.rata_ijazah; });
 
-      var subjects = dbIjazah.subjects; var thMapel = ''; subjects.forEach(sub => { thMapel += `<th class="rotate"><div><span>${sub.nama_mapel}</span></div></th>`; });
+      var subjects = dbIjazah.subjects; var thMapel = ''; 
+      subjects.forEach(sub => { 
+        var namaCetak = sub.nama_mapel;
+        if(namaCetak.toLowerCase().includes('sejarah kebudayaan islam')) namaCetak = 'SKI';
+        else if(namaCetak.toLowerCase().includes('ilmu pengetahuan alam dan sosial')) namaCetak = 'IPAS';
+        else if(namaCetak.toLowerCase().includes('seni budaya dan prakarya')) namaCetak = 'SBDP';
+        thMapel += `<th class="rotate"><div><span>${namaCetak}</span></div></th>`; 
+      });
+      
       var trData = ''; var currentRank = 1, prevScore = -1, displayRank = 1;
       
       filteredStudents.forEach(function(j, idx) {
