@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Nilai Ijazah</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-color: #0f5132;
+      --primary-light: #d1e7dd;
+      --secondary-color: #198754;
+      --bg-color: #f8f9fa;
+      --text-color: #2b3440;
+    }
+    
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-color); color: var(--text-color); overflow-x: hidden; }
+
+    /* Preloader */
+    #fullPageLoader { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(4px); }
+    .kemenag-spinner { position: relative; width: 100px; height: 100px; display: flex; justify-content: center; align-items: center; }
+    .kemenag-spinner .circle-spin { position: absolute; width: 100%; height: 100%; border: 4px solid var(--primary-light); border-top: 4px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; }
+    .kemenag-spinner img { width: 55px; z-index: 2; object-fit: contain; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* Layout & Nav */
+    .sidebar { width: 260px; height: 100vh; position: fixed; top: 0; left: 0; background: #fff; box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 1030; transition: 0.3s; }
+    .main-content { margin-left: 260px; min-height: 100vh; padding: 20px; transition: 0.3s; }
+    .nav-item-custom { padding: 12px 20px; color: #6c757d; display: flex; align-items: center; gap: 12px; font-weight: 500; cursor: pointer; transition: 0.2s; border-radius: 0 25px 25px 0; margin-right: 15px; margin-bottom: 5px; }
+    .nav-item-custom:hover { background: var(--primary-light); color: var(--primary-color); }
+    .nav-item-custom.active { background: var(--primary-color); color: #fff; }
+    
+    @media (max-width: 991.98px) {
+      .sidebar { left: -260px; }
+      .sidebar.active { left: 0; }
+      .main-content { margin-left: 0; }
+      .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1025; }
+      .sidebar-overlay.active { display: block; }
+    }
+
+    .placeholder-glow .placeholder { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    
+    .item-syncing { opacity: 0.6; pointer-events: none; }
+    .table-input { width: 70px; text-align: center; border: 1px solid #ced4da; border-radius: 4px; padding: 4px; }
+    .table-input:focus { border-color: var(--secondary-color); outline: none; }
+  </style>
+</head>
+<body>
+
+  <div id="fullPageLoader">
+    <div class="kemenag-spinner">
+      <div class="circle-spin"></div>
+      <img id="loaderLogo" src="https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg" alt="Logo">
+    </div>
+    <p class="mt-3 fw-semibold text-success" id="loaderText">SINKRONISASI FIREBASE...</p>
+  </div>
+
+  <input type="file" id="fileImportSiswa" class="d-none" accept=".xlsx, .xls" onchange="handleImportSiswa(event)">
+  <input type="file" id="fileImportMapel" class="d-none" accept=".xlsx, .xls" onchange="handleImportMapel(event)">
+  <input type="file" id="fileImportRapor" class="d-none" accept=".xlsx, .xls" onchange="handleImportRapor(event)">
+  <input type="file" id="fileImportUjian" class="d-none" accept=".xlsx, .xls" onchange="handleImportUjian(event)">
+
+  <div id="mainApp" class="d-none">
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar d-flex flex-column">
+      <div class="p-4 text-center border-bottom">
+        <img id="sidebarLogo" src="https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg" width="50" class="mb-2" style="object-fit: contain; max-height: 55px;">
+        <h6 class="fw-bold text-success mb-0" id="sidebarTitle">E-IJAZAH</h6>
+        <small class="text-muted" style="font-size: 11px;" id="sidebarSubtitle">Kemenag RI</small>
+      </div>
+      
+      <div class="flex-grow-1 overflow-auto py-3">
+        <div class="small text-muted px-4 mb-2 fw-bold" style="font-size: 11px;">MENU UTAMA</div>
+        <div class="nav-item-custom active" onclick="showPage('dashboard', this)"><i class="fa-solid fa-chart-pie fa-fw"></i> Dashboard</div>
+        
+        <div class="small text-muted px-4 mb-2 mt-4 fw-bold" style="font-size: 11px;">MASTER DATA</div>
+        <div class="nav-item-custom" onclick="showPage('students', this)"><i class="fa-solid fa-users fa-fw"></i> Data Siswa</div>
+        <div class="nav-item-custom" onclick="showPage('subjects', this)"><i class="fa-solid fa-book fa-fw"></i> Mata Pelajaran</div>
+        <div class="nav-item-custom" id="navSettings" onclick="showPage('settings', this)"><i class="fa-solid fa-sliders fa-fw"></i> Pengaturan Sistem</div>
+
+        <div class="small text-muted px-4 mb-2 mt-4 fw-bold" style="font-size: 11px;">NILAI & PROSES</div>
+        <div class="nav-item-custom" onclick="showPage('rapor', this)"><i class="fa-solid fa-pen-to-square fa-fw"></i> Nilai Rapor</div>
+        <div class="nav-item-custom" onclick="showPage('ujian', this)"><i class="fa-solid fa-file-pen fa-fw"></i> Nilai Ujian</div>
+        <div class="nav-item-custom" onclick="showPage('ijazah', this)"><i class="fa-solid fa-calculator fa-fw"></i> Proses Ijazah</div>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="d-flex align-items-center justify-content-between mb-4 d-lg-none bg-white p-3 rounded shadow-sm">
+        <h5 class="mb-0 fw-bold text-success"><i class="fa-solid fa-graduation-cap me-2"></i>E-Ijazah</h5>
+        <button class="btn btn-light border" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+      </div>
+
+      <div id="page-dashboard" class="page-container">
+        <h4 class="fw-bold mb-4">Dashboard</h4>
+        <div id="dashboardContainer"></div> 
+      </div>
+
+      <div id="page-students" class="page-container d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <h4 class="fw-bold mb-0">Data Siswa</h4>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-outline-success rounded-pill shadow-sm px-3" onclick="downloadTemplateSiswa()"><i class="fa-solid fa-download me-1"></i> Template</button>
+            <button class="btn btn-outline-primary rounded-pill shadow-sm px-3" onclick="document.getElementById('fileImportSiswa').click()"><i class="fa-solid fa-file-import me-1"></i> Import Excel</button>
+            <button class="btn btn-success rounded-pill shadow-sm px-3" onclick="openStudentModal()"><i class="fa-solid fa-plus me-1"></i> Tambah</button>
+          </div>
+        </div>
+        <div id="studentsContainer"></div>
+      </div>
+
+      <div id="page-subjects" class="page-container d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <h4 class="fw-bold mb-0">Mata Pelajaran</h4>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-outline-success rounded-pill shadow-sm px-3" onclick="downloadTemplateMapel()"><i class="fa-solid fa-download me-1"></i> Template</button>
+            <button class="btn btn-outline-primary rounded-pill shadow-sm px-3" onclick="document.getElementById('fileImportMapel').click()"><i class="fa-solid fa-file-import me-1"></i> Import Excel</button>
+            <button class="btn btn-success rounded-pill shadow-sm px-3" onclick="openSubjectModal()"><i class="fa-solid fa-plus me-1"></i> Tambah</button>
+          </div>
+        </div>
+        <div id="subjectsContainer"></div>
+      </div>
+
+      <div id="page-settings" class="page-container d-none">
+        <h4 class="fw-bold mb-4">Pengaturan Sistem</h4>
+        <div id="settingsContainer"></div>
+      </div>
+
+      <div id="page-rapor" class="page-container d-none">
+        <h4 class="fw-bold mb-4">Input Nilai Rapor</h4>
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+          <div class="card-body p-3 d-flex gap-2 align-items-center flex-wrap">
+            <span class="fw-bold ms-2">Mata Pelajaran:</span>
+            <select class="form-select w-auto min-w-200" id="filterMapelRapor" onchange="fetchRapor()"></select>
+            <div class="ms-auto d-flex gap-2 flex-wrap">
+              <button class="btn btn-outline-success rounded-pill px-3" onclick="downloadTemplateRapor()"><i class="fa-solid fa-download me-1"></i> Template</button>
+              <button class="btn btn-outline-primary rounded-pill px-3" onclick="document.getElementById('fileImportRapor').click()"><i class="fa-solid fa-file-import me-1"></i> Import</button>
+              <button class="btn btn-success rounded-pill px-3" id="btnSaveRapor" onclick="saveRaporMassal()"><i class="fa-solid fa-save me-1"></i> Simpan ke Firebase</button>
+            </div>
+          </div>
+        </div>
+        <div id="raporContainer"></div>
+      </div>
+
+      <div id="page-ujian" class="page-container d-none">
+        <h4 class="fw-bold mb-4">Input Nilai Ujian</h4>
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+          <div class="card-body p-3 d-flex gap-2 align-items-center flex-wrap">
+            <span class="fw-bold ms-2">Mata Pelajaran:</span>
+            <select class="form-select w-auto min-w-200" id="filterMapelUjian" onchange="fetchUjian()"></select>
+            <div class="ms-auto d-flex gap-2 flex-wrap">
+              <button class="btn btn-outline-success rounded-pill px-3" onclick="downloadTemplateUjian()"><i class="fa-solid fa-download me-1"></i> Template</button>
+              <button class="btn btn-outline-primary rounded-pill px-3" onclick="document.getElementById('fileImportUjian').click()"><i class="fa-solid fa-file-import me-1"></i> Import</button>
+              <button class="btn btn-success rounded-pill px-3" id="btnSaveUjian" onclick="saveUjianMassal()"><i class="fa-solid fa-save me-1"></i> Simpan ke Firebase</button>
+            </div>
+          </div>
+        </div>
+        <div id="ujianContainer"></div>
+      </div>
+
+      <div id="page-ijazah" class="page-container d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <h4 class="fw-bold mb-0">Proses Nilai Ijazah</h4>
+          <div class="d-flex gap-2 align-items-center flex-wrap">
+            <span class="fw-bold small text-muted">Filter Kelas:</span>
+            <select class="form-select form-select-sm w-auto rounded-pill px-3" id="filterKelasIjazah" onchange="renderIjazah()">
+              <option value="Semua">Semua Kelas</option>
+            </select>
+            <button class="btn btn-outline-danger btn-sm rounded-pill shadow-sm px-3 fw-bold" onclick="cetakPDFIjazah()">
+              <i class="fa-solid fa-file-pdf me-1"></i> Cetak PDF
+            </button>
+            <button class="btn btn-primary btn-sm rounded-pill shadow-sm px-3 fw-bold" id="btnProsesIjazah" onclick="fetchIjazah()">
+              <i class="fa-solid fa-gears me-1"></i> Kalkulasi Ulang (Tarik Firebase)
+            </button>
+          </div>
+        </div>
+        <div id="ijazahContainer"></div>
+      </div>
+
+      <footer class="text-center mt-5 mb-4">
+        <small class="text-muted">
+          by <a href="https://www.madrasahebat.com" target="_blank" class="text-decoration-none text-success fw-semibold">Madrasah Hebat Bermartabat</a>
+        </small>
+      </footer>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalStudent" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title fw-bold" id="titleStudent">Tambah Siswa</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formStudent">
+            <input type="hidden" id="studId"><input type="hidden" id="studIsEdit" value="false">
+            <div class="mb-3"><label class="form-label small fw-bold">NISN</label><input type="text" class="form-control" id="studNisn" required></div>
+            <div class="mb-3"><label class="form-label small fw-bold">Nama Lengkap</label><input type="text" class="form-control" id="studNama" required></div>
+            <div class="row">
+              <div class="col-md-6 mb-3"><label class="form-label small fw-bold">Kelas</label><input type="text" class="form-control" id="studKelas" placeholder="X-A" required></div>
+              <div class="col-md-6 mb-3"><label class="form-label small fw-bold">Tahun Ajaran</label><input type="text" class="form-control" id="studTahun" placeholder="2025/2026" required></div>
+            </div>
+            <div class="mb-3"><label class="form-label small fw-bold">Status</label><select class="form-select" id="studStatus"><option value="Aktif">Aktif</option><option value="Nonaktif">Nonaktif</option></select></div>
+          </form>
+        </div>
+        <div class="modal-footer bg-light border-top-0">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-success px-4" onclick="saveStudent()">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalSubject" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title fw-bold" id="titleSubject">Tambah Mapel</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formSubject">
+            <input type="hidden" id="subjId"><input type="hidden" id="subjIsEdit" value="false">
+            <div class="row">
+              <div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kode</label><input type="text" class="form-control" id="subjKode" required></div>
+              <div class="col-md-8 mb-3"><label class="form-label small fw-bold">Nama Mata Pelajaran</label><input type="text" class="form-control" id="subjNama" required></div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3"><label class="form-label small fw-bold">Kelompok</label><select class="form-select" id="subjKel"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="Muatan Lokal">Muatan Lokal</option></select></div>
+              <div class="col-md-6 mb-3"><label class="form-label small fw-bold">Urut</label><input type="number" class="form-control" id="subjUrut" value="1" required></div>
+            </div>
+            <div class="mb-3"><label class="form-label small fw-bold">Status Aktif</label><select class="form-select" id="subjAktif"><option value="Ya">Ya</option><option value="Tidak">Tidak</option></select></div>
+          </form>
+        </div>
+        <div class="modal-footer bg-light border-top-0">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-success px-4" onclick="saveSubject()">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // --- FIREBASE REST API INTEGRATION ---
+    const FB_URL = "https://nilai-63a30-default-rtdb.asia-southeast1.firebasedatabase.app";
+    
+    async function fbRequest(path, method = 'GET', body = null) {
+      const options = { method: method };
+      if (body) {
+        options.body = JSON.stringify(body);
+        options.headers = { 'Content-Type': 'application/json' };
+      }
+      try {
+        const res = await fetch(`${FB_URL}/${path}.json`, options);
+        if (!res.ok) throw new Error('Network response was not ok');
+        return await res.json();
+      } catch (err) {
+        console.error("Firebase Error:", err);
+        return null;
+      }
+    }
+
+    // --- STATE & DATA ---
+    var activePage = 'dashboard';
+    var tempLogoBase64 = null;
+    var dbStudents = [], dbSubjects = [];
+    var dbSettings = { 
+      persen_rapor: 60, persen_ujian: 40, 
+      nama_sekolah: 'Madrasah Hebat', alamat: 'Jl. Pendidikan No. 1', kota: 'Kota Anda', 
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg',
+      tahun_pelajaran: '2025/2026', kepala_sekolah: 'Ahmad Dahlan, S.Pd', format_nilai: 'Pecahan'
+    };
+    var dbRapor = [], dbUjian = [];
+    var dbIjazah = { subjects: [], students: [] };
+    
+    // Status Loader
+    var isStudLoaded = false, isSubjLoaded = false, isSetLoaded = false;
+
+    // --- INITIALIZATION ---
+    async function initializeApp() {
+      showFullPageLoading("Menghubungkan ke Firebase...");
+      
+      // Fetch default data needed everywhere
+      const [setRes, studRes, subjRes] = await Promise.all([
+        fbRequest('settings'),
+        fbRequest('students'),
+        fbRequest('subjects')
+      ]);
+
+      if (setRes) dbSettings = Object.assign(dbSettings, setRes);
+      if (studRes) dbStudents = Object.keys(studRes).map(k => ({...studRes[k], id: k}));
+      if (subjRes) dbSubjects = Object.keys(subjRes).map(k => ({...subjRes[k], id: k}));
+      
+      isSetLoaded = true; isStudLoaded = true; isSubjLoaded = true;
+      
+      updateAppProfile(dbSettings);
+      hideFullPageLoading();
+      document.getElementById('mainApp').classList.remove('d-none');
+      showPage('dashboard', document.querySelector('.nav-item-custom.active') || document.querySelectorAll('.nav-item-custom')[0]);
+    }
+
+    // --- PROFILE SYNC & FORMATTER ---
+    function updateAppProfile(profile) {
+      if(!profile) return;
+      if(profile.logo) { document.getElementById('sidebarLogo').src = profile.logo; document.getElementById('loaderLogo').src = profile.logo; }
+      if(profile.nama_sekolah) { document.getElementById('sidebarSubtitle').innerText = profile.nama_sekolah; }
+    }
+
+    function formatNilaiAkhir(val) {
+      if (val === '-' || val === undefined) return '-';
+      var num = Number(val);
+      if (isNaN(num)) return val;
+      return dbSettings.format_nilai === 'Bulat' ? Math.round(num) : num.toFixed(2);
+    }
+
+    // --- NAVIGATION ---
+    function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
+    function showPage(pageName, navEl) {
+      activePage = pageName;
+      document.querySelectorAll('.nav-item-custom').forEach(function(n) { n.classList.remove('active'); }); if (navEl) navEl.classList.add('active');
+      document.querySelectorAll('.page-container').forEach(function(p) { p.classList.add('d-none'); });
+      var target = document.getElementById('page-' + pageName); if (target) target.classList.remove('d-none');
+      if (window.innerWidth < 992) { document.querySelector('.sidebar').classList.remove('active'); document.querySelector('.sidebar-overlay').classList.remove('active'); }
+      loadPageData(pageName);
+    }
+
+    function loadPageData(pageName) {
+      if (pageName === 'dashboard') { renderDashboard(); } 
+      else if (pageName === 'students') { renderStudents(); }
+      else if (pageName === 'subjects') { renderSubjects(); }
+      else if (pageName === 'settings') { renderSettings(); }
+      else if (pageName === 'rapor') { initDropdowns('filterMapelRapor', fetchRapor); }
+      else if (pageName === 'ujian') { initDropdowns('filterMapelUjian', fetchUjian); }
+      else if (pageName === 'ijazah') { fetchIjazah(); }
+    }
+
+    function initDropdowns(selectId, callback) { 
+      var sel = document.getElementById(selectId); sel.innerHTML = ''; 
+      dbSubjects.filter(s => s.aktif === 'Ya').forEach(s => { 
+        sel.innerHTML += `<option value="${s.id}">${s.kode_mapel} - ${s.nama_mapel}</option>`; 
+      }); 
+      if(callback) callback(); 
+    }
+
+    // --- FIREBASE FETCHERS ---
+    async function fetchStudents() {
+      showSectionLoading('studentsContainer');
+      const res = await fbRequest('students');
+      dbStudents = res ? Object.keys(res).map(k => ({...res[k], id: k})) : [];
+      if(activePage === 'students') renderStudents();
+    }
+
+    async function fetchSubjects() {
+      showSectionLoading('subjectsContainer');
+      const res = await fbRequest('subjects');
+      dbSubjects = res ? Object.keys(res).map(k => ({...res[k], id: k})) : [];
+      if(activePage === 'subjects') renderSubjects();
+    }
+
+    async function fetchRapor() {
+      var mapelId = document.getElementById('filterMapelRapor').value; if(!mapelId) return; 
+      showSectionLoading('raporContainer');
+      const res = await fbRequest(`rapor/${mapelId}`);
+      
+      dbRapor = dbStudents.map(s => {
+        var r = res && res[s.id] ? res[s.id] : {s1:0, s2:0, s3:0, s4:0, s5:0};
+        var rata = ((Number(r.s1||0)+Number(r.s2||0)+Number(r.s3||0)+Number(r.s4||0)+Number(r.s5||0))/5).toFixed(2);
+        return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, s1: r.s1||0, s2: r.s2||0, s3: r.s3||0, s4: r.s4||0, s5: r.s5||0, rata: rata };
+      });
+      if(activePage === 'rapor') renderRapor();
+    }
+
+    async function fetchUjian() {
+      var mapelId = document.getElementById('filterMapelUjian').value; if(!mapelId) return; 
+      showSectionLoading('ujianContainer');
+      const res = await fbRequest(`ujian/${mapelId}`);
+      
+      dbUjian = dbStudents.map(s => {
+        var u = res && res[s.id] ? res[s.id] : {nilai_ujian: 0};
+        return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, nilai_ujian: u.nilai_ujian||0 };
+      });
+      if(activePage === 'ujian') renderUjian();
+    }
+
+    async function fetchIjazah() {
+      showSectionLoading('ijazahContainer');
+      const [raporRes, ujianRes] = await Promise.all([fbRequest('rapor'), fbRequest('ujian')]);
+      
+      var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan);
+      var pctRapor = dbSettings.persen_rapor / 100;
+      var pctUjian = dbSettings.persen_ujian / 100;
+      
+      var studentsData = dbStudents.filter(s => s.status === 'Aktif').map(s => {
+          var scores = {};
+          var totalAkhir = 0;
+          var countMapel = 0;
+          
+          activeSubjects.forEach(sub => {
+              var s_rapor = raporRes && raporRes[sub.id] && raporRes[sub.id][s.id] ? raporRes[sub.id][s.id] : {s1:0, s2:0, s3:0, s4:0, s5:0};
+              var s_ujian = ujianRes && ujianRes[sub.id] && ujianRes[sub.id][s.id] ? ujianRes[sub.id][s.id] : {nilai_ujian:0};
+              
+              var rataRapor = (Number(s_rapor.s1||0)+Number(s_rapor.s2||0)+Number(s_rapor.s3||0)+Number(s_rapor.s4||0)+Number(s_rapor.s5||0))/5;
+              var nilaiUjian = Number(s_ujian.nilai_ujian||0);
+              
+              var finalScore = (rataRapor * pctRapor) + (nilaiUjian * pctUjian);
+              scores[sub.id] = finalScore;
+              totalAkhir += finalScore;
+              countMapel++;
+          });
+          
+          var rataIjazah = countMapel > 0 ? (totalAkhir / countMapel) : 0;
+          return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, scores: scores, total: totalAkhir, rata_ijazah: rataIjazah };
+      });
+      
+      dbIjazah = { subjects: activeSubjects, students: studentsData };
+      if(activePage === 'ijazah') renderIjazah();
+    }
+
+    function showSectionLoading(cId) { var c = document.getElementById(cId); if(!c) return; var skel = ''; for (var i=0; i<3; i++) skel += '<div class="card border-0 shadow-sm rounded-3 mb-3"><div class="card-body"><div class="placeholder-glow d-flex gap-3"><div class="placeholder rounded bg-light" style="width:50px;height:50px;"></div><div class="flex-grow-1"><span class="placeholder col-6 rounded"></span><span class="placeholder col-3 rounded mt-2" style="height:8px;"></span></div></div></div></div>'; c.innerHTML = skel; }
+    function showFullPageLoading(msg) { var l = document.getElementById('fullPageLoader'); if (!l) return; if (msg) document.getElementById('loaderText').innerText = msg; l.style.display = 'flex'; }
+    function hideFullPageLoading() { var l = document.getElementById('fullPageLoader'); if(l) l.style.display = 'none'; }
+
+    // --- RENDERERS ---
+    function renderDashboard() {
+      var c = document.getElementById('dashboardContainer');
+      c.innerHTML = 
+        `<div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-success text-white">
+              <div class="card-body p-4 d-flex align-items-center">
+                <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-3" style="width:60px;height:60px;"><i class="fa-solid fa-users fa-2x"></i></div>
+                <div><h3 class="fw-bold mb-0">${dbStudents.length}</h3><small class="opacity-75">Total Siswa Terdaftar</small></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-primary text-white">
+              <div class="card-body p-4 d-flex align-items-center">
+                <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-3" style="width:60px;height:60px;"><i class="fa-solid fa-book fa-2x"></i></div>
+                <div><h3 class="fw-bold mb-0">${dbSubjects.length}</h3><small class="opacity-75">Mata Pelajaran</small></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card border-0 shadow-sm rounded-4"><div class="card-body p-5 text-center"><img src="${dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="90" class="mb-3" style="object-fit:contain;"><h4 class="fw-bold text-success mb-1">Selamat Datang di ${dbSettings.nama_sekolah || 'Aplikasi E-Ijazah'}</h4><p class="text-muted small">Sistem Informasi Pengolahan Nilai Ijazah Terpadu Tahun Ajaran ${dbSettings.tahun_pelajaran || '-'}</p></div></div>`;
+    }
+
+    function renderStudents() {
+      var c = document.getElementById('studentsContainer'); if (dbStudents.length === 0) { c.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-inbox fa-3x text-muted mb-3 opacity-25"></i><p>Belum ada data siswa</p></div>'; return; }
+      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>NISN</th><th>Nama Lengkap</th><th>Kelas</th><th>TA</th><th>Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
+      dbStudents.forEach(function(item) { var bdg = item.status === 'Aktif' ? 'bg-success' : 'bg-secondary'; h += '<tr><td><span class="fw-semibold">' + item.nisn + '</span></td><td>' + item.nama + '</td><td><span class="badge bg-light text-dark border">' + item.kelas + '</span></td><td><small class="text-muted">' + item.tahun_ajaran + '</small></td><td><span class="badge ' + bdg + '">' + item.status + '</span></td><td class="text-end"><button class="btn btn-sm btn-light border me-1" onclick="editStudent(\''+item.id+'\')"><i class="fa-solid fa-pen text-primary"></i></button><button class="btn btn-sm btn-light border" onclick="deleteStudent(\''+item.id+'\')"><i class="fa-solid fa-trash text-danger"></i></button></td></tr>'; });
+      c.innerHTML = h + '</tbody></table></div></div>';
+    }
+
+    function renderSubjects() {
+      var c = document.getElementById('subjectsContainer'); if (dbSubjects.length === 0) { c.innerHTML = '<div class="text-center py-5"><p>Belum ada data mapel</p></div>'; return; }
+      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>Urut</th><th>Kode</th><th>Mata Pelajaran</th><th>Kelompok</th><th>Aktif</th><th class="text-end">Aksi</th></tr></thead><tbody>';
+      var srt = dbSubjects.slice().sort(function(a,b){return a.urutan-b.urutan;});
+      srt.forEach(function(item) { var bdg = item.aktif === 'Ya' ? 'bg-success' : 'bg-danger'; h += '<tr><td>'+item.urutan+'</td><td><span class="fw-semibold">'+item.kode_mapel+'</span></td><td>'+item.nama_mapel+'</td><td><span class="badge bg-light text-dark border">Kel '+item.kelompok+'</span></td><td><span class="badge '+bdg+'">'+item.aktif+'</span></td><td class="text-end"><button class="btn btn-sm btn-light border me-1" onclick="editSubject(\''+item.id+'\')"><i class="fa-solid fa-pen text-primary"></i></button><button class="btn btn-sm btn-light border" onclick="deleteSubject(\''+item.id+'\')"><i class="fa-solid fa-trash text-danger"></i></button></td></tr>'; });
+      c.innerHTML = h + '</tbody></table></div></div>';
+    }
+
+    function renderSettings() {
+      tempLogoBase64 = null;
+      var c = document.getElementById('settingsContainer');
+      c.innerHTML = 
+        `<form id="formSetting" onsubmit="event.preventDefault(); saveSettingsOpt();"><div class="row g-4 mb-4"><div class="col-lg-7"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-school me-2"></i>Profil Madrasah</h6></div><div class="card-body p-4"><div class="mb-3"><label class="form-label small fw-bold">Nama Madrasah</label><input type="text" class="form-control" id="setNamaSekolah" value="${dbSettings.nama_sekolah||''}" required></div><div class="mb-3"><label class="form-label small fw-bold">Alamat Madrasah</label><textarea class="form-control" id="setAlamat" rows="2">${dbSettings.alamat||''}</textarea></div><div class="row"><div class="col-md-6 mb-3"><label class="form-label small fw-bold">Kota/Kabupaten</label><input type="text" class="form-control" id="setKota" value="${dbSettings.kota||''}"></div><div class="col-md-6 mb-3"><label class="form-label small fw-bold">Tahun Pelajaran</label><input type="text" class="form-control" id="setTahun" value="${dbSettings.tahun_pelajaran||''}" required></div></div><div class="mb-3"><label class="form-label small fw-bold">Nama Kepala Madrasah</label><input type="text" class="form-control" id="setKepala" value="${dbSettings.kepala_sekolah||''}" required></div><div class="mb-2"><label class="form-label small fw-bold">Upload Logo (JPG/PNG)</label><input type="file" class="form-control" id="setLogoFile" accept=".jpg, .jpeg, .png" onchange="previewLogo(event)"><div class="mt-2 text-center"><img id="previewLogoImg" src="${dbSettings.logo||'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="60" style="object-fit:contain; border:1px solid #ddd; padding:5px; border-radius:5px;"></div></div></div></div></div><div class="col-lg-5"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-scale-balanced me-2"></i>Bobot Nilai Kalkulasi (%)</h6></div><div class="card-body p-4"><div class="alert alert-info border-0 bg-info bg-opacity-10 text-info-emphasis d-flex gap-2 small"><i class="fa-solid fa-circle-info mt-1"></i><span>Total bobot wajib 100%.</span></div><div class="mb-4"><label class="fw-bold mb-2 small">Bobot Rapor (Sem 1-5)</label><div class="input-group"><input type="number" class="form-control form-control-lg" id="setRapor" value="${dbSettings.persen_rapor}" required oninput="document.getElementById('setUjian').value = 100 - (parseInt(this.value)||0)"><span class="input-group-text bg-white">%</span></div></div><div class="mb-2"><label class="fw-bold mb-2 small">Bobot Ujian Akhir</label><div class="input-group"><input type="number" class="form-control form-control-lg bg-light" id="setUjian" value="${dbSettings.persen_ujian}" readonly><span class="input-group-text bg-white">%</span></div></div><div class="mt-4 border-top pt-3"><label class="fw-bold mb-2 small">Format Nilai Akhir</label><select class="form-select form-select-lg" id="setFormatNilai"><option value="Bulat" ${dbSettings.format_nilai === 'Bulat' ? 'selected' : ''}>Bulat (Contoh: 88)</option><option value="Pecahan" ${dbSettings.format_nilai === 'Pecahan' ? 'selected' : ''}>Pecahan (Contoh: 87.50)</option></select></div></div></div></div></div><div class="text-end"><button type="submit" class="btn btn-success px-5 rounded-pill shadow-sm py-2 fw-bold" id="btnSaveSet"><i class="fa-solid fa-save me-2"></i>Simpan ke Firebase</button></div></form>`;
+    }
+
+    function renderRapor() {
+      var c = document.getElementById('raporContainer'); if(dbRapor.length===0){ c.innerHTML='<div class="text-center py-5 text-muted"><i class="fa-solid fa-users fa-3x mb-3 opacity-25"></i><p>Tidak ada data. Silakan tambah siswa atau import.</p></div>'; return; }
+      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th>Smt 1</th><th>Smt 2</th><th>Smt 3</th><th>Smt 4</th><th>Smt 5</th><th>Rata-rata</th></tr></thead><tbody id="bodyRapor">';
+      dbRapor.forEach(function(r) { h += '<tr><td>'+r.nisn+'</td><td><span class="fw-semibold">'+r.nama+'</span></td><td>'+r.kelas+'</td><td><input type="number" class="table-input rep-val" data-id="'+r.student_id+'" data-sem="s1" value="'+r.s1+'"></td><td><input type="number" class="table-input rep-val" data-id="'+r.student_id+'" data-sem="s2" value="'+r.s2+'"></td><td><input type="number" class="table-input rep-val" data-id="'+r.student_id+'" data-sem="s3" value="'+r.s3+'"></td><td><input type="number" class="table-input rep-val" data-id="'+r.student_id+'" data-sem="s4" value="'+r.s4+'"></td><td><input type="number" class="table-input rep-val" data-id="'+r.student_id+'" data-sem="s5" value="'+r.s5+'"></td><td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">'+r.rata+'</span></td></tr>'; });
+      c.innerHTML = h + '</tbody></table></div></div>';
+    }
+
+    function renderUjian() {
+      var c = document.getElementById('ujianContainer'); if(dbUjian.length===0){ c.innerHTML='<div class="text-center py-5 text-muted"><p>Tidak ada data. Silakan tambah siswa atau import.</p></div>'; return; }
+      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th>Nilai Ujian Akhir</th></tr></thead><tbody id="bodyUjian">';
+      dbUjian.forEach(function(u) { h += '<tr><td>'+u.nisn+'</td><td><span class="fw-semibold">'+u.nama+'</span></td><td>'+u.kelas+'</td><td><input type="number" class="table-input exam-val" data-id="'+u.student_id+'" value="'+u.nilai_ujian+'"></td></tr>'; });
+      c.innerHTML = h + '</tbody></table></div></div>';
+    }
+
+    function renderIjazah() {
+      var c = document.getElementById('ijazahContainer');
+      if(!dbIjazah.students || dbIjazah.students.length === 0) { c.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-calculator fa-3x text-muted opacity-25 mb-3"></i><p>Belum ada kalkulasi terbaru dari Firebase. Klik "Kalkulasi Ulang".</p></div>'; return; }
+      
+      var subjects = dbIjazah.subjects; var allStudents = dbIjazah.students;
+      var filter = document.getElementById('filterKelasIjazah'); var currentVal = filter.value;
+      var classes = []; allStudents.forEach(function(s) { if(classes.indexOf(s.kelas) === -1) classes.push(s.kelas); }); classes.sort();
+      var opts = '<option value="Semua">Semua Kelas</option>'; classes.forEach(function(k) { opts += '<option value="'+k+'">'+k+'</option>'; });
+      filter.innerHTML = opts; if(classes.indexOf(currentVal) !== -1 || currentVal === 'Semua') filter.value = currentVal;
+      
+      var selectedKelas = filter.value;
+      var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
+      if(filteredStudents.length === 0) { c.innerHTML = '<div class="text-center py-5 text-muted"><p>Tidak ada data di kelas ini.</p></div>'; return; }
+      
+      filteredStudents.sort(function(a, b) { return b.rata_ijazah - a.rata_ijazah; });
+      var thMapel = ''; subjects.forEach(sub => { thMapel += `<th class="text-center text-nowrap" title="${sub.nama}">${sub.kode}</th>`; });
+      
+      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover table-bordered align-middle mb-0" style="font-size: 14px;"><thead class="table-light align-middle text-center"><tr><th rowspan="2">NISN</th><th rowspan="2" class="min-w-200">Nama Siswa</th><th rowspan="2">Kelas</th><th colspan="'+subjects.length+'">Nilai Akhir Ijazah (Per Mapel)</th><th rowspan="2">Jumlah<br>Nilai</th><th rowspan="2">Rata-<br>rata</th><th rowspan="2">Peringkat</th></tr><tr>' + thMapel + '</tr></thead><tbody>';
+      var currentRank = 1, prevScore = -1, displayRank = 1;
+      
+      filteredStudents.forEach(function(j) {
+        if(j.rata_ijazah !== prevScore) { displayRank = currentRank; prevScore = j.rata_ijazah; }
+        var tdMapel = '';
+        subjects.forEach(sub => { var val = j.scores[sub.id] !== undefined ? formatNilaiAkhir(j.scores[sub.id]) : '-'; tdMapel += '<td class="text-center">' + val + '</td>'; });
+        h += `<tr><td class="text-center">${j.nisn}</td><td class="text-nowrap"><span class="fw-semibold">${j.nama}</span></td><td class="text-center">${j.kelas}</td>${tdMapel}<td class="text-center fw-bold text-primary">${formatNilaiAkhir(j.total)}</td><td class="text-center"><span class="badge bg-success fs-6">${formatNilaiAkhir(j.rata_ijazah)}</span></td><td class="text-center"><span class="badge bg-danger fs-6">${displayRank}</span></td></tr>`;
+        currentRank++;
+      });
+      c.innerHTML = h + '</tbody></table></div></div>';
+    }
+
+    // --- FIREBASE CRUD & MASS SAVE LOGIC ---
+    function previewLogo(event) { var file = event.target.files[0]; if(!file) return; var reader = new FileReader(); reader.onload = function(e) { tempLogoBase64 = e.target.result; document.getElementById('previewLogoImg').src = tempLogoBase64; }; reader.readAsDataURL(file); }
+
+    async function saveSettingsOpt() { 
+      var payload = { persen_rapor: parseInt(document.getElementById('setRapor').value), persen_ujian: parseInt(document.getElementById('setUjian').value), nama_sekolah: document.getElementById('setNamaSekolah').value, alamat: document.getElementById('setAlamat').value, kota: document.getElementById('setKota').value, tahun_pelajaran: document.getElementById('setTahun').value, kepala_sekolah: document.getElementById('setKepala').value, logo: tempLogoBase64 ? tempLogoBase64 : dbSettings.logo, format_nilai: document.getElementById('setFormatNilai').value }; 
+      if(payload.persen_rapor + payload.persen_ujian !== 100) return Swal.fire('Warning','Total bobot rapor & ujian harus 100%','warning'); 
+      var btn = document.getElementById('btnSaveSet'); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...'; btn.disabled = true; 
+      
+      await fbRequest('settings', 'PUT', payload);
+      dbSettings = payload; updateAppProfile(dbSettings); 
+      btn.innerHTML = '<i class="fa-solid fa-save me-2"></i>Simpan ke Firebase'; btn.disabled = false; 
+      Swal.fire('Sukses','Konfigurasi tersimpan di database','success'); 
+    }
+
+    function openStudentModal(){ document.getElementById('formStudent').reset(); document.getElementById('studIsEdit').value='false'; document.getElementById('titleStudent').innerText='Tambah Siswa'; new bootstrap.Modal(document.getElementById('modalStudent')).show(); }
+    function editStudent(id){ var item=dbStudents.find(x => String(x.id)===String(id)); if(!item)return; document.getElementById('studId').value=item.id; document.getElementById('studIsEdit').value='true'; document.getElementById('studNisn').value=item.nisn; document.getElementById('studNama').value=item.nama; document.getElementById('studKelas').value=item.kelas; document.getElementById('studTahun').value=item.tahun_ajaran; document.getElementById('studStatus').value=item.status; document.getElementById('titleStudent').innerText='Edit Siswa'; new bootstrap.Modal(document.getElementById('modalStudent')).show(); }
+    
+    async function saveStudent(){ 
+      var p={ id:document.getElementById('studId').value, isEdit:document.getElementById('studIsEdit').value, nisn:document.getElementById('studNisn').value, nama:document.getElementById('studNama').value, kelas:document.getElementById('studKelas').value, tahun_ajaran:document.getElementById('studTahun').value, status:document.getElementById('studStatus').value }; 
+      if(!p.nisn||!p.nama) return Swal.fire('Error','Lengkapi form','warning'); 
+      var tId = p.isEdit === 'true' ? p.id : 'stud_'+Date.now(); 
+      var payload = { nisn: p.nisn, nama: p.nama, kelas: p.kelas, tahun_ajaran: p.tahun_ajaran, status: p.status };
+      bootstrap.Modal.getInstance(document.getElementById('modalStudent')).hide(); 
+      Swal.fire({icon:'info', title:'Menyimpan...', showConfirmButton:false});
+      await fbRequest(`students/${tId}`, 'PUT', payload);
+      await fetchStudents();
+      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false});
+    }
+
+    function deleteStudent(id){ 
+      Swal.fire({title:'Hapus data ini dari Firebase?',icon:'warning',showCancelButton:true,confirmButtonColor:'#dc3545',confirmButtonText:'Ya'}).then(async res => { 
+        if(!res.isConfirmed) return; 
+        await fbRequest(`students/${id}`, 'DELETE');
+        await fetchStudents();
+      }); 
+    }
+
+    function openSubjectModal(){ document.getElementById('formSubject').reset(); document.getElementById('subjIsEdit').value='false'; document.getElementById('titleSubject').innerText='Tambah Mapel'; new bootstrap.Modal(document.getElementById('modalSubject')).show(); }
+    function editSubject(id){ var item=dbSubjects.find(x => String(x.id)===String(id)); if(!item)return; document.getElementById('subjId').value=item.id; document.getElementById('subjIsEdit').value='true'; document.getElementById('subjKode').value=item.kode_mapel; document.getElementById('subjNama').value=item.nama_mapel; document.getElementById('subjKel').value=item.kelompok; document.getElementById('subjUrut').value=item.urutan; document.getElementById('subjAktif').value=item.aktif; document.getElementById('titleSubject').innerText='Edit Mapel'; new bootstrap.Modal(document.getElementById('modalSubject')).show(); }
+    
+    async function saveSubject(){ 
+      var p={ id:document.getElementById('subjId').value, isEdit:document.getElementById('subjIsEdit').value, kode_mapel:document.getElementById('subjKode').value, nama_mapel:document.getElementById('subjNama').value, kelompok:document.getElementById('subjKel').value, urutan:Number(document.getElementById('subjUrut').value), aktif:document.getElementById('subjAktif').value }; 
+      if(!p.kode_mapel||!p.nama_mapel) return Swal.fire('Error','Lengkapi form','warning'); 
+      var tId = p.isEdit === 'true' ? p.id : 'subj_'+Date.now(); 
+      var payload = { kode_mapel: p.kode_mapel, nama_mapel: p.nama_mapel, kelompok: p.kelompok, urutan: p.urutan, aktif: p.aktif };
+      bootstrap.Modal.getInstance(document.getElementById('modalSubject')).hide(); 
+      Swal.fire({icon:'info', title:'Menyimpan...', showConfirmButton:false});
+      await fbRequest(`subjects/${tId}`, 'PUT', payload);
+      await fetchSubjects();
+      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false});
+    }
+
+    function deleteSubject(id){ 
+      Swal.fire({title:'Hapus mapel ini dari Firebase?',icon:'warning',showCancelButton:true,confirmButtonColor:'#dc3545',confirmButtonText:'Ya'}).then(async res => { 
+        if(!res.isConfirmed) return; 
+        await fbRequest(`subjects/${id}`, 'DELETE');
+        await fetchSubjects();
+      }); 
+    }
+
+    async function saveRaporMassal() { 
+      var btn = document.getElementById('btnSaveRapor'); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...'; btn.disabled = true; 
+      var mapelId = document.getElementById('filterMapelRapor').value; 
+      var payload = {}; 
+      document.querySelectorAll('#bodyRapor tr').forEach(function(tr) { 
+        var id = tr.querySelector('input[data-sem="s1"]').getAttribute('data-id'); 
+        payload[id] = { 
+          s1: tr.querySelector('input[data-sem="s1"]').value || 0, s2: tr.querySelector('input[data-sem="s2"]').value || 0, s3: tr.querySelector('input[data-sem="s3"]').value || 0, s4: tr.querySelector('input[data-sem="s4"]').value || 0, s5: tr.querySelector('input[data-sem="s5"]').value || 0 
+        }; 
+      }); 
+      await fbRequest(`rapor/${mapelId}`, 'PATCH', payload);
+      btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan ke Firebase'; btn.disabled = false; 
+      await fetchRapor();
+      Swal.fire({icon:'success', title:'Tersimpan di Firebase', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
+    }
+
+    async function saveUjianMassal() { 
+      var btn = document.getElementById('btnSaveUjian'); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...'; btn.disabled = true; 
+      var mapelId = document.getElementById('filterMapelUjian').value; 
+      var payload = {}; 
+      document.querySelectorAll('#bodyUjian tr').forEach(function(tr) { 
+        var inpt = tr.querySelector('.exam-val'); 
+        payload[inpt.getAttribute('data-id')] = { nilai_ujian: inpt.value || 0 }; 
+      }); 
+      await fbRequest(`ujian/${mapelId}`, 'PATCH', payload);
+      btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan ke Firebase'; btn.disabled = false; 
+      await fetchUjian();
+      Swal.fire({icon:'success', title:'Tersimpan di Firebase', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
+    }
+
+    // --- EXCEL IMPORTERS TO FIREBASE ---
+    function parseExcel(file, callback) { var reader = new FileReader(); reader.onload = function(e) { try { var workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); callback(null, XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]])); } catch(err) { callback(err, null); } }; reader.readAsArrayBuffer(file); }
+    
+    function handleImportSiswa(e) { 
+      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
+      parseExcel(file, async function(err, json) { 
+        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
+        var payload = {};
+        json.forEach((r, idx) => {
+          var id = 'stud_' + Date.now() + '_' + idx;
+          var nisn = String(r['NISN']||''), nama = r['Nama Lengkap']||'';
+          if(nisn && nama) payload[id] = { nisn: nisn, nama: nama, kelas: r['Kelas']||'', tahun_ajaran: r['Tahun Ajaran']||'', status: r['Status']||'Aktif' };
+        });
+        if(Object.keys(payload).length === 0) return Swal.fire('Error', 'Format data tidak sesuai.', 'error'); 
+        Swal.fire({icon:'info', title:'Mengimpor ke Firebase...', showConfirmButton:false}); 
+        await fbRequest('students', 'PATCH', payload);
+        await fetchStudents();
+        Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
+      }); 
+    }
+    
+    function handleImportMapel(e) { 
+      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
+      parseExcel(file, async function(err, json) { 
+        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
+        var payload = {};
+        json.forEach((r, idx) => {
+          var id = 'subj_' + Date.now() + '_' + idx;
+          var k = String(r['Kode']||''), n = r['Nama Mata Pelajaran']||'';
+          if(k && n) payload[id] = { kode_mapel: k, nama_mapel: n, kelompok: r['Kelompok']||'A', urutan: Number(r['Urutan']||1), aktif: r['Status Aktif']||'Ya' };
+        });
+        if(Object.keys(payload).length === 0) return Swal.fire('Error', 'Format data tidak sesuai.', 'error'); 
+        Swal.fire({icon:'info', title:'Mengimpor ke Firebase...', showConfirmButton:false}); 
+        await fbRequest('subjects', 'PATCH', payload);
+        await fetchSubjects();
+        Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
+      }); 
+    }
+    
+    function handleImportRapor(e) { 
+      var file = e.target.files[0]; if(!file) return; e.target.value = ''; var mapelId = document.getElementById('filterMapelRapor').value; if(!mapelId) return; 
+      parseExcel(file, async function(err, json) { 
+        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
+        var payload = {};
+        json.forEach(r => {
+           var sId = r['ID_Siswa (Jangan Diubah)'];
+           if(sId) payload[sId] = { s1: r['Semester 1']||0, s2: r['Semester 2']||0, s3: r['Semester 3']||0, s4: r['Semester 4']||0, s5: r['Semester 5']||0 };
+        });
+        if(Object.keys(payload).length === 0) return Swal.fire('Error', 'ID Siswa tidak ditemukan.', 'error'); 
+        Swal.fire({icon:'info', title:'Mengimpor ke Firebase...', showConfirmButton:false}); 
+        await fbRequest(`rapor/${mapelId}`, 'PATCH', payload);
+        await fetchRapor();
+        Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
+      }); 
+    }
+    
+    function handleImportUjian(e) { 
+      var file = e.target.files[0]; if(!file) return; e.target.value = ''; var mapelId = document.getElementById('filterMapelUjian').value; if(!mapelId) return; 
+      parseExcel(file, async function(err, json) { 
+        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
+        var payload = {};
+        json.forEach(r => {
+           var sId = r['ID_Siswa (Jangan Diubah)'];
+           if(sId) payload[sId] = { nilai_ujian: r['Nilai Ujian Akhir']||0 };
+        });
+        if(Object.keys(payload).length === 0) return Swal.fire('Error', 'ID Siswa tidak ditemukan.', 'error'); 
+        Swal.fire({icon:'info', title:'Mengimpor ke Firebase...', showConfirmButton:false}); 
+        await fbRequest(`ujian/${mapelId}`, 'PATCH', payload);
+        await fetchUjian();
+        Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
+      }); 
+    }
+
+    // --- CETAK PDF ---
+    function cetakPDFIjazah() {
+      if(!dbIjazah.students || dbIjazah.students.length === 0) return Swal.fire('Gagal', 'Belum ada data nilai. Lakukan kalkulasi terlebih dahulu.', 'error');
+      var filterSelect = document.getElementById('filterKelasIjazah'); var selectedKelas = filterSelect.value;
+      var allStudents = dbIjazah.students; var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
+      if(filteredStudents.length === 0) return Swal.fire('Warning', 'Tidak ada data siswa pada kelas terpilih.', 'warning');
+      filteredStudents.sort(function(a, b) { return b.rata_ijazah - a.rata_ijazah; });
+
+      var subjects = dbIjazah.subjects; var thMapel = ''; subjects.forEach(sub => { thMapel += `<th class="rotate"><div><span>${sub.nama}</span></div></th>`; });
+      var trData = ''; var currentRank = 1, prevScore = -1, displayRank = 1;
+      
+      filteredStudents.forEach(function(j, idx) {
+        if(j.rata_ijazah !== prevScore) { displayRank = currentRank; prevScore = j.rata_ijazah; }
+        var tdMapel = ''; subjects.forEach(sub => { var val = j.scores[sub.id] !== undefined ? formatNilaiAkhir(j.scores[sub.id]) : '-'; tdMapel += `<td class="text-center">${val}</td>`; });
+        trData += `<tr><td class="text-center">${idx + 1}</td><td class="text-center">${j.nisn}</td><td>${j.nama}</td>${tdMapel}<td class="text-center fw-bold">${formatNilaiAkhir(j.total)}</td><td class="text-center fw-bold">${formatNilaiAkhir(j.rata_ijazah)}</td><td class="text-center fw-bold">${displayRank}</td></tr>`;
+        currentRank++;
+      });
+
+      var logoUrl = dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg';
+      var namaSekolah = dbSettings.nama_sekolah || 'Madrasah Hebat'; var thnPelajaran = dbSettings.tahun_pelajaran || '-';
+      var titleKelas = selectedKelas === 'Semua' ? 'Seluruh Kelas' : 'Kelas ' + selectedKelas;
+
+      var html = `
+      <html>
+      <head>
+        <title>Rekap Nilai Ijazah - ${titleKelas}</title>
+        <style>
+          body { font-family: Arial, sans-serif; font-size: 11px; margin: 20px; color: #000; }
+          .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; position: relative; }
+          .header img { height: 70px; position: absolute; left: 0; }
+          .header-content { text-align: center; width: 100%; }
+          .header h2 { margin: 0; padding: 0; font-size: 16px; font-weight: bold; text-transform: uppercase; }
+          .header h3 { margin: 5px 0 0 0; padding: 0; font-size: 18px; font-weight: bold; text-transform: uppercase; }
+          .header p { margin: 5px 0 0 0; font-size: 12px; }
+          .title { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 20px; text-transform: uppercase; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; page-break-inside: auto; }
+          tr { page-break-inside: avoid; page-break-after: auto; }
+          th, td { border: 1px solid #000; padding: 4px; }
+          th { background-color: #f0f0f0; text-align: center; vertical-align: middle; font-size: 10px; }
+          .text-center { text-align: center; }
+          .fw-bold { font-weight: bold; }
+          .rotate { height: 110px; white-space: nowrap; width: 35px; }
+          .rotate > div { transform: translate(0px, 45px) rotate(-90deg); width: 25px; }
+          .rotate > div > span { padding: 5px; }
+          @media print { @page { size: 330mm 215mm; margin: 10mm; } body { margin: 0; -webkit-print-color-adjust: exact; width: 100%; } }
+        </style>
+      </head>
+      <body>
+        <div class="header"><img src="${logoUrl}" alt="Logo"><div class="header-content"><h2>KEMENTERIAN AGAMA REPUBLIK INDONESIA</h2><h3>${namaSekolah}</h3><p>Tahun Pelajaran: ${thnPelajaran} | Daftar Kumpulan Nilai Ijazah</p></div></div>
+        <div class="title">REKAPITULASI NILAI IJAZAH - ${titleKelas}</div>
+        <table><thead><tr><th rowspan="2" style="width:25px;">No</th><th rowspan="2" style="width:70px;">NISN</th><th rowspan="2" style="width:160px;">Nama Siswa</th><th colspan="${subjects.length}">Nilai Ujian / Mata Pelajaran</th><th rowspan="2" style="width:50px;">Jumlah<br>Nilai</th><th rowspan="2" style="width:50px;">Rata-<br>rata</th><th rowspan="2" style="width:45px;">Peringkat</th></tr><tr>${thMapel}</tr></thead><tbody>${trData}</tbody></table>
+        <script>setTimeout(function() { window.print(); window.close(); }, 500);<\/script>
+      </body>
+      </html>`;
+      var printWin = window.open('', '_blank'); printWin.document.write(html); printWin.document.close();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeApp(); 
+    });
+  </script>
+</body>
+</html>
