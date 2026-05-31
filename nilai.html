@@ -1,4 +1,3 @@
-<!-- #by: www.madrasahebat.com-->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -9,7 +8,6 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <!-- Library SheetJS untuk Ekspor & Impor Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
@@ -61,7 +59,7 @@
       <div class="circle-spin"></div>
       <img id="loaderLogo" src="https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg" alt="Logo">
     </div>
-    <p class="mt-3 fw-semibold text-success" id="loaderText">SINKRONISASI FIREBASE...</p>
+    <p class="mt-3 fw-semibold text-success" id="loaderText">SINKRONISASI DATA...</p>
   </div>
 
   <input type="file" id="fileImportSiswa" class="d-none" accept=".xlsx, .xls" onchange="handleImportSiswa(event)">
@@ -100,13 +98,11 @@
         <button class="btn btn-light border" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
       </div>
 
-      <!-- PAGE: DASHBOARD -->
       <div id="page-dashboard" class="page-container">
         <h4 class="fw-bold mb-4">Dashboard</h4>
         <div id="dashboardContainer"></div> 
       </div>
 
-      <!-- PAGE: STUDENTS -->
       <div id="page-students" class="page-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <h4 class="fw-bold mb-0">Data Siswa</h4>
@@ -119,7 +115,6 @@
         <div id="studentsContainer"></div>
       </div>
 
-      <!-- PAGE: SUBJECTS -->
       <div id="page-subjects" class="page-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <h4 class="fw-bold mb-0">Mata Pelajaran</h4>
@@ -135,13 +130,11 @@
         <div id="subjectsContainer"></div>
       </div>
 
-      <!-- PAGE: SETTINGS -->
       <div id="page-settings" class="page-container d-none">
         <h4 class="fw-bold mb-4">Pengaturan Sistem</h4>
         <div id="settingsContainer"></div>
       </div>
 
-      <!-- PAGE: RAPOR -->
       <div id="page-rapor" class="page-container d-none">
         <h4 class="fw-bold mb-4">Input Nilai Rapor</h4>
         <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -151,14 +144,13 @@
             <div class="ms-auto d-flex gap-2 flex-wrap">
               <button class="btn btn-outline-success rounded-pill px-3 fw-semibold" onclick="downloadTemplateRapor()"><i class="fa-solid fa-file-excel me-1"></i> Download Template</button>
               <button class="btn btn-outline-primary rounded-pill px-3 fw-semibold" onclick="document.getElementById('fileImportRapor').click()"><i class="fa-solid fa-file-import me-1"></i> Import Multi-Sheet</button>
-              <button class="btn btn-success rounded-pill px-3 fw-bold" id="btnSaveRapor" onclick="saveRaporMassal()"><i class="fa-solid fa-save me-1"></i> Simpan Tabel</button>
+              <button class="btn btn-success rounded-pill px-3 fw-bold" id="btnSaveRapor" onclick="saveRaporMassal()"><i class="fa-solid fa-save me-1"></i> Simpan Data</button>
             </div>
           </div>
         </div>
         <div id="raporContainer"></div>
       </div>
 
-      <!-- PAGE: UJIAN -->
       <div id="page-ujian" class="page-container d-none">
         <h4 class="fw-bold mb-4">Input Nilai Ujian</h4>
         <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -168,14 +160,13 @@
             <div class="ms-auto d-flex gap-2 flex-wrap">
               <button class="btn btn-outline-success rounded-pill px-3" onclick="downloadTemplateUjian()"><i class="fa-solid fa-download me-1"></i> Template</button>
               <button class="btn btn-outline-primary rounded-pill px-3" onclick="document.getElementById('fileImportUjian').click()"><i class="fa-solid fa-file-import me-1"></i> Import</button>
-              <button class="btn btn-success rounded-pill px-3" id="btnSaveUjian" onclick="saveUjianMassal()"><i class="fa-solid fa-save me-1"></i> Simpan ke Firebase</button>
+              <button class="btn btn-success rounded-pill px-3" id="btnSaveUjian" onclick="saveUjianMassal()"><i class="fa-solid fa-save me-1"></i> Simpan Data</button>
             </div>
           </div>
         </div>
         <div id="ujianContainer"></div>
       </div>
 
-      <!-- PAGE: IJAZAH -->
       <div id="page-ijazah" class="page-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <h4 class="fw-bold mb-0">Proses Nilai Ijazah</h4>
@@ -188,7 +179,7 @@
               <i class="fa-solid fa-file-pdf me-1"></i> Cetak PDF
             </button>
             <button class="btn btn-primary btn-sm rounded-pill shadow-sm px-3 fw-bold" id="btnProsesIjazah" onclick="fetchIjazah()">
-              <i class="fa-solid fa-gears me-1"></i> Kalkulasi Ulang (Tarik Firebase)
+              <i class="fa-solid fa-gears me-1"></i> Kalkulasi Ulang (Sinkron Data)
             </button>
           </div>
         </div>
@@ -203,7 +194,6 @@
     </div>
   </div>
 
-  <!-- Modal Siswa -->
   <div class="modal fade" id="modalStudent" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content border-0 shadow">
@@ -231,7 +221,6 @@
     </div>
   </div>
 
-  <!-- Modal Mapel -->
   <div class="modal fade" id="modalSubject" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content border-0 shadow">
@@ -243,7 +232,7 @@
           <form id="formSubject">
             <input type="hidden" id="subjId"><input type="hidden" id="subjIsEdit" value="false">
             <div class="row">
-              <div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kode (cth: MTK)</label><input type="text" class="form-control" id="subjKode" required></div>
+              <div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kode Singkatan</label><input type="text" class="form-control" id="subjKode" placeholder="cth: MTK" required></div>
               <div class="col-md-8 mb-3"><label class="form-label small fw-bold">Nama Mata Pelajaran</label><input type="text" class="form-control" id="subjNama" required></div>
             </div>
             <div class="row">
@@ -271,7 +260,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // --- FIREBASE REST API INTEGRATION ---
     const FB_URL = "https://nilai-63a30-default-rtdb.asia-southeast1.firebasedatabase.app";
     
     async function fbRequest(path, method = 'GET', body = null) {
@@ -285,7 +273,7 @@
         if (!res.ok) throw new Error('Network response was not ok');
         return await res.json();
       } catch (err) {
-        console.error("Firebase Error:", err);
+        console.error("System Error:", err);
         return null;
       }
     }
@@ -303,7 +291,6 @@
     var dbRapor = [], dbUjian = [];
     var dbIjazah = { subjects: [], students: [] };
 
-    // --- DEFAULT 14 MAPEL ---
     const DEFAULT_MAPEL = [
       { id: "subj_01", kode_mapel: "QH", nama_mapel: "Al-Qur'an Hadis", kelompok: "PAI", urutan: 1, aktif: "Ya" },
       { id: "subj_02", kode_mapel: "AA", nama_mapel: "Akidah Akhlak", kelompok: "PAI", urutan: 2, aktif: "Ya" },
@@ -325,7 +312,7 @@
 
     // --- INITIALIZATION ---
     async function initializeApp() {
-      showFullPageLoading("Sinkronisasi & Perbaikan Database...");
+      showFullPageLoading("Sinkronisasi Data...");
       
       const [setRes, studRes, subjRes] = await Promise.all([
         fbRequest('settings'),
@@ -548,7 +535,7 @@
       if(callback) callback(); 
     }
 
-    // --- FIREBASE FETCHERS ---
+    // --- SYSTEM FETCHERS ---
     async function fetchStudents() {
       showSectionLoading('studentsContainer');
       const res = await fbRequest('students');
@@ -670,7 +657,7 @@
       tempLogoBase64 = null;
       var c = document.getElementById('settingsContainer');
       c.innerHTML = 
-        `<form id="formSetting" onsubmit="event.preventDefault(); saveSettingsOpt();"><div class="row g-4 mb-4"><div class="col-lg-7"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-school me-2"></i>Profil Madrasah</h6></div><div class="card-body p-4"><div class="mb-3"><label class="form-label small fw-bold">Nama Madrasah</label><input type="text" class="form-control" id="setNamaSekolah" value="${dbSettings.nama_sekolah||''}" required></div><div class="mb-3"><label class="form-label small fw-bold">Alamat Madrasah</label><textarea class="form-control" id="setAlamat" rows="2">${dbSettings.alamat||''}</textarea></div><div class="row"><div class="col-md-6 mb-3"><label class="form-label small fw-bold">Kota/Kabupaten</label><input type="text" class="form-control" id="setKota" value="${dbSettings.kota||''}"></div><div class="col-md-6 mb-3"><label class="form-label small fw-bold">Tahun Pelajaran</label><input type="text" class="form-control" id="setTahun" value="${dbSettings.tahun_pelajaran||''}" required></div></div><div class="mb-3"><label class="form-label small fw-bold">Nama Kepala Madrasah</label><input type="text" class="form-control" id="setKepala" value="${dbSettings.kepala_sekolah||''}" required></div><div class="mb-2"><label class="form-label small fw-bold">Upload Logo (JPG/PNG)</label><input type="file" class="form-control" id="setLogoFile" accept=".jpg, .jpeg, .png" onchange="previewLogo(event)"><div class="mt-2 text-center"><img id="previewLogoImg" src="${dbSettings.logo||'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="60" style="object-fit:contain; border:1px solid #ddd; padding:5px; border-radius:5px;"></div></div></div></div></div><div class="col-lg-5"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-scale-balanced me-2"></i>Bobot Nilai Kalkulasi (%)</h6></div><div class="card-body p-4"><div class="alert alert-info border-0 bg-info bg-opacity-10 text-info-emphasis d-flex gap-2 small"><i class="fa-solid fa-circle-info mt-1"></i><span>Total bobot wajib 100%.</span></div><div class="mb-4"><label class="fw-bold mb-2 small">Bobot Rapor (Sem 1-5)</label><div class="input-group"><input type="number" class="form-control form-control-lg" id="setRapor" value="${dbSettings.persen_rapor}" required oninput="document.getElementById('setUjian').value = 100 - (parseInt(this.value)||0)"><span class="input-group-text bg-white">%</span></div></div><div class="mb-2"><label class="fw-bold mb-2 small">Bobot Ujian Akhir</label><div class="input-group"><input type="number" class="form-control form-control-lg bg-light" id="setUjian" value="${dbSettings.persen_ujian}" readonly><span class="input-group-text bg-white">%</span></div></div><div class="mt-4 border-top pt-3"><label class="fw-bold mb-2 small">Format Nilai Akhir</label><select class="form-select form-select-lg" id="setFormatNilai"><option value="Bulat" ${dbSettings.format_nilai === 'Bulat' ? 'selected' : ''}>Bulat (Contoh: 88)</option><option value="Pecahan" ${dbSettings.format_nilai === 'Pecahan' ? 'selected' : ''}>Pecahan (Contoh: 87.50)</option></select></div></div></div></div></div><div class="text-end"><button type="submit" class="btn btn-success px-5 rounded-pill shadow-sm py-2 fw-bold" id="btnSaveSet"><i class="fa-solid fa-save me-2"></i>Simpan ke Firebase</button></div></form>`;
+        `<form id="formSetting" onsubmit="event.preventDefault(); saveSettingsOpt();"><div class="row g-4 mb-4"><div class="col-lg-7"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-school me-2"></i>Profil Madrasah</h6></div><div class="card-body p-4"><div class="mb-3"><label class="form-label small fw-bold">Nama Madrasah</label><input type="text" class="form-control" id="setNamaSekolah" value="${dbSettings.nama_sekolah||''}" required></div><div class="mb-3"><label class="form-label small fw-bold">Alamat Madrasah</label><textarea class="form-control" id="setAlamat" rows="2">${dbSettings.alamat||''}</textarea></div><div class="row"><div class="col-md-6 mb-3"><label class="form-label small fw-bold">Kota/Kabupaten</label><input type="text" class="form-control" id="setKota" value="${dbSettings.kota||''}"></div><div class="col-md-6 mb-3"><label class="form-label small fw-bold">Tahun Pelajaran</label><input type="text" class="form-control" id="setTahun" value="${dbSettings.tahun_pelajaran||''}" required></div></div><div class="mb-3"><label class="form-label small fw-bold">Nama Kepala Madrasah</label><input type="text" class="form-control" id="setKepala" value="${dbSettings.kepala_sekolah||''}" required></div><div class="mb-2"><label class="form-label small fw-bold">Upload Logo (JPG/PNG)</label><input type="file" class="form-control" id="setLogoFile" accept=".jpg, .jpeg, .png" onchange="previewLogo(event)"><div class="mt-2 text-center"><img id="previewLogoImg" src="${dbSettings.logo||'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="60" style="object-fit:contain; border:1px solid #ddd; padding:5px; border-radius:5px;"></div></div></div></div></div><div class="col-lg-5"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-scale-balanced me-2"></i>Bobot Nilai Kalkulasi (%)</h6></div><div class="card-body p-4"><div class="alert alert-info border-0 bg-info bg-opacity-10 text-info-emphasis d-flex gap-2 small"><i class="fa-solid fa-circle-info mt-1"></i><span>Total bobot wajib 100%.</span></div><div class="mb-4"><label class="fw-bold mb-2 small">Bobot Rapor (Sem 1-5)</label><div class="input-group"><input type="number" class="form-control form-control-lg" id="setRapor" value="${dbSettings.persen_rapor}" required oninput="document.getElementById('setUjian').value = 100 - (parseInt(this.value)||0)"><span class="input-group-text bg-white">%</span></div></div><div class="mb-2"><label class="fw-bold mb-2 small">Bobot Ujian Akhir</label><div class="input-group"><input type="number" class="form-control form-control-lg bg-light" id="setUjian" value="${dbSettings.persen_ujian}" readonly><span class="input-group-text bg-white">%</span></div></div><div class="mt-4 border-top pt-3"><label class="fw-bold mb-2 small">Format Nilai Akhir</label><select class="form-select form-select-lg" id="setFormatNilai"><option value="Bulat" ${dbSettings.format_nilai === 'Bulat' ? 'selected' : ''}>Bulat (Contoh: 88)</option><option value="Pecahan" ${dbSettings.format_nilai === 'Pecahan' ? 'selected' : ''}>Pecahan (Contoh: 87.50)</option></select></div></div></div></div></div><div class="text-end"><button type="submit" class="btn btn-success px-5 rounded-pill shadow-sm py-2 fw-bold" id="btnSaveSet"><i class="fa-solid fa-save me-2"></i>Simpan Perubahan</button></div></form>`;
     }
 
     function renderRapor() {
@@ -689,7 +676,7 @@
 
     function renderIjazah() {
       var c = document.getElementById('ijazahContainer');
-      if(!dbIjazah.students || dbIjazah.students.length === 0) { c.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-calculator fa-3x text-muted opacity-25 mb-3"></i><p>Belum ada kalkulasi terbaru dari Firebase. Klik "Kalkulasi Ulang".</p></div>'; return; }
+      if(!dbIjazah.students || dbIjazah.students.length === 0) { c.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-calculator fa-3x text-muted opacity-25 mb-3"></i><p>Belum ada kalkulasi terbaru dari sistem. Klik "Kalkulasi Ulang".</p></div>'; return; }
       
       var subjects = dbIjazah.subjects; var allStudents = dbIjazah.students;
       var filter = document.getElementById('filterKelasIjazah'); var currentVal = filter.value;
@@ -717,7 +704,7 @@
       c.innerHTML = h + '</tbody></table></div></div>';
     }
 
-    // --- FIREBASE CRUD & MASS SAVE LOGIC ---
+    // --- SYSTEM CRUD & MASS SAVE LOGIC ---
     function previewLogo(event) { var file = event.target.files[0]; if(!file) return; var reader = new FileReader(); reader.onload = function(e) { tempLogoBase64 = e.target.result; document.getElementById('previewLogoImg').src = tempLogoBase64; }; reader.readAsDataURL(file); }
 
     async function saveSettingsOpt() { 
@@ -727,8 +714,8 @@
       
       await fbRequest('settings', 'PUT', payload);
       dbSettings = payload; updateAppProfile(dbSettings); 
-      btn.innerHTML = '<i class="fa-solid fa-save me-2"></i>Simpan ke Firebase'; btn.disabled = false; 
-      Swal.fire('Sukses','Konfigurasi tersimpan di database','success'); 
+      btn.innerHTML = '<i class="fa-solid fa-save me-2"></i>Simpan Perubahan'; btn.disabled = false; 
+      Swal.fire('Sukses','Konfigurasi tersimpan di sistem','success'); 
     }
 
     function openStudentModal(){ document.getElementById('formStudent').reset(); document.getElementById('studIsEdit').value='false'; document.getElementById('titleStudent').innerText='Tambah Siswa'; new bootstrap.Modal(document.getElementById('modalStudent')).show(); }
@@ -747,7 +734,7 @@
     }
 
     function deleteStudent(id){ 
-      Swal.fire({title:'Hapus data ini dari Firebase?',icon:'warning',showCancelButton:true,confirmButtonColor:'#dc3545',confirmButtonText:'Ya'}).then(async res => { 
+      Swal.fire({title:'Hapus data ini dari sistem?',icon:'warning',showCancelButton:true,confirmButtonColor:'#dc3545',confirmButtonText:'Ya'}).then(async res => { 
         if(!res.isConfirmed) return; 
         await fbRequest(`students/${id}`, 'DELETE');
         await fetchStudents();
@@ -770,7 +757,7 @@
     }
 
     function deleteSubject(id){ 
-      Swal.fire({title:'Hapus mapel ini dari Firebase?',icon:'warning',showCancelButton:true,confirmButtonColor:'#dc3545',confirmButtonText:'Ya'}).then(async res => { 
+      Swal.fire({title:'Hapus mapel ini dari sistem?',icon:'warning',showCancelButton:true,confirmButtonColor:'#dc3545',confirmButtonText:'Ya'}).then(async res => { 
         if(!res.isConfirmed) return; 
         await fbRequest(`subjects/${id}`, 'DELETE');
         await fetchSubjects();
@@ -788,9 +775,9 @@
         }; 
       }); 
       await fbRequest(`rapor/${mapelId}`, 'PATCH', payload);
-      btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Tabel'; btn.disabled = false; 
+      btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Data'; btn.disabled = false; 
       await fetchRapor();
-      Swal.fire({icon:'success', title:'Tersimpan di Firebase', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
+      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
     }
 
     async function saveUjianMassal() { 
@@ -802,11 +789,12 @@
         payload[inpt.getAttribute('data-id')] = { nilai_ujian: inpt.value || 0 }; 
       }); 
       await fbRequest(`ujian/${mapelId}`, 'PATCH', payload);
-      btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan ke Firebase'; btn.disabled = false; 
+      btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Data'; btn.disabled = false; 
       await fetchUjian();
-      Swal.fire({icon:'success', title:'Tersimpan di Firebase', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
+      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
     }
 
+    // --- EXCEL IMPORTERS TO SYSTEM ---
     function handleImportSiswa(e) { 
       var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
       parseExcel(file, async function(err, json) { 
@@ -818,9 +806,27 @@
           if(nisn && nama) payload[id] = { nisn: nisn, nama: nama, kelas: r['Kelas']||'', tahun_ajaran: r['Tahun Ajaran']||'', status: r['Status']||'Aktif' };
         });
         if(Object.keys(payload).length === 0) return Swal.fire('Error', 'Format data tidak sesuai.', 'error'); 
-        Swal.fire({icon:'info', title:'Mengimpor ke Firebase...', showConfirmButton:false}); 
+        Swal.fire({icon:'info', title:'Mengimpor ke sistem...', showConfirmButton:false}); 
         await fbRequest('students', 'PATCH', payload);
         await fetchStudents();
+        Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
+      }); 
+    }
+    
+    function handleImportMapel(e) { 
+      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
+      parseExcel(file, async function(err, json) { 
+        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
+        var payload = {};
+        json.forEach((r, idx) => {
+          var id = 'subj_' + Date.now() + '_' + idx;
+          var k = String(r['Kode']||''), n = r['Nama Mata Pelajaran']||'';
+          if(k && n) payload[id] = { kode_mapel: k, nama_mapel: n, kelompok: r['Kelompok']||'Umum', urutan: Number(r['Urutan']||1), aktif: r['Status Aktif']||'Ya' };
+        });
+        if(Object.keys(payload).length === 0) return Swal.fire('Error', 'Format data tidak sesuai.', 'error'); 
+        Swal.fire({icon:'info', title:'Mengimpor ke sistem...', showConfirmButton:false}); 
+        await fbRequest('subjects', 'PATCH', payload);
+        await fetchSubjects();
         Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
       }); 
     }
@@ -835,7 +841,7 @@
         var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya');
         if(activeSubjects.length === 0) return Swal.fire('Error', 'Tidak ada mapel aktif', 'error');
 
-        Swal.fire({icon:'info', title:'Mengimpor Leger Rapor...', text:'Mohon tunggu, sedang sinkronisasi ke Firebase.', showConfirmButton:false, allowOutsideClick:false}); 
+        Swal.fire({icon:'info', title:'Mengimpor data...', text:'Mohon tunggu, sedang sinkronisasi ke sistem.', showConfirmButton:false, allowOutsideClick:false}); 
         
         try {
           let flatPatch = {};
@@ -868,19 +874,42 @@
     }
     
     function handleImportUjian(e) { 
-      var file = e.target.files[0]; if(!file) return; e.target.value = ''; var mapelId = document.getElementById('filterMapelUjian').value; if(!mapelId) return; 
-      parseExcel(file, async function(err, json) { 
+      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
+      
+      parseExcelAllSheets(file, async function(err, sheets) { 
         if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
-        var payload = {};
-        json.forEach(r => {
-           var sId = r['ID_Siswa (Jangan Diubah)'];
-           if(sId) payload[sId] = { nilai_ujian: r['Nilai Ujian Akhir']||0 };
-        });
-        if(Object.keys(payload).length === 0) return Swal.fire('Error', 'ID Siswa tidak ditemukan.', 'error'); 
-        Swal.fire({icon:'info', title:'Mengimpor ke Firebase...', showConfirmButton:false}); 
-        await fbRequest(`ujian/${mapelId}`, 'PATCH', payload);
-        await fetchUjian();
-        Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
+        if(Object.keys(sheets).length === 0) return Swal.fire('Error', 'File Excel kosong.', 'error');
+
+        var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya');
+        if(activeSubjects.length === 0) return Swal.fire('Error', 'Tidak ada mapel aktif', 'error');
+
+        Swal.fire({icon:'info', title:'Mengimpor data...', text:'Mohon tunggu, sedang sinkronisasi ke sistem.', showConfirmButton:false, allowOutsideClick:false}); 
+        
+        try {
+          let flatPatch = {};
+          
+          let sheetName = Object.keys(sheets)[0];
+          let rows = sheets[sheetName] || [];
+          
+          activeSubjects.forEach(sub => {
+            rows.forEach(r => {
+              let sId = r['ID_Siswa (Jangan Diubah)'];
+              if (sId && r[sub.kode_mapel] !== undefined && r[sub.kode_mapel] !== "") {
+                flatPatch[`${sub.id}/${sId}/nilai_ujian`] = r[sub.kode_mapel];
+              }
+            });
+          });
+
+          if(Object.keys(flatPatch).length > 0) {
+            await fbRequest(`ujian`, 'PATCH', flatPatch);
+          }
+          
+          await fetchUjian(); 
+          Swal.fire({icon:'success',title:'Impor Ujian Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
+        } catch (error) {
+          console.error(error);
+          Swal.fire('Error', 'Terjadi kesalahan jaringan saat mengimpor.', 'error');
+        }
       }); 
     }
 
