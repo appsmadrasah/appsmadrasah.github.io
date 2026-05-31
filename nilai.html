@@ -139,8 +139,8 @@
             <span class="fw-bold ms-2">Mata Pelajaran:</span>
             <select class="form-select w-auto min-w-200" id="filterMapelRapor" onchange="fetchRapor()"></select>
             <div class="ms-auto d-flex gap-2 flex-wrap">
-              <button class="btn btn-outline-success rounded-pill px-3" onclick="downloadTemplateRapor()"><i class="fa-solid fa-download me-1"></i> Template</button>
-              <button class="btn btn-outline-primary rounded-pill px-3" onclick="document.getElementById('fileImportRapor').click()"><i class="fa-solid fa-file-import me-1"></i> Import</button>
+              <button class="btn btn-outline-success rounded-pill px-3" onclick="downloadTemplateRapor()"><i class="fa-solid fa-download me-1"></i> Download Leger</button>
+              <button class="btn btn-outline-primary rounded-pill px-3" onclick="document.getElementById('fileImportRapor').click()"><i class="fa-solid fa-file-import me-1"></i> Import Leger</button>
               <button class="btn btn-success rounded-pill px-3" id="btnSaveRapor" onclick="saveRaporMassal()"><i class="fa-solid fa-save me-1"></i> Simpan ke Firebase</button>
             </div>
           </div>
@@ -368,26 +368,34 @@
       exportToExcel(data, "Template_Import_Mapel"); 
     }
 
+    // UPDATE: Download Template Rapor sekarang menampilkan SEMUA Mata Pelajaran dan SEMUA Semester
     function downloadTemplateRapor() { 
-      var mapel = document.getElementById('filterMapelRapor'); 
-      var mapelText = mapel && mapel.options.length > 0 ? mapel.options[mapel.selectedIndex].text : 'Mapel_Unknown'; 
-      if(dbRapor.length === 0) {
-        return Swal.fire('Peringatan', 'Belum ada data siswa di halaman ini.', 'warning'); 
-      }
-      var data = dbRapor.map(function(r) { 
-        return { 
-          "ID_Siswa (Jangan Diubah)": r.student_id, 
-          "NISN": r.nisn, 
-          "Nama Siswa": r.nama, 
-          "Kelas": r.kelas, 
-          "Semester 1": r.s1||0, 
-          "Semester 2": r.s2||0, 
-          "Semester 3": r.s3||0, 
-          "Semester 4": r.s4||0, 
-          "Semester 5": r.s5||0 
+      if(dbStudents.length === 0) return Swal.fire('Peringatan', 'Belum ada data siswa.', 'warning'); 
+      
+      var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan);
+      if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif.', 'warning');
+
+      var data = dbStudents.map(function(s) { 
+        var row = { 
+          "ID_Siswa (Jangan Diubah)": s.id, 
+          "NISN": s.nisn, 
+          "Nama Siswa": s.nama, 
+          "Kelas": s.kelas 
         }; 
+        
+        // Membangun kolom per mata pelajaran dan per semester
+        activeSubjects.forEach(sub => {
+          row[sub.kode_mapel + " Smt 1"] = 0;
+          row[sub.kode_mapel + " Smt 2"] = 0;
+          row[sub.kode_mapel + " Smt 3"] = 0;
+          row[sub.kode_mapel + " Smt 4"] = 0;
+          row[sub.kode_mapel + " Smt 5"] = 0;
+        });
+        
+        return row;
       }); 
-      exportToExcel(data, "Template_Rapor_" + mapelText.replace(/[^a-zA-Z0-9]/g, "_")); 
+      
+      exportToExcel(data, "Template_Leger_Rapor_Semua_Mapel"); 
     }
 
     function downloadTemplateUjian() { 
@@ -735,20 +743,51 @@
       }); 
     }
     
+    // UPDATE: Import Rapor sekarang akan memecah file Leger berdasarkan Mata Pelajaran
     function handleImportRapor(e) { 
-      var file = e.target.files[0]; if(!file) return; e.target.value = ''; var mapelId = document.getElementById('filterMapelRapor').value; if(!mapelId) return; 
+      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
+      
       parseExcel(file, async function(err, json) { 
         if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
-        var payload = {};
-        json.forEach(r => {
-           var sId = r['ID_Siswa (Jangan Diubah)'];
-           if(sId) payload[sId] = { s1: r['Semester 1']||0, s2: r['Semester 2']||0, s3: r['Semester 3']||0, s4: r['Semester 4']||0, s5: r['Semester 5']||0 };
-        });
-        if(Object.keys(payload).length === 0) return Swal.fire('Error', 'ID Siswa tidak ditemukan.', 'error'); 
-        Swal.fire({icon:'info', title:'Mengimpor ke Firebase...', showConfirmButton:false}); 
-        await fbRequest(`rapor/${mapelId}`, 'PATCH', payload);
-        await fetchRapor();
-        Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
+        if(json.length === 0) return Swal.fire('Error', 'File Excel kosong.', 'error');
+
+        var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya');
+        if(activeSubjects.length === 0) return Swal.fire('Error', 'Tidak ada mapel aktif', 'error');
+
+        Swal.fire({icon:'info', title:'Mengimpor Leger Rapor...', text:'Mohon tunggu, sedang sinkronisasi ke Firebase.', showConfirmButton:false, allowOutsideClick:false}); 
+        
+        try {
+          // Melakukan loop untuk menyimpan data per-mata pelajaran ke Firebase
+          for (const sub of activeSubjects) {
+            var mapelPayload = {};
+            var hasData = false;
+            
+            json.forEach(r => {
+               var sId = r['ID_Siswa (Jangan Diubah)'];
+               // Jika ID Siswa ada dan nilai Semester 1 untuk mapel ini terdeteksi di Excel
+               if(sId && r[sub.kode_mapel + ' Smt 1'] !== undefined) {
+                 hasData = true;
+                 mapelPayload[sId] = { 
+                   s1: r[sub.kode_mapel + ' Smt 1'] || 0, 
+                   s2: r[sub.kode_mapel + ' Smt 2'] || 0, 
+                   s3: r[sub.kode_mapel + ' Smt 3'] || 0, 
+                   s4: r[sub.kode_mapel + ' Smt 4'] || 0, 
+                   s5: r[sub.kode_mapel + ' Smt 5'] || 0 
+                 };
+               }
+            });
+            
+            // Jika ada data untuk mapel ini, langsung push ke Firebase
+            if(hasData) {
+              await fbRequest(`rapor/${sub.id}`, 'PATCH', mapelPayload);
+            }
+          }
+          
+          await fetchRapor(); // Refresh tabel view saat ini agar nilainya langsung tampil
+          Swal.fire({icon:'success',title:'Impor Leger Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
+        } catch (error) {
+          Swal.fire('Error', 'Terjadi kesalahan jaringan saat mengimpor.', 'error');
+        }
       }); 
     }
     
