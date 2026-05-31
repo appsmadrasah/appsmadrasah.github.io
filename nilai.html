@@ -407,7 +407,7 @@
         
         var dataRows = dbStudents.map(function(s) { 
           var row = [s.id, s.nisn, s.nama, s.kelas];
-          activeSubjects.forEach(sub => { row.push(''); }); // Blank default
+          activeSubjects.forEach(sub => { row.push(''); }); // Default dikosongkan
           return row;
         }); 
         
@@ -475,7 +475,7 @@
         
         var dataRows = dbStudents.map(function(s) { 
           var row = [s.id, s.nisn, s.nama, s.kelas];
-          activeSubjects.forEach(sub => { row.push(''); }); // Blank default
+          activeSubjects.forEach(sub => { row.push(''); }); // Default dikosongkan agar mudah diisi sebagian
           return row;
         }); 
         
@@ -617,18 +617,27 @@
       
       dbRapor = dbStudents.map(s => {
         var r = res && res[s.id] ? res[s.id] : {};
-        var v1 = Number(r.s1)||0, v2 = Number(r.s2)||0, v3 = Number(r.s3)||0, v4 = Number(r.s4)||0, v5 = Number(r.s5)||0;
+        
+        // Membaca string/kosong dengan aman
+        var s1 = r.s1 !== undefined && r.s1 !== "" ? r.s1 : "";
+        var s2 = r.s2 !== undefined && r.s2 !== "" ? r.s2 : "";
+        var s3 = r.s3 !== undefined && r.s3 !== "" ? r.s3 : "";
+        var s4 = r.s4 !== undefined && r.s4 !== "" ? r.s4 : "";
+        var s5 = r.s5 !== undefined && r.s5 !== "" ? r.s5 : "";
+        
+        // Menghitung rata-rata dinamis HANYA untuk semester yang ada nilainya
         var sum = 0, count = 0;
-        if(v1 > 0) { sum+=v1; count++; }
-        if(v2 > 0) { sum+=v2; count++; }
-        if(v3 > 0) { sum+=v3; count++; }
-        if(v4 > 0) { sum+=v4; count++; }
-        if(v5 > 0) { sum+=v5; count++; }
+        if(s1 !== "") { sum += Number(s1); count++; }
+        if(s2 !== "") { sum += Number(s2); count++; }
+        if(s3 !== "") { sum += Number(s3); count++; }
+        if(s4 !== "") { sum += Number(s4); count++; }
+        if(s5 !== "") { sum += Number(s5); count++; }
+        
         var rata = count > 0 ? (sum/count).toFixed(2) : "0";
         
         return { 
           student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, 
-          s1: r.s1!==undefined?r.s1:'', s2: r.s2!==undefined?r.s2:'', s3: r.s3!==undefined?r.s3:'', s4: r.s4!==undefined?r.s4:'', s5: r.s5!==undefined?r.s5:'', 
+          s1: s1, s2: s2, s3: s3, s4: s4, s5: s5, 
           rata: rata 
         };
       });
@@ -642,7 +651,7 @@
       
       dbUjian = dbStudents.map(s => {
         var u = res && res[s.id] ? res[s.id] : {};
-        return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, nilai_ujian: u.nilai_ujian!==undefined?u.nilai_ujian:'' };
+        return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, nilai_ujian: u.nilai_ujian !== undefined && u.nilai_ujian !== "" ? u.nilai_ujian : "" };
       });
       if(activePage === 'ujian') renderUjian();
     }
@@ -664,16 +673,21 @@
               var s_rapor = raporRes && raporRes[sub.id] && raporRes[sub.id][s.id] ? raporRes[sub.id][s.id] : {};
               var s_ujian = ujianRes && ujianRes[sub.id] && ujianRes[sub.id][s.id] ? ujianRes[sub.id][s.id] : {};
               
-              var v1 = Number(s_rapor.s1)||0, v2 = Number(s_rapor.s2)||0, v3 = Number(s_rapor.s3)||0, v4 = Number(s_rapor.s4)||0, v5 = Number(s_rapor.s5)||0;
-              var sumRapor = 0, countRapor = 0;
-              if(v1 > 0) { sumRapor+=v1; countRapor++; }
-              if(v2 > 0) { sumRapor+=v2; countRapor++; }
-              if(v3 > 0) { sumRapor+=v3; countRapor++; }
-              if(v4 > 0) { sumRapor+=v4; countRapor++; }
-              if(v5 > 0) { sumRapor+=v5; countRapor++; }
-              var rataRapor = countRapor > 0 ? (sumRapor / countRapor) : 0;
+              var s1 = s_rapor.s1 !== undefined && s_rapor.s1 !== "" ? s_rapor.s1 : "";
+              var s2 = s_rapor.s2 !== undefined && s_rapor.s2 !== "" ? s_rapor.s2 : "";
+              var s3 = s_rapor.s3 !== undefined && s_rapor.s3 !== "" ? s_rapor.s3 : "";
+              var s4 = s_rapor.s4 !== undefined && s_rapor.s4 !== "" ? s_rapor.s4 : "";
+              var s5 = s_rapor.s5 !== undefined && s_rapor.s5 !== "" ? s_rapor.s5 : "";
               
-              var nilaiUjian = Number(s_ujian.nilai_ujian)||0;
+              var sumRapor = 0, countRapor = 0;
+              if(s1 !== "") { sumRapor += Number(s1); countRapor++; }
+              if(s2 !== "") { sumRapor += Number(s2); countRapor++; }
+              if(s3 !== "") { sumRapor += Number(s3); countRapor++; }
+              if(s4 !== "") { sumRapor += Number(s4); countRapor++; }
+              if(s5 !== "") { sumRapor += Number(s5); countRapor++; }
+              
+              var rataRapor = countRapor > 0 ? (sumRapor / countRapor) : 0;
+              var nilaiUjian = s_ujian.nilai_ujian !== undefined && s_ujian.nilai_ujian !== "" ? Number(s_ujian.nilai_ujian) : 0;
               
               var finalScore = (rataRapor * pctRapor) + (nilaiUjian * pctUjian);
               scores[sub.id] = finalScore;
@@ -861,7 +875,7 @@
       await fbRequest(`rapor/${mapelId}`, 'PATCH', payload);
       btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Data'; btn.disabled = false; 
       await fetchRapor();
-      Swal.fire({icon:'success', title:'Tersimpan di Sistem', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
+      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
     }
 
     async function saveUjianMassal() { 
@@ -875,7 +889,7 @@
       await fbRequest(`ujian/${mapelId}`, 'PATCH', payload);
       btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Data'; btn.disabled = false; 
       await fetchUjian();
-      Swal.fire({icon:'success', title:'Tersimpan di Sistem', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
+      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
     }
 
     // --- EXCEL IMPORTERS TO SYSTEM ---
@@ -937,8 +951,10 @@
               
               rows.forEach(r => {
                 let sId = r['ID_Siswa (Jangan Diubah)'];
-                if (sId && r[sub.kode_mapel] !== undefined && r[sub.kode_mapel] !== "") {
-                  flatPatch[`${sub.id}/${sId}/s${i}`] = r[sub.kode_mapel];
+                // Update: Memastikan nilai kosong (blank) dikirim sebagai "" untuk menghapus sisa data
+                if (sId) {
+                  let val = r[sub.kode_mapel];
+                  flatPatch[`${sub.id}/${sId}/s${i}`] = (val !== undefined && val !== "") ? val : "";
                 }
               });
             }
@@ -978,8 +994,9 @@
           activeSubjects.forEach(sub => {
             rows.forEach(r => {
               let sId = r['ID_Siswa (Jangan Diubah)'];
-              if (sId && r[sub.kode_mapel] !== undefined && r[sub.kode_mapel] !== "") {
-                flatPatch[`${sub.id}/${sId}/nilai_ujian`] = r[sub.kode_mapel];
+              if (sId) {
+                let val = r[sub.kode_mapel];
+                flatPatch[`${sub.id}/${sId}/nilai_ujian`] = (val !== undefined && val !== "") ? val : "";
               }
             });
           });
