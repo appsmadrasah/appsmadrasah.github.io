@@ -760,7 +760,7 @@
       if(filteredStudents.length === 0) { c.innerHTML = '<div class="text-center py-5 text-muted"><p>Tidak ada data di kelas ini.</p></div>'; return; }
       
       filteredStudents.sort(function(a, b) { return b.rata_ijazah - a.rata_ijazah; });
-      var thMapel = ''; subjects.forEach(sub => { thMapel += `<th class="text-center text-nowrap" title="${sub.nama}">${sub.kode}</th>`; });
+      var thMapel = ''; subjects.forEach(sub => { thMapel += `<th class="text-center text-nowrap" title="${sub.nama_mapel}">${sub.kode_mapel}</th>`; });
       
       var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover table-bordered align-middle mb-0" style="font-size: 14px;"><thead class="table-light align-middle text-center"><tr><th rowspan="2">NISN</th><th rowspan="2" class="min-w-200">Nama Siswa</th><th rowspan="2">Kelas</th><th colspan="'+subjects.length+'">Nilai Akhir Ijazah (Per Mapel)</th><th rowspan="2">Jumlah<br>Nilai</th><th rowspan="2">Rata-<br>rata</th><th rowspan="2">Peringkat</th></tr><tr>' + thMapel + '</tr></thead><tbody>';
       var currentRank = 1, prevScore = -1, displayRank = 1;
@@ -848,7 +848,7 @@
       await fbRequest(`rapor/${mapelId}`, 'PATCH', payload);
       btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Data'; btn.disabled = false; 
       await fetchRapor();
-      Swal.fire({icon:'success', title:'Tersimpan di Sistem', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
+      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
     }
 
     async function saveUjianMassal() { 
@@ -862,7 +862,7 @@
       await fbRequest(`ujian/${mapelId}`, 'PATCH', payload);
       btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Data'; btn.disabled = false; 
       await fetchUjian();
-      Swal.fire({icon:'success', title:'Tersimpan di Sistem', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
+      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
     }
 
     // --- EXCEL IMPORTERS TO SYSTEM ---
@@ -991,7 +991,7 @@
       if(filteredStudents.length === 0) return Swal.fire('Warning', 'Tidak ada data siswa pada kelas terpilih.', 'warning');
       filteredStudents.sort(function(a, b) { return b.rata_ijazah - a.rata_ijazah; });
 
-      var subjects = dbIjazah.subjects; var thMapel = ''; subjects.forEach(sub => { thMapel += `<th class="rotate"><div><span>${sub.nama}</span></div></th>`; });
+      var subjects = dbIjazah.subjects; var thMapel = ''; subjects.forEach(sub => { thMapel += `<th class="rotate"><div><span>${sub.nama_mapel}</span></div></th>`; });
       var trData = ''; var currentRank = 1, prevScore = -1, displayRank = 1;
       
       filteredStudents.forEach(function(j, idx) {
