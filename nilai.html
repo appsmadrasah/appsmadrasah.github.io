@@ -380,23 +380,46 @@
         }
         var wb = XLSX.utils.book_new(); 
         
-        // Membuat 5 Sheet terpisah (Semester 1 sampai Semester 5)
+        var header1 = ["ID_Siswa (Jangan Diubah)", "NISN", "Nama Siswa", "Kelas"];
+        var header2 = ["ID_Siswa (Jangan Diubah)", "NISN", "Nama Siswa", "Kelas"];
+        
+        activeSubjects.forEach(sub => {
+          header1.push("Kelompok " + sub.kelompok);
+          header2.push(sub.kode_mapel);
+        });
+        
+        var dataRows = dbStudents.map(function(s) { 
+          var row = [s.id, s.nisn, s.nama, s.kelas];
+          activeSubjects.forEach(sub => { row.push(0); });
+          return row;
+        }); 
+        
+        var aoa = [header1, header2].concat(dataRows);
+        
         for(let i=1; i<=5; i++) {
-          var dataSmt = dbStudents.map(function(s) { 
-            var row = { 
-              "ID_Siswa (Jangan Diubah)": s.id, 
-              "NISN": s.nisn, 
-              "Nama Siswa": s.nama, 
-              "Kelas": s.kelas 
-            }; 
-            // Tambahkan kolom setiap mapel mendatar ke kanan
-            activeSubjects.forEach(sub => {
-              row[sub.kode_mapel] = 0; // Default nilai 0
-            });
-            return row;
-          });
+          var ws = XLSX.utils.aoa_to_sheet(aoa);
           
-          var ws = XLSX.utils.json_to_sheet(dataSmt);
+          var merges = [
+            {s: {r:0, c:0}, e: {r:1, c:0}},
+            {s: {r:0, c:1}, e: {r:1, c:1}},
+            {s: {r:0, c:2}, e: {r:1, c:2}},
+            {s: {r:0, c:3}, e: {r:1, c:3}}
+          ];
+          
+          if(activeSubjects.length > 0) {
+            var startCol = 4;
+            var currentKel = header1[4];
+            for (var c = 5; c < header1.length; c++) {
+              if (header1[c] !== currentKel) {
+                if (c - 1 > startCol) { merges.push({s: {r:0, c:startCol}, e: {r:0, c:c-1}}); }
+                startCol = c;
+                currentKel = header1[c];
+              }
+            }
+            if (header1.length - 1 > startCol) { merges.push({s: {r:0, c:startCol}, e: {r:0, c:header1.length-1}}); }
+          }
+          
+          ws['!merges'] = merges;
           XLSX.utils.book_append_sheet(wb, ws, "Semester " + i);
         }
         
@@ -427,7 +450,8 @@
           var workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); 
           var result = {};
           workbook.SheetNames.forEach(function(sheetName) {
-            result[sheetName] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+            // Karena template leger ada 2 baris header, baca dari baris kedua (index 1)
+            result[sheetName] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { range: 1 });
           });
           callback(null, result); 
         } catch(err) { callback(err, null); } 
@@ -458,7 +482,7 @@
 
     function initDropdowns(selectId, callback) { 
       var sel = document.getElementById(selectId); sel.innerHTML = ''; 
-      dbSubjects.filter(s => s.aktif === 'Ya').forEach(s => { 
+      dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan).forEach(s => { 
         sel.innerHTML += `<option value="${s.id}">${s.kode_mapel} - ${s.nama_mapel}</option>`; 
       }); 
       if(callback) callback(); 
@@ -777,14 +801,12 @@
           let flatPatch = {};
           
           activeSubjects.forEach(sub => {
-            // Cek data di kelima sheet (Semester 1 sampai Semester 5)
             for (let i = 1; i <= 5; i++) {
               let sheetName = "Semester " + i;
               let rows = sheets[sheetName] || [];
               
               rows.forEach(r => {
                 let sId = r['ID_Siswa (Jangan Diubah)'];
-                // Pastikan siswa ada & nilai untuk mata pelajaran ini ada di sheet tersebut
                 if (sId && r[sub.kode_mapel] !== undefined) {
                   flatPatch[`${sub.id}/${sId}/s${i}`] = r[sub.kode_mapel];
                 }
@@ -792,7 +814,6 @@
             }
           });
 
-          // Upload semua nilai gabungan sekaligus secara bersarang ke Firebase
           if(Object.keys(flatPatch).length > 0) {
             await fbRequest(`rapor`, 'PATCH', flatPatch);
           }
