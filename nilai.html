@@ -358,8 +358,24 @@
       exportToExcel(data, "Template_Import_Siswa"); 
     }
 
+    // PRE-FILLED TEMPLATE MAPEL (14 Mapel sesuai dengan gambar)
     function downloadTemplateMapel() { 
-      var data = [{ "Kode": "PAI", "Nama Mata Pelajaran": "Pendidikan Agama Islam", "Kelompok": "Umum", "Urutan": 1, "Status Aktif": "Ya" }]; 
+      var data = [
+        { "Kode": "QH", "Nama Mata Pelajaran": "Al-Qur'an Hadis", "Kelompok": "PAI", "Urutan": 1, "Status Aktif": "Ya" },
+        { "Kode": "AA", "Nama Mata Pelajaran": "Akidah Akhlak", "Kelompok": "PAI", "Urutan": 2, "Status Aktif": "Ya" },
+        { "Kode": "FIK", "Nama Mata Pelajaran": "Fikih", "Kelompok": "PAI", "Urutan": 3, "Status Aktif": "Ya" },
+        { "Kode": "SKI", "Nama Mata Pelajaran": "Sejarah Kebudayaan Islam", "Kelompok": "PAI", "Urutan": 4, "Status Aktif": "Ya" },
+        { "Kode": "BA", "Nama Mata Pelajaran": "Bahasa Arab", "Kelompok": "Umum", "Urutan": 5, "Status Aktif": "Ya" },
+        { "Kode": "PP", "Nama Mata Pelajaran": "Pendidikan Pancasila", "Kelompok": "Umum", "Urutan": 6, "Status Aktif": "Ya" },
+        { "Kode": "BIndo", "Nama Mata Pelajaran": "Bahasa Indonesia", "Kelompok": "Umum", "Urutan": 7, "Status Aktif": "Ya" },
+        { "Kode": "MTK", "Nama Mata Pelajaran": "Matematika", "Kelompok": "Umum", "Urutan": 8, "Status Aktif": "Ya" },
+        { "Kode": "IPAS", "Nama Mata Pelajaran": "Ilmu Pengetahuan Alam dan Sosial", "Kelompok": "Umum", "Urutan": 9, "Status Aktif": "Ya" },
+        { "Kode": "PJOK", "Nama Mata Pelajaran": "PJOK", "Kelompok": "Umum", "Urutan": 10, "Status Aktif": "Ya" },
+        { "Kode": "SBP", "Nama Mata Pelajaran": "Seni Budaya dan Prakarya", "Kelompok": "Umum", "Urutan": 11, "Status Aktif": "Ya" },
+        { "Kode": "Bing", "Nama Mata Pelajaran": "Bahasa Inggris", "Kelompok": "Umum", "Urutan": 12, "Status Aktif": "Ya" },
+        { "Kode": "B. Ja", "Nama Mata Pelajaran": "Bahasa Jawa", "Kelompok": "Mulok", "Urutan": 13, "Status Aktif": "Ya" },
+        { "Kode": "ASWAJ", "Nama Mata Pelajaran": "Ke-NU-an / Aswaja", "Kelompok": "Mulok", "Urutan": 14, "Status Aktif": "Ya" }
+      ];
       exportToExcel(data, "Template_Import_Mapel"); 
     }
 
@@ -382,19 +398,17 @@
         if(typeof XLSX === 'undefined') return Swal.fire('Error', 'Library SheetJS gagal dimuat.', 'error');
         var wb = XLSX.utils.book_new(); 
         
-        // Setup Array of Arrays untuk manipulasi header ganda persis Leger
         var header1 = ["ID_Siswa (Jangan Diubah)", "NISN", "Nama Siswa", "Kelas"];
         var header2 = ["ID_Siswa (Jangan Diubah)", "NISN", "Nama Siswa", "Kelas"];
         
         activeSubjects.forEach(sub => {
           var kel = (sub.kelompok || "").trim();
-          // Logika Penataan Kolom: Jika diisi 'Umum', '-' atau kosong, mapel akan berdiri sendiri secara vertikal (contoh: BA, PP)
           if(kel === "" || kel === "-" || kel.toLowerCase() === "umum") {
              header1.push(sub.kode_mapel);
              header2.push(""); 
           } else {
-             header1.push(kel); // (contoh: "PAI", "Mulok")
-             header2.push(sub.kode_mapel); // (contoh: "QH", "B. Ja")
+             header1.push(kel);
+             header2.push(sub.kode_mapel); 
           }
         });
         
@@ -409,7 +423,6 @@
         for(let i=1; i<=5; i++) {
           var ws = XLSX.utils.aoa_to_sheet(aoa);
           
-          // Menerapkan Merging Cells
           var merges = [
             {s: {r:0, c:0}, e: {r:1, c:0}},
             {s: {r:0, c:1}, e: {r:1, c:1}},
@@ -417,28 +430,21 @@
             {s: {r:0, c:3}, e: {r:1, c:3}}
           ];
           
-          var startCol = 4;
-          var currentKel = header1[4];
-          var isStandalone = header2[4] === "";
+          if(activeSubjects.length > 0) {
+            var startCol = 4;
+            var currentKel = header1[4];
+            var isStandalone = header2[4] === "";
 
-          for (var c = 5; c <= header1.length; c++) {
-            var nextIsStandalone = c < header1.length ? header2[c] === "" : false;
-            
-            // Trigger merge bila grup ganti atau masuk/keluar elemen standalone
-            if (c === header1.length || header1[c] !== currentKel || isStandalone || nextIsStandalone) {
-              if (c - 1 > startCol && !isStandalone) {
-                // Merge mendatar/horizontal untuk kelompok mapel besar (PAI / Mulok)
-                merges.push({s: {r:0, c:startCol}, e: {r:0, c:c-1}});
-              } else {
-                // Merge vertikal untuk mapel yang berdiri sendiri tanpa kelompok (BA, PP, MTK, dst)
-                for(var col = startCol; col < c; col++) {
-                   merges.push({s: {r:0, c:col}, e: {r:1, c:col}});
+            for (var c = 5; c <= header1.length; c++) {
+              var nextIsStandalone = c < header1.length ? header2[c] === "" : false;
+              
+              if (c === header1.length || header1[c] !== currentKel || isStandalone || nextIsStandalone) {
+                if (c - 1 > startCol && !isStandalone) {
+                  merges.push({s: {r:0, c:startCol}, e: {r:0, c:c-1}});
+                } else if(isStandalone) {
+                  for(var col = startCol; col < c; col++) { merges.push({s: {r:0, c:col}, e: {r:1, c:col}}); }
                 }
-              }
-              if (c < header1.length) {
-                startCol = c;
-                currentKel = header1[c];
-                isStandalone = nextIsStandalone;
+                if (c < header1.length) { startCol = c; currentKel = header1[c]; isStandalone = nextIsStandalone; }
               }
             }
           }
@@ -478,7 +484,6 @@
               var keys = [];
               var maxCol = Math.max(headerRow1.length, headerRow2.length);
               
-              // Mencocokan key. Bila sel di header baris 2 kosong (karena mapel berdiri sendiri/merging vertikal), ia akan baca dari header baris 1
               for(var c=0; c<maxCol; c++) {
                 var key = headerRow2[c] ? headerRow2[c].toString().trim() : (headerRow1[c] ? headerRow1[c].toString().trim() : "Col"+c);
                 keys.push(key);
@@ -849,7 +854,6 @@
               
               rows.forEach(r => {
                 let sId = r['ID_Siswa (Jangan Diubah)'];
-                // Akses array r menggunakan kode_mapel karena key di json disamakan otomatis dgn baris ke-2 excel (atau baris ke-1 bila standalone)
                 if (sId && r[sub.kode_mapel] !== undefined && r[sub.kode_mapel] !== "") {
                   flatPatch[`${sub.id}/${sId}/s${i}`] = r[sub.kode_mapel];
                 }
