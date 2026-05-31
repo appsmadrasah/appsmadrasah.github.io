@@ -129,6 +129,10 @@
             <button class="btn btn-success rounded-pill shadow-sm px-3" onclick="openSubjectModal()"><i class="fa-solid fa-plus me-1"></i> Tambah</button>
           </div>
         </div>
+        <div class="alert alert-info border-0 bg-info bg-opacity-10 d-flex gap-2 small mb-4">
+          <i class="fa-solid fa-circle-info mt-1 text-info"></i>
+          <span class="text-secondary">Gunakan nama <b>Kelompok</b> (misal: "PAI" atau "Mulok") untuk menggabungkan header. Ketik <b>"Umum"</b> agar mapel tersebut berdiri sendiri secara vertikal.</span>
+        </div>
         <div id="subjectsContainer"></div>
       </div>
 
@@ -143,12 +147,12 @@
         <h4 class="fw-bold mb-4">Input Nilai Rapor</h4>
         <div class="card border-0 shadow-sm rounded-4 mb-4">
           <div class="card-body p-3 d-flex gap-2 align-items-center flex-wrap">
-            <span class="fw-bold ms-2">Mata Pelajaran:</span>
-            <select class="form-select w-auto min-w-200" id="filterMapelRapor" onchange="fetchRapor()"></select>
+            <span class="fw-bold ms-2">Lihat & Edit per Mapel:</span>
+            <select class="form-select w-auto min-w-200 border-success text-success fw-semibold" id="filterMapelRapor" onchange="fetchRapor()"></select>
             <div class="ms-auto d-flex gap-2 flex-wrap">
-              <button class="btn btn-outline-success rounded-pill px-3" onclick="downloadTemplateRapor()"><i class="fa-solid fa-download me-1"></i> Download Leger</button>
-              <button class="btn btn-outline-primary rounded-pill px-3" onclick="document.getElementById('fileImportRapor').click()"><i class="fa-solid fa-file-import me-1"></i> Import Leger</button>
-              <button class="btn btn-success rounded-pill px-3" id="btnSaveRapor" onclick="saveRaporMassal()"><i class="fa-solid fa-save me-1"></i> Simpan ke Firebase</button>
+              <button class="btn btn-outline-success rounded-pill px-3 fw-semibold" onclick="downloadTemplateRapor()"><i class="fa-solid fa-file-excel me-1"></i> Download Template Leger</button>
+              <button class="btn btn-outline-primary rounded-pill px-3 fw-semibold" onclick="document.getElementById('fileImportRapor').click()"><i class="fa-solid fa-file-import me-1"></i> Import Leger Multi-Sheet</button>
+              <button class="btn btn-success rounded-pill px-3 fw-bold" id="btnSaveRapor" onclick="saveRaporMassal()"><i class="fa-solid fa-save me-1"></i> Simpan Tabel</button>
             </div>
           </div>
         </div>
@@ -240,12 +244,20 @@
           <form id="formSubject">
             <input type="hidden" id="subjId"><input type="hidden" id="subjIsEdit" value="false">
             <div class="row">
-              <div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kode</label><input type="text" class="form-control" id="subjKode" required></div>
+              <div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kode (cth: MTK)</label><input type="text" class="form-control" id="subjKode" required></div>
               <div class="col-md-8 mb-3"><label class="form-label small fw-bold">Nama Mata Pelajaran</label><input type="text" class="form-control" id="subjNama" required></div>
             </div>
             <div class="row">
-              <div class="col-md-6 mb-3"><label class="form-label small fw-bold">Kelompok</label><select class="form-select" id="subjKel"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="Muatan Lokal">Muatan Lokal</option></select></div>
-              <div class="col-md-6 mb-3"><label class="form-label small fw-bold">Urut</label><input type="number" class="form-control" id="subjUrut" value="1" required></div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label small fw-bold">Kelompok Grup</label>
+                <input type="text" class="form-control" id="subjKel" list="listKelompok" placeholder="Ketik Umum / PAI / Mulok" required>
+                <datalist id="listKelompok">
+                  <option value="PAI">
+                  <option value="Umum">
+                  <option value="Mulok">
+                </datalist>
+              </div>
+              <div class="col-md-6 mb-3"><label class="form-label small fw-bold">Urutan Kolom</label><input type="number" class="form-control" id="subjUrut" value="1" required></div>
             </div>
             <div class="mb-3"><label class="form-label small fw-bold">Status Aktif</label><select class="form-select" id="subjAktif"><option value="Ya">Ya</option><option value="Tidak">Tidak</option></select></div>
           </form>
@@ -292,6 +304,7 @@
     var dbRapor = [], dbUjian = [];
     var dbIjazah = { subjects: [], students: [] };
     
+    // Status Loader
     var isStudLoaded = false, isSubjLoaded = false, isSetLoaded = false;
 
     // --- INITIALIZATION ---
@@ -333,20 +346,11 @@
     // --- EXCEL LOGIC (SINGLE SHEET) ---
     function exportToExcel(dataArray, filename) {
       try {
-        if(typeof XLSX === 'undefined') {
-          Swal.fire('Error', 'Library SheetJS gagal dimuat. Periksa koneksi internet Anda.', 'error');
-          return;
-        }
-        var ws = XLSX.utils.json_to_sheet(dataArray); 
-        var wb = XLSX.utils.book_new(); 
-        XLSX.utils.book_append_sheet(wb, ws, "Template"); 
-        XLSX.writeFile(wb, filename + ".xlsx");
-        
+        if(typeof XLSX === 'undefined') { Swal.fire('Error', 'Library SheetJS gagal dimuat. Periksa koneksi.', 'error'); return; }
+        var ws = XLSX.utils.json_to_sheet(dataArray); var wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, "Template"); XLSX.writeFile(wb, filename + ".xlsx");
         Swal.fire({icon: 'success', title: 'File Diunduh', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false});
-      } catch (e) {
-        console.error("Excel Export Error: ", e);
-        Swal.fire('Error', 'Gagal membuat file Excel: ' + e.message, 'error');
-      }
+      } catch (e) { Swal.fire('Error', 'Gagal membuat file Excel: ' + e.message, 'error'); }
     }
 
     function downloadTemplateSiswa() { 
@@ -355,7 +359,7 @@
     }
 
     function downloadTemplateMapel() { 
-      var data = [{ "Kode": "PAI", "Nama Mata Pelajaran": "Pendidikan Agama Islam", "Kelompok": "A", "Urutan": 1, "Status Aktif": "Ya" }]; 
+      var data = [{ "Kode": "PAI", "Nama Mata Pelajaran": "Pendidikan Agama Islam", "Kelompok": "Umum", "Urutan": 1, "Status Aktif": "Ya" }]; 
       exportToExcel(data, "Template_Import_Mapel"); 
     }
 
@@ -372,20 +376,26 @@
       if(dbStudents.length === 0) return Swal.fire('Peringatan', 'Belum ada data siswa.', 'warning'); 
       
       var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan);
-      if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif.', 'warning');
+      if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif. Tambahkan mapel dahulu!', 'warning');
 
       try {
-        if(typeof XLSX === 'undefined') {
-          return Swal.fire('Error', 'Library SheetJS gagal dimuat. Periksa koneksi internet Anda.', 'error');
-        }
+        if(typeof XLSX === 'undefined') return Swal.fire('Error', 'Library SheetJS gagal dimuat.', 'error');
         var wb = XLSX.utils.book_new(); 
         
+        // Setup Array of Arrays untuk manipulasi header ganda persis Leger
         var header1 = ["ID_Siswa (Jangan Diubah)", "NISN", "Nama Siswa", "Kelas"];
         var header2 = ["ID_Siswa (Jangan Diubah)", "NISN", "Nama Siswa", "Kelas"];
         
         activeSubjects.forEach(sub => {
-          header1.push("Kelompok " + sub.kelompok);
-          header2.push(sub.kode_mapel);
+          var kel = (sub.kelompok || "").trim();
+          // Logika Penataan Kolom: Jika diisi 'Umum', '-' atau kosong, mapel akan berdiri sendiri secara vertikal (contoh: BA, PP)
+          if(kel === "" || kel === "-" || kel.toLowerCase() === "umum") {
+             header1.push(sub.kode_mapel);
+             header2.push(""); 
+          } else {
+             header1.push(kel); // (contoh: "PAI", "Mulok")
+             header2.push(sub.kode_mapel); // (contoh: "QH", "B. Ja")
+          }
         });
         
         var dataRows = dbStudents.map(function(s) { 
@@ -399,6 +409,7 @@
         for(let i=1; i<=5; i++) {
           var ws = XLSX.utils.aoa_to_sheet(aoa);
           
+          // Menerapkan Merging Cells
           var merges = [
             {s: {r:0, c:0}, e: {r:1, c:0}},
             {s: {r:0, c:1}, e: {r:1, c:1}},
@@ -406,19 +417,31 @@
             {s: {r:0, c:3}, e: {r:1, c:3}}
           ];
           
-          if(activeSubjects.length > 0) {
-            var startCol = 4;
-            var currentKel = header1[4];
-            for (var c = 5; c < header1.length; c++) {
-              if (header1[c] !== currentKel) {
-                if (c - 1 > startCol) { merges.push({s: {r:0, c:startCol}, e: {r:0, c:c-1}}); }
+          var startCol = 4;
+          var currentKel = header1[4];
+          var isStandalone = header2[4] === "";
+
+          for (var c = 5; c <= header1.length; c++) {
+            var nextIsStandalone = c < header1.length ? header2[c] === "" : false;
+            
+            // Trigger merge bila grup ganti atau masuk/keluar elemen standalone
+            if (c === header1.length || header1[c] !== currentKel || isStandalone || nextIsStandalone) {
+              if (c - 1 > startCol && !isStandalone) {
+                // Merge mendatar/horizontal untuk kelompok mapel besar (PAI / Mulok)
+                merges.push({s: {r:0, c:startCol}, e: {r:0, c:c-1}});
+              } else {
+                // Merge vertikal untuk mapel yang berdiri sendiri tanpa kelompok (BA, PP, MTK, dst)
+                for(var col = startCol; col < c; col++) {
+                   merges.push({s: {r:0, c:col}, e: {r:1, c:col}});
+                }
+              }
+              if (c < header1.length) {
                 startCol = c;
                 currentKel = header1[c];
+                isStandalone = nextIsStandalone;
               }
             }
-            if (header1.length - 1 > startCol) { merges.push({s: {r:0, c:startCol}, e: {r:0, c:header1.length-1}}); }
           }
-          
           ws['!merges'] = merges;
           XLSX.utils.book_append_sheet(wb, ws, "Semester " + i);
         }
@@ -430,19 +453,17 @@
       }
     }
 
-    // Fungsi Parser Single Sheet (Siswa, Mapel, Ujian)
+    // Fungsi Parser Single Sheet
     function parseExcel(file, callback) { 
       var reader = new FileReader(); 
       reader.onload = function(e) { 
-        try { 
-          var workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); 
-          callback(null, XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]])); 
-        } catch(err) { callback(err, null); } 
+        try { var workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); callback(null, XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]])); } 
+        catch(err) { callback(err, null); } 
       }; 
       reader.readAsArrayBuffer(file); 
     }
 
-    // Fungsi Parser Multi Sheet (Khusus Import Leger Rapor)
+    // Fungsi Parser Multi Sheet Pintar untuk Template Leger Ganda
     function parseExcelAllSheets(file, callback) { 
       var reader = new FileReader(); 
       reader.onload = function(e) { 
@@ -450,8 +471,30 @@
           var workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); 
           var result = {};
           workbook.SheetNames.forEach(function(sheetName) {
-            // Karena template leger ada 2 baris header, baca dari baris kedua (index 1)
-            result[sheetName] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { range: 1 });
+            var aoa = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+            if(aoa.length > 2) {
+              var headerRow1 = aoa[0] || [];
+              var headerRow2 = aoa[1] || [];
+              var keys = [];
+              var maxCol = Math.max(headerRow1.length, headerRow2.length);
+              
+              // Mencocokan key. Bila sel di header baris 2 kosong (karena mapel berdiri sendiri/merging vertikal), ia akan baca dari header baris 1
+              for(var c=0; c<maxCol; c++) {
+                var key = headerRow2[c] ? headerRow2[c].toString().trim() : (headerRow1[c] ? headerRow1[c].toString().trim() : "Col"+c);
+                keys.push(key);
+              }
+              
+              var rows = [];
+              for(var r=2; r<aoa.length; r++) {
+                 var rowData = aoa[r];
+                 if(rowData && rowData.length > 0 && rowData[0]) {
+                   var obj = {};
+                   for(var c=0; c<keys.length; c++) { obj[keys[c]] = rowData[c]; }
+                   rows.push(obj);
+                 }
+              }
+              result[sheetName] = rows;
+            } else { result[sheetName] = []; }
           });
           callback(null, result); 
         } catch(err) { callback(err, null); } 
@@ -602,7 +645,7 @@
       var c = document.getElementById('subjectsContainer'); if (dbSubjects.length === 0) { c.innerHTML = '<div class="text-center py-5"><p>Belum ada data mapel</p></div>'; return; }
       var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>Urut</th><th>Kode</th><th>Mata Pelajaran</th><th>Kelompok</th><th>Aktif</th><th class="text-end">Aksi</th></tr></thead><tbody>';
       var srt = dbSubjects.slice().sort(function(a,b){return a.urutan-b.urutan;});
-      srt.forEach(function(item) { var bdg = item.aktif === 'Ya' ? 'bg-success' : 'bg-danger'; h += '<tr><td>'+item.urutan+'</td><td><span class="fw-semibold">'+item.kode_mapel+'</span></td><td>'+item.nama_mapel+'</td><td><span class="badge bg-light text-dark border">Kel '+item.kelompok+'</span></td><td><span class="badge '+bdg+'">'+item.aktif+'</span></td><td class="text-end"><button class="btn btn-sm btn-light border me-1" onclick="editSubject(\''+item.id+'\')"><i class="fa-solid fa-pen text-primary"></i></button><button class="btn btn-sm btn-light border" onclick="deleteSubject(\''+item.id+'\')"><i class="fa-solid fa-trash text-danger"></i></button></td></tr>'; });
+      srt.forEach(function(item) { var bdg = item.aktif === 'Ya' ? 'bg-success' : 'bg-danger'; h += '<tr><td>'+item.urutan+'</td><td><span class="fw-semibold">'+item.kode_mapel+'</span></td><td>'+item.nama_mapel+'</td><td><span class="badge bg-light text-dark border">' + item.kelompok + '</span></td><td><span class="badge '+bdg+'">'+item.aktif+'</span></td><td class="text-end"><button class="btn btn-sm btn-light border me-1" onclick="editSubject(\''+item.id+'\')"><i class="fa-solid fa-pen text-primary"></i></button><button class="btn btn-sm btn-light border" onclick="deleteSubject(\''+item.id+'\')"><i class="fa-solid fa-trash text-danger"></i></button></td></tr>'; });
       c.innerHTML = h + '</tbody></table></div></div>';
     }
 
@@ -774,7 +817,7 @@
         json.forEach((r, idx) => {
           var id = 'subj_' + Date.now() + '_' + idx;
           var k = String(r['Kode']||''), n = r['Nama Mata Pelajaran']||'';
-          if(k && n) payload[id] = { kode_mapel: k, nama_mapel: n, kelompok: r['Kelompok']||'A', urutan: Number(r['Urutan']||1), aktif: r['Status Aktif']||'Ya' };
+          if(k && n) payload[id] = { kode_mapel: k, nama_mapel: n, kelompok: r['Kelompok']||'Umum', urutan: Number(r['Urutan']||1), aktif: r['Status Aktif']||'Ya' };
         });
         if(Object.keys(payload).length === 0) return Swal.fire('Error', 'Format data tidak sesuai.', 'error'); 
         Swal.fire({icon:'info', title:'Mengimpor ke Firebase...', showConfirmButton:false}); 
@@ -784,7 +827,6 @@
       }); 
     }
     
-    // UPDATE: Import Rapor multi-sheet Leger
     function handleImportRapor(e) { 
       var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
       
@@ -807,7 +849,8 @@
               
               rows.forEach(r => {
                 let sId = r['ID_Siswa (Jangan Diubah)'];
-                if (sId && r[sub.kode_mapel] !== undefined) {
+                // Akses array r menggunakan kode_mapel karena key di json disamakan otomatis dgn baris ke-2 excel (atau baris ke-1 bila standalone)
+                if (sId && r[sub.kode_mapel] !== undefined && r[sub.kode_mapel] !== "") {
                   flatPatch[`${sub.id}/${sId}/s${i}`] = r[sub.kode_mapel];
                 }
               });
