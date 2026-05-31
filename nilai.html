@@ -149,8 +149,8 @@
             <span class="fw-bold ms-2">Lihat & Edit per Mapel:</span>
             <select class="form-select w-auto min-w-200 border-success text-success fw-semibold" id="filterMapelRapor" onchange="fetchRapor()"></select>
             <div class="ms-auto d-flex gap-2 flex-wrap">
-              <button class="btn btn-outline-success rounded-pill px-3 fw-semibold" onclick="downloadTemplateRapor()"><i class="fa-solid fa-file-excel me-1"></i> Download Template Leger</button>
-              <button class="btn btn-outline-primary rounded-pill px-3 fw-semibold" onclick="document.getElementById('fileImportRapor').click()"><i class="fa-solid fa-file-import me-1"></i> Import Leger Multi-Sheet</button>
+              <button class="btn btn-outline-success rounded-pill px-3 fw-semibold" onclick="downloadTemplateRapor()"><i class="fa-solid fa-file-excel me-1"></i> Download Template</button>
+              <button class="btn btn-outline-primary rounded-pill px-3 fw-semibold" onclick="document.getElementById('fileImportRapor').click()"><i class="fa-solid fa-file-import me-1"></i> Import Multi-Sheet</button>
               <button class="btn btn-success rounded-pill px-3 fw-bold" id="btnSaveRapor" onclick="saveRaporMassal()"><i class="fa-solid fa-save me-1"></i> Simpan Tabel</button>
             </div>
           </div>
@@ -243,7 +243,7 @@
           <form id="formSubject">
             <input type="hidden" id="subjId"><input type="hidden" id="subjIsEdit" value="false">
             <div class="row">
-              <div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kode Singkatan</label><input type="text" class="form-control" id="subjKode" placeholder="cth: MTK" required></div>
+              <div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kode (cth: MTK)</label><input type="text" class="form-control" id="subjKode" required></div>
               <div class="col-md-8 mb-3"><label class="form-label small fw-bold">Nama Mata Pelajaran</label><input type="text" class="form-control" id="subjNama" required></div>
             </div>
             <div class="row">
@@ -323,7 +323,7 @@
     
     var isStudLoaded = false, isSubjLoaded = false, isSetLoaded = false;
 
-    // --- INITIALIZATION (WITH FORCE AUTO-REPAIR) ---
+    // --- INITIALIZATION ---
     async function initializeApp() {
       showFullPageLoading("Sinkronisasi & Perbaikan Database...");
       
@@ -336,7 +336,6 @@
       if (setRes) dbSettings = Object.assign(dbSettings, setRes);
       if (studRes) dbStudents = Object.keys(studRes).map(k => ({...studRes[k], id: k}));
       
-      // AUTO REPAIR MAPEL: Memaksa sinkronisasi database dengan template singkatan terbaru
       var hasAswaja = subjRes ? Object.values(subjRes).some(s => s.kode_mapel === 'ASWAJ') : false;
       
       if (!subjRes || !hasAswaja) {
@@ -354,7 +353,6 @@
       showPage('dashboard', document.querySelector('.nav-item-custom.active') || document.querySelectorAll('.nav-item-custom')[0]);
     }
 
-    // FUNGSI RESET MANUAL (Jika sewaktu-waktu user ingin mereset kembali)
     async function resetMapelFirebase() {
       Swal.fire({title:'Reset Mapel?', text:'Ini akan menghapus seluruh mapel saat ini dan mengembalikannya ke 14 mapel default. Lanjutkan?', icon:'warning', showCancelButton:true, confirmButtonColor:'#dc3545', confirmButtonText: 'Ya, Reset'}).then(async res => {
         if(!res.isConfirmed) return;
@@ -404,7 +402,6 @@
       exportToExcel(data, "Template_Ujian_" + mapelText.replace(/[^a-zA-Z0-9]/g, "_")); 
     }
 
-    // --- EXCEL LOGIC (MULTI SHEET LEGER) ---
     function downloadTemplateRapor() { 
       if(dbStudents.length === 0) return Swal.fire('Peringatan', 'Belum ada data siswa.', 'warning'); 
       
@@ -420,7 +417,6 @@
         
         activeSubjects.forEach(sub => {
           var kel = (sub.kelompok || "").trim();
-          // Logika Penataan Kolom yang tepat:
           if(kel === "" || kel === "-" || kel.toLowerCase() === "umum") {
              header1.push(sub.kode_mapel);
              header2.push(""); 
@@ -458,10 +454,8 @@
               
               if (c === header1.length || header1[c] !== currentKel || isStandalone || nextIsStandalone) {
                 if (c - 1 > startCol && !isStandalone) {
-                  // Merge horizontal (misal untuk grup PAI)
                   merges.push({s: {r:0, c:startCol}, e: {r:0, c:c-1}});
                 } else if(isStandalone) {
-                  // Merge vertical (misal untuk Umum: BA, PP, MTK)
                   for(var col = startCol; col < c; col++) { merges.push({s: {r:0, c:col}, e: {r:1, c:col}}); }
                 }
                 if (c < header1.length) { startCol = c; currentKel = header1[c]; isStandalone = nextIsStandalone; }
@@ -479,7 +473,6 @@
       }
     }
 
-    // Fungsi Parser Single Sheet
     function parseExcel(file, callback) { 
       var reader = new FileReader(); 
       reader.onload = function(e) { 
@@ -489,7 +482,6 @@
       reader.readAsArrayBuffer(file); 
     }
 
-    // Fungsi Parser Multi Sheet Pintar (Untuk import data Leger dengan dua baris header)
     function parseExcelAllSheets(file, callback) { 
       var reader = new FileReader(); 
       reader.onload = function(e) { 
@@ -505,7 +497,6 @@
               var maxCol = Math.max(headerRow1.length, headerRow2.length);
               
               for(var c=0; c<maxCol; c++) {
-                // Membaca singkatan dengan cerdas dari header baris kedua. Jika kosong (vertikal merge), ambil dari baris pertama.
                 var key = headerRow2[c] ? headerRow2[c].toString().trim() : (headerRow1[c] ? headerRow1[c].toString().trim() : "Col"+c);
                 keys.push(key);
               }
@@ -797,7 +788,7 @@
         }; 
       }); 
       await fbRequest(`rapor/${mapelId}`, 'PATCH', payload);
-      btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan ke Firebase'; btn.disabled = false; 
+      btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Tabel'; btn.disabled = false; 
       await fetchRapor();
       Swal.fire({icon:'success', title:'Tersimpan di Firebase', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
     }
@@ -816,7 +807,6 @@
       Swal.fire({icon:'success', title:'Tersimpan di Firebase', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
     }
 
-    // --- EXCEL IMPORTERS TO FIREBASE ---
     function handleImportSiswa(e) { 
       var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
       parseExcel(file, async function(err, json) { 
@@ -831,24 +821,6 @@
         Swal.fire({icon:'info', title:'Mengimpor ke Firebase...', showConfirmButton:false}); 
         await fbRequest('students', 'PATCH', payload);
         await fetchStudents();
-        Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
-      }); 
-    }
-    
-    function handleImportMapel(e) { 
-      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
-      parseExcel(file, async function(err, json) { 
-        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
-        var payload = {};
-        json.forEach((r, idx) => {
-          var id = 'subj_' + Date.now() + '_' + idx;
-          var k = String(r['Kode']||''), n = r['Nama Mata Pelajaran']||'';
-          if(k && n) payload[id] = { kode_mapel: k, nama_mapel: n, kelompok: r['Kelompok']||'Umum', urutan: Number(r['Urutan']||1), aktif: r['Status Aktif']||'Ya' };
-        });
-        if(Object.keys(payload).length === 0) return Swal.fire('Error', 'Format data tidak sesuai.', 'error'); 
-        Swal.fire({icon:'info', title:'Mengimpor ke Firebase...', showConfirmButton:false}); 
-        await fbRequest('subjects', 'PATCH', payload);
-        await fetchSubjects();
         Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
       }); 
     }
@@ -912,7 +884,6 @@
       }); 
     }
 
-    // --- CETAK PDF ---
     function cetakPDFIjazah() {
       if(!dbIjazah.students || dbIjazah.students.length === 0) return Swal.fire('Gagal', 'Belum ada data nilai. Lakukan kalkulasi terlebih dahulu.', 'error');
       var filterSelect = document.getElementById('filterKelasIjazah'); var selectedKelas = filterSelect.value;
