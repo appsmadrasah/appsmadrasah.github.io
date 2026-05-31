@@ -65,7 +65,6 @@
   </div>
 
   <input type="file" id="fileImportSiswa" class="d-none" accept=".xlsx, .xls" onchange="handleImportSiswa(event)">
-  <input type="file" id="fileImportMapel" class="d-none" accept=".xlsx, .xls" onchange="handleImportMapel(event)">
   <input type="file" id="fileImportRapor" class="d-none" accept=".xlsx, .xls" onchange="handleImportRapor(event)">
   <input type="file" id="fileImportUjian" class="d-none" accept=".xlsx, .xls" onchange="handleImportUjian(event)">
 
@@ -124,14 +123,13 @@
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <h4 class="fw-bold mb-0">Mata Pelajaran</h4>
           <div class="d-flex gap-2 flex-wrap">
-            <button class="btn btn-outline-success rounded-pill shadow-sm px-3" onclick="downloadTemplateMapel()"><i class="fa-solid fa-download me-1"></i> Template</button>
-            <button class="btn btn-outline-primary rounded-pill shadow-sm px-3" onclick="document.getElementById('fileImportMapel').click()"><i class="fa-solid fa-file-import me-1"></i> Import Excel</button>
+            <button class="btn btn-outline-danger rounded-pill shadow-sm px-3" onclick="resetMapelFirebase()"><i class="fa-solid fa-rotate-left me-1"></i> Reset Mapel Default</button>
             <button class="btn btn-success rounded-pill shadow-sm px-3" onclick="openSubjectModal()"><i class="fa-solid fa-plus me-1"></i> Tambah</button>
           </div>
         </div>
         <div class="alert alert-info border-0 bg-info bg-opacity-10 d-flex gap-2 small mb-4">
           <i class="fa-solid fa-circle-info mt-1 text-info"></i>
-          <span class="text-secondary">Gunakan nama <b>Kelompok</b> (misal: "PAI" atau "Mulok") untuk menggabungkan header. Ketik <b>"Umum"</b> agar mapel tersebut berdiri sendiri secara vertikal.</span>
+          <span class="text-secondary">Gunakan nama <b>Kelompok</b> (misal: "PAI" atau "Mulok") untuk menggabungkan header. Ketik <b>"Umum"</b> agar mapel tersebut berdiri sendiri.</span>
         </div>
         <div id="subjectsContainer"></div>
       </div>
@@ -303,9 +301,24 @@
     };
     var dbRapor = [], dbUjian = [];
     var dbIjazah = { subjects: [], students: [] };
-    
-    // Status Loader
-    var isStudLoaded = false, isSubjLoaded = false, isSetLoaded = false;
+
+    // --- DEFAULT 14 MAPEL ---
+    const DEFAULT_MAPEL = [
+      { id: "subj_01", kode_mapel: "QH", nama_mapel: "Al-Qur'an Hadis", kelompok: "PAI", urutan: 1, aktif: "Ya" },
+      { id: "subj_02", kode_mapel: "AA", nama_mapel: "Akidah Akhlak", kelompok: "PAI", urutan: 2, aktif: "Ya" },
+      { id: "subj_03", kode_mapel: "FIK", nama_mapel: "Fikih", kelompok: "PAI", urutan: 3, aktif: "Ya" },
+      { id: "subj_04", kode_mapel: "SKI", nama_mapel: "Sejarah Kebudayaan Islam", kelompok: "PAI", urutan: 4, aktif: "Ya" },
+      { id: "subj_05", kode_mapel: "BA", nama_mapel: "Bahasa Arab", kelompok: "Umum", urutan: 5, aktif: "Ya" },
+      { id: "subj_06", kode_mapel: "PP", nama_mapel: "Pendidikan Pancasila", kelompok: "Umum", urutan: 6, aktif: "Ya" },
+      { id: "subj_07", kode_mapel: "BIndo", nama_mapel: "Bahasa Indonesia", kelompok: "Umum", urutan: 7, aktif: "Ya" },
+      { id: "subj_08", kode_mapel: "MTK", nama_mapel: "Matematika", kelompok: "Umum", urutan: 8, aktif: "Ya" },
+      { id: "subj_09", kode_mapel: "IPAS", nama_mapel: "Ilmu Pengetahuan Alam dan Sosial", kelompok: "Umum", urutan: 9, aktif: "Ya" },
+      { id: "subj_10", kode_mapel: "PJOK", nama_mapel: "PJOK", kelompok: "Umum", urutan: 10, aktif: "Ya" },
+      { id: "subj_11", kode_mapel: "SBP", nama_mapel: "Seni Budaya dan Prakarya", kelompok: "Umum", urutan: 11, aktif: "Ya" },
+      { id: "subj_12", kode_mapel: "Bing", nama_mapel: "Bahasa Inggris", kelompok: "Umum", urutan: 12, aktif: "Ya" },
+      { id: "subj_13", kode_mapel: "B. Ja", nama_mapel: "Bahasa Jawa", kelompok: "Mulok", urutan: 13, aktif: "Ya" },
+      { id: "subj_14", kode_mapel: "ASWAJ", nama_mapel: "Ke-NU-an / Aswaja", kelompok: "Mulok", urutan: 14, aktif: "Ya" }
+    ];
 
     // --- INITIALIZATION ---
     async function initializeApp() {
@@ -319,9 +332,16 @@
 
       if (setRes) dbSettings = Object.assign(dbSettings, setRes);
       if (studRes) dbStudents = Object.keys(studRes).map(k => ({...studRes[k], id: k}));
-      if (subjRes) dbSubjects = Object.keys(subjRes).map(k => ({...subjRes[k], id: k}));
       
-      isSetLoaded = true; isStudLoaded = true; isSubjLoaded = true;
+      // AUTO REPAIR MAPEL JIKA KOSONG ATAU FORMAT LAMA
+      if (!subjRes || Object.keys(subjRes).length < 14) {
+        var payloadMapel = {};
+        DEFAULT_MAPEL.forEach(sub => { payloadMapel[sub.id] = sub; });
+        await fbRequest('subjects', 'PUT', payloadMapel);
+        dbSubjects = DEFAULT_MAPEL;
+      } else {
+        dbSubjects = Object.keys(subjRes).map(k => ({...subjRes[k], id: k}));
+      }
       
       updateAppProfile(dbSettings);
       hideFullPageLoading();
@@ -329,7 +349,20 @@
       showPage('dashboard', document.querySelector('.nav-item-custom.active') || document.querySelectorAll('.nav-item-custom')[0]);
     }
 
-    // --- PROFILE SYNC & FORMATTER ---
+    // FUNGSI RESET MANUAL JIKA USER MENGKLIK TOMBOL
+    async function resetMapelFirebase() {
+      Swal.fire({title:'Reset Mapel?', text:'Ini akan menghapus seluruh mapel saat ini dan mengembalikannya ke 14 mapel default (Leger Normal). Lanjutkan?', icon:'warning', showCancelButton:true, confirmButtonColor:'#dc3545'}).then(async res => {
+        if(!res.isConfirmed) return;
+        showFullPageLoading("Mereset Mapel...");
+        var payloadMapel = {};
+        DEFAULT_MAPEL.forEach(sub => { payloadMapel[sub.id] = sub; });
+        await fbRequest('subjects', 'PUT', payloadMapel);
+        await fetchSubjects();
+        hideFullPageLoading();
+        Swal.fire('Sukses', 'Mata pelajaran berhasil di-reset.', 'success');
+      });
+    }
+
     function updateAppProfile(profile) {
       if(!profile) return;
       if(profile.logo) { document.getElementById('sidebarLogo').src = profile.logo; document.getElementById('loaderLogo').src = profile.logo; }
@@ -343,7 +376,7 @@
       return dbSettings.format_nilai === 'Bulat' ? Math.round(num) : num.toFixed(2);
     }
 
-    // --- EXCEL LOGIC (SINGLE SHEET) ---
+    // --- EXCEL LOGIC ---
     function exportToExcel(dataArray, filename) {
       try {
         if(typeof XLSX === 'undefined') { Swal.fire('Error', 'Library SheetJS gagal dimuat. Periksa koneksi.', 'error'); return; }
@@ -356,27 +389,6 @@
     function downloadTemplateSiswa() { 
       var data = [{ "NISN": "0012345678", "Nama Lengkap": "Contoh Nama Siswa", "Kelas": "XII-IPA 1", "Tahun Ajaran": "2025/2026", "Status": "Aktif" }]; 
       exportToExcel(data, "Template_Import_Siswa"); 
-    }
-
-    // PRE-FILLED TEMPLATE MAPEL (14 Mapel sesuai dengan gambar)
-    function downloadTemplateMapel() { 
-      var data = [
-        { "Kode": "QH", "Nama Mata Pelajaran": "Al-Qur'an Hadis", "Kelompok": "PAI", "Urutan": 1, "Status Aktif": "Ya" },
-        { "Kode": "AA", "Nama Mata Pelajaran": "Akidah Akhlak", "Kelompok": "PAI", "Urutan": 2, "Status Aktif": "Ya" },
-        { "Kode": "FIK", "Nama Mata Pelajaran": "Fikih", "Kelompok": "PAI", "Urutan": 3, "Status Aktif": "Ya" },
-        { "Kode": "SKI", "Nama Mata Pelajaran": "Sejarah Kebudayaan Islam", "Kelompok": "PAI", "Urutan": 4, "Status Aktif": "Ya" },
-        { "Kode": "BA", "Nama Mata Pelajaran": "Bahasa Arab", "Kelompok": "Umum", "Urutan": 5, "Status Aktif": "Ya" },
-        { "Kode": "PP", "Nama Mata Pelajaran": "Pendidikan Pancasila", "Kelompok": "Umum", "Urutan": 6, "Status Aktif": "Ya" },
-        { "Kode": "BIndo", "Nama Mata Pelajaran": "Bahasa Indonesia", "Kelompok": "Umum", "Urutan": 7, "Status Aktif": "Ya" },
-        { "Kode": "MTK", "Nama Mata Pelajaran": "Matematika", "Kelompok": "Umum", "Urutan": 8, "Status Aktif": "Ya" },
-        { "Kode": "IPAS", "Nama Mata Pelajaran": "Ilmu Pengetahuan Alam dan Sosial", "Kelompok": "Umum", "Urutan": 9, "Status Aktif": "Ya" },
-        { "Kode": "PJOK", "Nama Mata Pelajaran": "PJOK", "Kelompok": "Umum", "Urutan": 10, "Status Aktif": "Ya" },
-        { "Kode": "SBP", "Nama Mata Pelajaran": "Seni Budaya dan Prakarya", "Kelompok": "Umum", "Urutan": 11, "Status Aktif": "Ya" },
-        { "Kode": "Bing", "Nama Mata Pelajaran": "Bahasa Inggris", "Kelompok": "Umum", "Urutan": 12, "Status Aktif": "Ya" },
-        { "Kode": "B. Ja", "Nama Mata Pelajaran": "Bahasa Jawa", "Kelompok": "Mulok", "Urutan": 13, "Status Aktif": "Ya" },
-        { "Kode": "ASWAJ", "Nama Mata Pelajaran": "Ke-NU-an / Aswaja", "Kelompok": "Mulok", "Urutan": 14, "Status Aktif": "Ya" }
-      ];
-      exportToExcel(data, "Template_Import_Mapel"); 
     }
 
     function downloadTemplateUjian() { 
@@ -392,7 +404,7 @@
       if(dbStudents.length === 0) return Swal.fire('Peringatan', 'Belum ada data siswa.', 'warning'); 
       
       var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan);
-      if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif. Tambahkan mapel dahulu!', 'warning');
+      if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif.', 'warning');
 
       try {
         if(typeof XLSX === 'undefined') return Swal.fire('Error', 'Library SheetJS gagal dimuat.', 'error');
@@ -403,6 +415,7 @@
         
         activeSubjects.forEach(sub => {
           var kel = (sub.kelompok || "").trim();
+          // Jika Kelompok diset 'Umum' atau kosong, header akan ditaruh di atas, dan baris 2 nya kosong untuk trigger Merge Vertikal
           if(kel === "" || kel === "-" || kel.toLowerCase() === "umum") {
              header1.push(sub.kode_mapel);
              header2.push(""); 
@@ -485,6 +498,7 @@
               var maxCol = Math.max(headerRow1.length, headerRow2.length);
               
               for(var c=0; c<maxCol; c++) {
+                // Logika pintar: jika header baris ke-2 kosong (merging vertikal), ambil dari header baris pertama
                 var key = headerRow2[c] ? headerRow2[c].toString().trim() : (headerRow1[c] ? headerRow1[c].toString().trim() : "Col"+c);
                 keys.push(key);
               }
@@ -814,24 +828,7 @@
       }); 
     }
     
-    function handleImportMapel(e) { 
-      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
-      parseExcel(file, async function(err, json) { 
-        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
-        var payload = {};
-        json.forEach((r, idx) => {
-          var id = 'subj_' + Date.now() + '_' + idx;
-          var k = String(r['Kode']||''), n = r['Nama Mata Pelajaran']||'';
-          if(k && n) payload[id] = { kode_mapel: k, nama_mapel: n, kelompok: r['Kelompok']||'Umum', urutan: Number(r['Urutan']||1), aktif: r['Status Aktif']||'Ya' };
-        });
-        if(Object.keys(payload).length === 0) return Swal.fire('Error', 'Format data tidak sesuai.', 'error'); 
-        Swal.fire({icon:'info', title:'Mengimpor ke Firebase...', showConfirmButton:false}); 
-        await fbRequest('subjects', 'PATCH', payload);
-        await fetchSubjects();
-        Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
-      }); 
-    }
-    
+    // UPDATE: Import Rapor multi-sheet Leger
     function handleImportRapor(e) { 
       var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
       
@@ -854,6 +851,7 @@
               
               rows.forEach(r => {
                 let sId = r['ID_Siswa (Jangan Diubah)'];
+                // Akses array r menggunakan kode_mapel (diambil pintar dari baris 2, atau baris 1 jika Umum)
                 if (sId && r[sub.kode_mapel] !== undefined && r[sub.kode_mapel] !== "") {
                   flatPatch[`${sub.id}/${sId}/s${i}`] = r[sub.kode_mapel];
                 }
