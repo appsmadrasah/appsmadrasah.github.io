@@ -1,4 +1,3 @@
-<!-- #by: www.madrasahebat.com-->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -9,7 +8,6 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <!-- Library SheetJS untuk Ekspor & Impor Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
@@ -100,13 +98,11 @@
         <button class="btn btn-light border" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
       </div>
 
-      <!-- PAGE: DASHBOARD -->
       <div id="page-dashboard" class="page-container">
         <h4 class="fw-bold mb-4">Dashboard</h4>
         <div id="dashboardContainer"></div> 
       </div>
 
-      <!-- PAGE: STUDENTS -->
       <div id="page-students" class="page-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <h4 class="fw-bold mb-0">Data Siswa</h4>
@@ -119,7 +115,6 @@
         <div id="studentsContainer"></div>
       </div>
 
-      <!-- PAGE: SUBJECTS -->
       <div id="page-subjects" class="page-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <h4 class="fw-bold mb-0">Mata Pelajaran</h4>
@@ -135,13 +130,11 @@
         <div id="subjectsContainer"></div>
       </div>
 
-      <!-- PAGE: SETTINGS -->
       <div id="page-settings" class="page-container d-none">
         <h4 class="fw-bold mb-4">Pengaturan Sistem</h4>
         <div id="settingsContainer"></div>
       </div>
 
-      <!-- PAGE: RAPOR -->
       <div id="page-rapor" class="page-container d-none">
         <h4 class="fw-bold mb-4">Input Nilai Rapor</h4>
         <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -158,7 +151,6 @@
         <div id="raporContainer"></div>
       </div>
 
-      <!-- PAGE: UJIAN -->
       <div id="page-ujian" class="page-container d-none">
         <h4 class="fw-bold mb-4">Input Nilai Ujian</h4>
         <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -175,7 +167,6 @@
         <div id="ujianContainer"></div>
       </div>
 
-      <!-- PAGE: IJAZAH -->
       <div id="page-ijazah" class="page-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <h4 class="fw-bold mb-0">Proses Nilai Ijazah</h4>
@@ -203,7 +194,6 @@
     </div>
   </div>
 
-  <!-- Modal Siswa -->
   <div class="modal fade" id="modalStudent" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content border-0 shadow">
@@ -231,7 +221,6 @@
     </div>
   </div>
 
-  <!-- Modal Mapel -->
   <div class="modal fade" id="modalSubject" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content border-0 shadow">
@@ -418,7 +407,7 @@
         
         var dataRows = dbStudents.map(function(s) { 
           var row = [s.id, s.nisn, s.nama, s.kelas];
-          activeSubjects.forEach(sub => { row.push(0); });
+          activeSubjects.forEach(sub => { row.push(''); }); // Blank default
           return row;
         }); 
         
@@ -486,7 +475,7 @@
         
         var dataRows = dbStudents.map(function(s) { 
           var row = [s.id, s.nisn, s.nama, s.kelas];
-          activeSubjects.forEach(sub => { row.push(0); });
+          activeSubjects.forEach(sub => { row.push(''); }); // Blank default
           return row;
         }); 
         
@@ -627,9 +616,21 @@
       const res = await fbRequest(`rapor/${mapelId}`);
       
       dbRapor = dbStudents.map(s => {
-        var r = res && res[s.id] ? res[s.id] : {s1:0, s2:0, s3:0, s4:0, s5:0};
-        var rata = ((Number(r.s1||0)+Number(r.s2||0)+Number(r.s3||0)+Number(r.s4||0)+Number(r.s5||0))/5).toFixed(2);
-        return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, s1: r.s1||0, s2: r.s2||0, s3: r.s3||0, s4: r.s4||0, s5: r.s5||0, rata: rata };
+        var r = res && res[s.id] ? res[s.id] : {};
+        var v1 = Number(r.s1)||0, v2 = Number(r.s2)||0, v3 = Number(r.s3)||0, v4 = Number(r.s4)||0, v5 = Number(r.s5)||0;
+        var sum = 0, count = 0;
+        if(v1 > 0) { sum+=v1; count++; }
+        if(v2 > 0) { sum+=v2; count++; }
+        if(v3 > 0) { sum+=v3; count++; }
+        if(v4 > 0) { sum+=v4; count++; }
+        if(v5 > 0) { sum+=v5; count++; }
+        var rata = count > 0 ? (sum/count).toFixed(2) : "0";
+        
+        return { 
+          student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, 
+          s1: r.s1!==undefined?r.s1:'', s2: r.s2!==undefined?r.s2:'', s3: r.s3!==undefined?r.s3:'', s4: r.s4!==undefined?r.s4:'', s5: r.s5!==undefined?r.s5:'', 
+          rata: rata 
+        };
       });
       if(activePage === 'rapor') renderRapor();
     }
@@ -640,8 +641,8 @@
       const res = await fbRequest(`ujian/${mapelId}`);
       
       dbUjian = dbStudents.map(s => {
-        var u = res && res[s.id] ? res[s.id] : {nilai_ujian: 0};
-        return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, nilai_ujian: u.nilai_ujian||0 };
+        var u = res && res[s.id] ? res[s.id] : {};
+        return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, nilai_ujian: u.nilai_ujian!==undefined?u.nilai_ujian:'' };
       });
       if(activePage === 'ujian') renderUjian();
     }
@@ -660,11 +661,19 @@
           var countMapel = 0;
           
           activeSubjects.forEach(sub => {
-              var s_rapor = raporRes && raporRes[sub.id] && raporRes[sub.id][s.id] ? raporRes[sub.id][s.id] : {s1:0, s2:0, s3:0, s4:0, s5:0};
-              var s_ujian = ujianRes && ujianRes[sub.id] && ujianRes[sub.id][s.id] ? ujianRes[sub.id][s.id] : {nilai_ujian:0};
+              var s_rapor = raporRes && raporRes[sub.id] && raporRes[sub.id][s.id] ? raporRes[sub.id][s.id] : {};
+              var s_ujian = ujianRes && ujianRes[sub.id] && ujianRes[sub.id][s.id] ? ujianRes[sub.id][s.id] : {};
               
-              var rataRapor = (Number(s_rapor.s1||0)+Number(s_rapor.s2||0)+Number(s_rapor.s3||0)+Number(s_rapor.s4||0)+Number(s_rapor.s5||0))/5;
-              var nilaiUjian = Number(s_ujian.nilai_ujian||0);
+              var v1 = Number(s_rapor.s1)||0, v2 = Number(s_rapor.s2)||0, v3 = Number(s_rapor.s3)||0, v4 = Number(s_rapor.s4)||0, v5 = Number(s_rapor.s5)||0;
+              var sumRapor = 0, countRapor = 0;
+              if(v1 > 0) { sumRapor+=v1; countRapor++; }
+              if(v2 > 0) { sumRapor+=v2; countRapor++; }
+              if(v3 > 0) { sumRapor+=v3; countRapor++; }
+              if(v4 > 0) { sumRapor+=v4; countRapor++; }
+              if(v5 > 0) { sumRapor+=v5; countRapor++; }
+              var rataRapor = countRapor > 0 ? (sumRapor / countRapor) : 0;
+              
+              var nilaiUjian = Number(s_ujian.nilai_ujian)||0;
               
               var finalScore = (rataRapor * pctRapor) + (nilaiUjian * pctUjian);
               scores[sub.id] = finalScore;
@@ -734,14 +743,14 @@
     function renderRapor() {
       var c = document.getElementById('raporContainer'); if(dbRapor.length===0){ c.innerHTML='<div class="text-center py-5 text-muted"><i class="fa-solid fa-users fa-3x mb-3 opacity-25"></i><p>Tidak ada data. Silakan tambah siswa atau import.</p></div>'; return; }
       var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th>Smt 1</th><th>Smt 2</th><th>Smt 3</th><th>Smt 4</th><th>Smt 5</th><th>Rata-rata</th></tr></thead><tbody id="bodyRapor">';
-      dbRapor.forEach(function(r) { h += '<tr><td>'+r.nisn+'</td><td><span class="fw-semibold">'+r.nama+'</span></td><td>'+r.kelas+'</td><td><input type="number" class="table-input rep-val" data-id="'+r.student_id+'" data-sem="s1" value="'+r.s1+'"></td><td><input type="number" class="table-input rep-val" data-id="'+r.student_id+'" data-sem="s2" value="'+r.s2+'"></td><td><input type="number" class="table-input rep-val" data-id="'+r.student_id+'" data-sem="s3" value="'+r.s3+'"></td><td><input type="number" class="table-input rep-val" data-id="'+r.student_id+'" data-sem="s4" value="'+r.s4+'"></td><td><input type="number" class="table-input rep-val" data-id="'+r.student_id+'" data-sem="s5" value="'+r.s5+'"></td><td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">'+r.rata+'</span></td></tr>'; });
+      dbRapor.forEach(function(r) { h += `<tr><td>${r.nisn}</td><td><span class="fw-semibold">${r.nama}</span></td><td>${r.kelas}</td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s1" value="${r.s1}"></td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s2" value="${r.s2}"></td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s3" value="${r.s3}"></td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s4" value="${r.s4}"></td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s5" value="${r.s5}"></td><td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">${r.rata}</span></td></tr>`; });
       c.innerHTML = h + '</tbody></table></div></div>';
     }
 
     function renderUjian() {
       var c = document.getElementById('ujianContainer'); if(dbUjian.length===0){ c.innerHTML='<div class="text-center py-5 text-muted"><p>Tidak ada data. Silakan tambah siswa atau import.</p></div>'; return; }
       var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th>Nilai Ujian Akhir</th></tr></thead><tbody id="bodyUjian">';
-      dbUjian.forEach(function(u) { h += '<tr><td>'+u.nisn+'</td><td><span class="fw-semibold">'+u.nama+'</span></td><td>'+u.kelas+'</td><td><input type="number" class="table-input exam-val" data-id="'+u.student_id+'" value="'+u.nilai_ujian+'"></td></tr>'; });
+      dbUjian.forEach(function(u) { h += `<tr><td>${u.nisn}</td><td><span class="fw-semibold">${u.nama}</span></td><td>${u.kelas}</td><td><input type="number" class="table-input exam-val" data-id="${u.student_id}" value="${u.nilai_ujian}"></td></tr>`; });
       c.innerHTML = h + '</tbody></table></div></div>';
     }
 
@@ -842,13 +851,17 @@
       document.querySelectorAll('#bodyRapor tr').forEach(function(tr) { 
         var id = tr.querySelector('input[data-sem="s1"]').getAttribute('data-id'); 
         payload[id] = { 
-          s1: tr.querySelector('input[data-sem="s1"]').value || 0, s2: tr.querySelector('input[data-sem="s2"]').value || 0, s3: tr.querySelector('input[data-sem="s3"]').value || 0, s4: tr.querySelector('input[data-sem="s4"]').value || 0, s5: tr.querySelector('input[data-sem="s5"]').value || 0 
+          s1: tr.querySelector('input[data-sem="s1"]').value, 
+          s2: tr.querySelector('input[data-sem="s2"]').value, 
+          s3: tr.querySelector('input[data-sem="s3"]').value, 
+          s4: tr.querySelector('input[data-sem="s4"]').value, 
+          s5: tr.querySelector('input[data-sem="s5"]').value 
         }; 
       }); 
       await fbRequest(`rapor/${mapelId}`, 'PATCH', payload);
       btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Data'; btn.disabled = false; 
       await fetchRapor();
-      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
+      Swal.fire({icon:'success', title:'Tersimpan di Sistem', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
     }
 
     async function saveUjianMassal() { 
@@ -857,12 +870,12 @@
       var payload = {}; 
       document.querySelectorAll('#bodyUjian tr').forEach(function(tr) { 
         var inpt = tr.querySelector('.exam-val'); 
-        payload[inpt.getAttribute('data-id')] = { nilai_ujian: inpt.value || 0 }; 
+        payload[inpt.getAttribute('data-id')] = { nilai_ujian: inpt.value }; 
       }); 
       await fbRequest(`ujian/${mapelId}`, 'PATCH', payload);
       btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Data'; btn.disabled = false; 
       await fetchUjian();
-      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
+      Swal.fire({icon:'success', title:'Tersimpan di Sistem', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
     }
 
     // --- EXCEL IMPORTERS TO SYSTEM ---
