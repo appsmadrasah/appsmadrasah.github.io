@@ -1,4 +1,3 @@
-<!-- #by: www.madrasahebat.com-->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -9,7 +8,6 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <!-- Library SheetJS untuk Ekspor & Impor Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
@@ -100,13 +98,11 @@
         <button class="btn btn-light border" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
       </div>
 
-      <!-- PAGE: DASHBOARD -->
       <div id="page-dashboard" class="page-container">
         <h4 class="fw-bold mb-4">Dashboard</h4>
         <div id="dashboardContainer"></div> 
       </div>
 
-      <!-- PAGE: STUDENTS -->
       <div id="page-students" class="page-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <h4 class="fw-bold mb-0">Data Siswa</h4>
@@ -119,7 +115,6 @@
         <div id="studentsContainer"></div>
       </div>
 
-      <!-- PAGE: SUBJECTS -->
       <div id="page-subjects" class="page-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <h4 class="fw-bold mb-0">Mata Pelajaran</h4>
@@ -135,13 +130,11 @@
         <div id="subjectsContainer"></div>
       </div>
 
-      <!-- PAGE: SETTINGS -->
       <div id="page-settings" class="page-container d-none">
         <h4 class="fw-bold mb-4">Pengaturan Sistem</h4>
         <div id="settingsContainer"></div>
       </div>
 
-      <!-- PAGE: RAPOR -->
       <div id="page-rapor" class="page-container d-none">
         <h4 class="fw-bold mb-4">Input Nilai Rapor</h4>
         <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -158,7 +151,6 @@
         <div id="raporContainer"></div>
       </div>
 
-      <!-- PAGE: UJIAN -->
       <div id="page-ujian" class="page-container d-none">
         <h4 class="fw-bold mb-4">Input Nilai Ujian</h4>
         <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -167,7 +159,7 @@
             <select class="form-select w-auto min-w-200 border-success text-success fw-semibold" id="filterMapelUjian" onchange="fetchUjian()"></select>
             <div class="ms-auto d-flex gap-2 flex-wrap">
               <button class="btn btn-outline-success rounded-pill px-3 fw-semibold" onclick="downloadTemplateUjian()"><i class="fa-solid fa-file-excel me-1"></i> Download Template</button>
-              <button class="btn btn-outline-primary rounded-pill px-3 fw-semibold" onclick="document.getElementById('fileImportUjian').click()"><i class="fa-solid fa-file-import me-1"></i> Import Leger Ujian</button>
+              <button class="btn btn-outline-primary rounded-pill px-3 fw-semibold" onclick="document.getElementById('fileImportUjian').click()"><i class="fa-solid fa-file-import me-1"></i> Import Ujian</button>
               <button class="btn btn-success rounded-pill px-3 fw-bold" id="btnSaveUjian" onclick="saveUjianMassal()"><i class="fa-solid fa-save me-1"></i> Simpan Data</button>
             </div>
           </div>
@@ -175,7 +167,6 @@
         <div id="ujianContainer"></div>
       </div>
 
-      <!-- PAGE: IJAZAH -->
       <div id="page-ijazah" class="page-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <h4 class="fw-bold mb-0">Proses Nilai Ijazah</h4>
@@ -203,7 +194,6 @@
     </div>
   </div>
 
-  <!-- Modal Siswa -->
   <div class="modal fade" id="modalStudent" tabindex="-1">
     <div class="modal-dialog modal-lg">
       <div class="modal-content border-0 shadow">
@@ -238,7 +228,6 @@
     </div>
   </div>
 
-  <!-- Modal Mapel -->
   <div class="modal fade" id="modalSubject" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content border-0 shadow">
@@ -280,15 +269,24 @@
   <script>
     const FB_URL = "https://nilai-63a30-default-rtdb.asia-southeast1.firebasedatabase.app";
     
+    // ANTI-CACHE SYSTEM UNTUK SELALU MENDAPATKAN DATA TERBARU
     async function fbRequest(path, method = 'GET', body = null) {
-      const options = { method: method };
+      const options = { 
+        method: method,
+        cache: 'no-store' // Memaksa browser tidak menyimpan cache
+      };
       if (body) {
         options.body = JSON.stringify(body);
         options.headers = { 'Content-Type': 'application/json' };
       }
       try {
-        const res = await fetch(`${FB_URL}/${path}.json`, options);
-        if (!res.ok) throw new Error('Network response was not ok');
+        // Menambahkan timestamp khusus GET agar benar-benar merefresh data
+        const url = `${FB_URL}/${path}.json` + (method === 'GET' ? `?_=${Date.now()}` : '');
+        const res = await fetch(url, options);
+        if (!res.ok) {
+          const errTxt = await res.text();
+          throw new Error(`HTTP ${res.status}: ${errTxt}`);
+        }
         return await res.json();
       } catch (err) {
         console.error("System Error:", err);
@@ -395,10 +393,11 @@
     }
 
     function downloadTemplateSiswa() { 
-      var data = [{ "NISN": "0012345678", "No Ujian": "01-001-001-8", "Nama Lengkap": "Contoh Nama Siswa", "Tempat Lahir": "Jakarta", "Tanggal Lahir": "2010-05-14", "Kelas": "XII-IPA 1", "Tahun Ajaran": "2025/2026", "Status": "Aktif" }]; 
+      var data = [{ "NISN": "0012345678", "No. Ujian": "01-001-001-8", "Nama Lengkap": "Contoh Nama Siswa", "Tempat Lahir": "Jakarta", "Tanggal Lahir": "2010-05-14", "Kelas": "XII-IPA 1", "Tahun Ajaran": "2025/2026", "Status": "Aktif" }]; 
       exportToExcel(data, "Template_Import_Siswa"); 
     }
 
+    // Terapkan Logika LEGER ke UJIAN
     function downloadTemplateUjian() { 
       if(dbStudents.length === 0) return Swal.fire('Peringatan', 'Belum ada data siswa.', 'warning'); 
       
@@ -922,7 +921,7 @@
         json.forEach((r, idx) => {
           var id = 'stud_' + Date.now() + '_' + idx;
           var nisn = String(r['NISN']||''), nama = r['Nama Lengkap']||'';
-          var no_ujian = String(r['No Ujian']||''), tmp = r['Tempat Lahir']||'', tgl = r['Tanggal Lahir']||'';
+          var no_ujian = String(r['No. Ujian']||r['No Ujian']||''), tmp = r['Tempat Lahir']||'', tgl = r['Tanggal Lahir']||'';
           if(nisn && nama) payload[id] = { nisn: nisn, no_ujian: no_ujian, nama: nama, tempat_lahir: tmp, tgl_lahir: tgl, kelas: r['Kelas']||'', tahun_ajaran: r['Tahun Ajaran']||'', status: r['Status']||'Aktif' };
         });
         if(Object.keys(payload).length === 0) return Swal.fire('Error', 'Format data tidak sesuai.', 'error'); 
@@ -972,10 +971,15 @@
               let rows = sheets[sheetName] || [];
               
               rows.forEach(r => {
-                let sId = r['ID_Siswa (Jangan Diubah)'];
+                let sIdKey = Object.keys(r).find(k => k && k.includes("ID_Siswa"));
+                let sId = sIdKey ? r[sIdKey] : null;
+                
                 if (sId) {
-                  let val = r[sub.kode_mapel];
-                  flatPatch[`${sub.id}/${sId}/s${i}`] = (val !== undefined && val !== "") ? val : "";
+                  let mapelKey = Object.keys(r).find(k => k && k.trim() === sub.kode_mapel.trim());
+                  if (mapelKey) {
+                    let val = r[mapelKey];
+                    flatPatch[`${sub.id}/${sId}/s${i}`] = (val !== undefined && val !== "") ? val : "";
+                  }
                 }
               });
             }
@@ -1008,16 +1012,20 @@
         
         try {
           let flatPatch = {};
-          
           let sheetName = Object.keys(sheets)[0];
           let rows = sheets[sheetName] || [];
           
           activeSubjects.forEach(sub => {
             rows.forEach(r => {
-              let sId = r['ID_Siswa (Jangan Diubah)'];
+              let sIdKey = Object.keys(r).find(k => k && k.includes("ID_Siswa"));
+              let sId = sIdKey ? r[sIdKey] : null;
+              
               if (sId) {
-                let val = r[sub.kode_mapel];
-                flatPatch[`${sub.id}/${sId}/nilai_ujian`] = (val !== undefined && val !== "") ? val : "";
+                let mapelKey = Object.keys(r).find(k => k && k.trim() === sub.kode_mapel.trim());
+                if (mapelKey) {
+                  let val = r[mapelKey];
+                  flatPatch[`${sub.id}/${sId}/nilai_ujian`] = (val !== undefined && val !== "") ? val : "";
+                }
               }
             });
           });
