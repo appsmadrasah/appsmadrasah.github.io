@@ -733,13 +733,17 @@
     }
 
     function renderStudents() {
-      var c = document.getElementById('studentsContainer'); if (dbStudents.length === 0) { c.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-inbox fa-3x text-muted mb-3 opacity-25"></i><p>Belum ada data siswa</p></div>'; return; }
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>No. Ujian</th><th>NISN</th><th>Nama Lengkap</th><th>TTL</th><th>Kelas</th><th>TA</th><th>Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
-      dbStudents.forEach(function(item) { 
+      var c = document.getElementById('studentsContainer'); 
+      if (dbStudents.length === 0) { c.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-inbox fa-3x text-muted mb-3 opacity-25"></i><p>Belum ada data siswa</p></div>'; return; }
+      
+      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th width="50" class="text-center">No</th><th>No. Ujian</th><th>NISN</th><th>Nama Lengkap</th><th>TTL</th><th>Kelas</th><th>TA</th><th>Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
+      
+      dbStudents.forEach(function(item, index) { 
         var bdg = item.status === 'Aktif' ? 'bg-success' : 'bg-secondary'; 
         var noUjian = item.no_ujian || '-';
         var ttl = (item.tempat_lahir || '-') + ', ' + (item.tgl_lahir || '-');
-        h += `<tr><td><span class="fw-semibold text-primary">${noUjian}</span></td><td><span class="fw-semibold">${item.nisn}</span></td><td>${item.nama}</td><td><small>${ttl}</small></td><td><span class="badge bg-light text-dark border">${item.kelas}</span></td><td><small class="text-muted">${item.tahun_ajaran}</small></td><td><span class="badge ${bdg}">${item.status}</span></td><td class="text-end"><button class="btn btn-sm btn-light border me-1" onclick="editStudent('${item.id}')"><i class="fa-solid fa-pen text-primary"></i></button><button class="btn btn-sm btn-light border" onclick="deleteStudent('${item.id}')"><i class="fa-solid fa-trash text-danger"></i></button></td></tr>`; 
+        
+        h += `<tr><td class="text-center">${index + 1}</td><td><span class="fw-semibold text-dark">${noUjian}</span></td><td><span class="fw-semibold">${item.nisn}</span></td><td>${item.nama}</td><td><small>${ttl}</small></td><td><span class="badge bg-light text-dark border">${item.kelas}</span></td><td><small class="text-muted">${item.tahun_ajaran}</small></td><td><span class="badge ${bdg}">${item.status}</span></td><td class="text-end"><button class="btn btn-sm btn-light border me-1" onclick="editStudent('${item.id}')"><i class="fa-solid fa-pen text-primary"></i></button><button class="btn btn-sm btn-light border" onclick="deleteStudent('${item.id}')"><i class="fa-solid fa-trash text-danger"></i></button></td></tr>`; 
       });
       c.innerHTML = h + '</tbody></table></div></div>';
     }
@@ -1025,7 +1029,6 @@
         
         try {
           let flatPatch = {};
-          
           let sheetName = Object.keys(sheets)[0];
           let rows = sheets[sheetName] || [];
           
