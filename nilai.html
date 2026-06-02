@@ -52,6 +52,9 @@
     .item-syncing { opacity: 0.6; pointer-events: none; }
     .table-input { width: 70px; text-align: center; border: 1px solid #ced4da; border-radius: 4px; padding: 4px; }
     .table-input:focus { border-color: var(--secondary-color); outline: none; }
+    
+    .status-select { cursor: pointer; border-radius: 20px !important; padding-left: 15px; padding-right: 15px; }
+    .status-select:focus { outline: none; box-shadow: none; }
   </style>
 </head>
 <body>
@@ -113,7 +116,6 @@
           
           <div class="d-flex align-items-center gap-3">
             <h4 class="fw-bold mb-0">Data Siswa</h4>
-            <!-- Tombol Hapus Masal -->
             <button class="btn btn-sm btn-danger rounded-pill shadow-sm px-3 d-none" id="btnBulkDelete" onclick="deleteSelectedStudents()">
               <i class="fa-solid fa-trash me-1"></i> Hapus <span id="countSelected"></span> Data
             </button>
@@ -214,7 +216,7 @@
               <option value="Semua">Semua Kelas</option>
             </select>
             <button class="btn btn-outline-danger btn-sm rounded-pill shadow-sm px-3 fw-bold" onclick="cetakPDFIjazah()">
-              <i class="fa-solid fa-file-pdf me-1"></i> Cetak PDF Ijazah
+              <i class="fa-solid fa-file-pdf me-1"></i> Cetak PDF Ijazah (F4)
             </button>
             <button class="btn btn-primary btn-sm rounded-pill shadow-sm px-3 fw-bold" id="btnProsesIjazah" onclick="fetchIjazah('ijazah')">
               <i class="fa-solid fa-gears me-1"></i> Kalkulasi Ulang (Sinkron Data)
@@ -252,17 +254,17 @@
             <div class="row">
               <div class="col-md-6 mb-3">
                 <label class="form-label small fw-bold">2. Tempat Lahir</label>
-                <input type="text" class="form-control" id="studTmpLahir" placeholder="Opsional">
+                <input type="text" class="form-control" id="studTmpLahir" placeholder="Lamongan">
               </div>
               <div class="col-md-6 mb-3">
                 <label class="form-label small fw-bold">Tanggal Lahir</label>
-                <input type="text" class="form-control" id="studTglLahir" placeholder="15 Juni 2010">
+                <input type="text" class="form-control" id="studTglLahir" placeholder="10 Juni 2010">
               </div>
             </div>
 
             <div class="mb-3">
               <label class="form-label small fw-bold">3. Sekolah Asal</label>
-              <input type="text" class="form-control" id="studSekolahAsal" placeholder="Nama Madrasah/Sekolah">
+              <input type="text" class="form-control" id="studSekolahAsal" placeholder="Nama Sekolah / Madrasah">
             </div>
             
             <div class="row">
@@ -281,7 +283,7 @@
             <div class="row">
               <div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kelas</label><input type="text" class="form-control" id="studKelas" placeholder="X-A" required></div>
               <div class="col-md-4 mb-3"><label class="form-label small fw-bold">Tahun Ajaran</label><input type="text" class="form-control" id="studTahun" placeholder="2025/2026" required></div>
-              <div class="col-md-4 mb-3"><label class="form-label small fw-bold">Status</label><select class="form-select" id="studStatus"><option value="Aktif">Aktif</option><option value="Nonaktif">Nonaktif</option></select></div>
+              <div class="col-md-4 mb-3"><label class="form-label small fw-bold">Status Siswa</label><select class="form-select" id="studStatus"><option value="Aktif">Aktif</option><option value="Nonaktif">Nonaktif</option></select></div>
             </div>
           </form>
         </div>
@@ -341,7 +343,7 @@
         </div>
         <div class="modal-body">
           <div class="alert alert-info border-0 small">
-            Atur kalimat pembuka dan penutup yang akan tampil di Surat Keterangan Lulus (SKL).
+            Atur kalimat pembuka dan penutup yang akan tampil di Surat Keterangan Lulus (SKL). Data akan otomatis menarik pengaturan dari Profil Madrasah.
           </div>
           <form id="formSKL">
             <div class="mb-3">
@@ -406,9 +408,13 @@
     var dbStudents = [], dbSubjects = [];
     var dbSettings = { 
       persen_rapor: 60, persen_ujian: 40, 
-      nama_sekolah: 'Madrasah Hebat', alamat: 'Jl. Pendidikan No. 1', kota: 'Kota Anda', 
+      kota: 'Lamongan', tahun_pelajaran: '2023/2024', kepala_sekolah: 'Nama Kepala Sekolah', format_nilai: 'Pecahan',
+      kop_1: "LEMBAGA PENDIDIKAN MA'ARIF NU",
+      kop_2: "MI. HIDAYATUS SHIBYAN",
+      kop_3: "KENDALKEMLAGI KARANGGENENG LAMONGAN",
+      kop_4: 'STATUS : TERAKRIDITASI "A" NSM : 111235240168',
+      kop_5: "BHPNU SK. Kemenkumham RI. Nomor AHU-119.AH.01.08 Tahun 2013",
       logo: 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg',
-      tahun_pelajaran: '2025/2026', kepala_sekolah: 'Ahmad Dahlan, S.Pd', format_nilai: 'Pecahan',
       skl_no_surat: '', skl_pembuka: '', skl_tengah: '', skl_tgl: '', skl_nip: ''
     };
     var dbRapor = [], dbUjian = [];
@@ -477,7 +483,7 @@
     function updateAppProfile(profile) {
       if(!profile) return;
       if(profile.logo) { document.getElementById('sidebarLogo').src = profile.logo; document.getElementById('loaderLogo').src = profile.logo; }
-      if(profile.nama_sekolah) { document.getElementById('sidebarSubtitle').innerText = profile.nama_sekolah; }
+      if(profile.kop_2) { document.getElementById('sidebarSubtitle').innerText = profile.kop_2; }
     }
 
     function formatNilaiAkhir(val) {
@@ -531,18 +537,27 @@
         if(!res.isConfirmed) return; 
         
         showFullPageLoading("Menghapus Data...");
-        
         var patchPayload = {};
-        selectedIds.forEach(id => {
-          patchPayload[id] = null;
-        });
-
+        selectedIds.forEach(id => { patchPayload[id] = null; });
         await fbRequest('students', 'PATCH', patchPayload);
         await fetchStudents();
-        
         hideFullPageLoading();
         Swal.fire('Terhapus!', selectedIds.length + ' data berhasil dihapus.', 'success');
       }); 
+    }
+
+    // --- STATUS LULUS UPDATE LOGIC ---
+    async function updateStatusLulus(id, val) {
+      Swal.fire({title: 'Menyimpan...', showConfirmButton: false, allowOutsideClick: false});
+      Swal.showLoading();
+      
+      await fbRequest(`students/${id}`, 'PATCH', { status_kelulusan: val });
+      
+      var st = dbStudents.find(s => s.id === id);
+      if(st) st.status_kelulusan = val;
+      
+      Swal.close();
+      renderSKL();
     }
 
     // --- EXCEL LOGIC ---
@@ -558,9 +573,9 @@
     function downloadTemplateSiswa() { 
       var data = [{ 
         "1. Nama Lengkap": "Contoh Nama Siswa",
-        "2. Tempat Lahir": "Jakarta", 
+        "2. Tempat Lahir": "Lamongan", 
         "3. Tanggal Lahir": "14/05/2010", 
-        "4. Sekolah Asal": "Madrasah Hebat",
+        "4. Sekolah Asal": "MI. HIDAYATUS SHIBYAN",
         "5. NISN": "0012345678", 
         "6. No Ujian": "01-001-001-8", 
         "Kelas": "XII-IPA 1", 
@@ -572,9 +587,8 @@
 
     function downloadTemplateUjian() { 
       if(dbStudents.length === 0) return Swal.fire('Peringatan', 'Belum ada data siswa.', 'warning'); 
-      
       var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan);
-      if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif.', 'warning');
+      if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif. Tambahkan mapel dahulu!', 'warning');
 
       try {
         if(typeof XLSX === 'undefined') return Swal.fire('Error', 'Library SheetJS gagal dimuat.', 'error');
@@ -586,11 +600,9 @@
         activeSubjects.forEach(sub => {
           var kel = (sub.kelompok || "").trim();
           if(kel === "" || kel === "-" || kel.toLowerCase() === "umum") {
-             header1.push(sub.kode_mapel);
-             header2.push(""); 
+             header1.push(sub.kode_mapel); header2.push(""); 
           } else {
-             header1.push(kel);
-             header2.push(sub.kode_mapel); 
+             header1.push(kel); header2.push(sub.kode_mapel); 
           }
         });
         
@@ -631,7 +643,7 @@
     function downloadTemplateRapor() { 
       if(dbStudents.length === 0) return Swal.fire('Peringatan', 'Belum ada data siswa.', 'warning'); 
       var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan);
-      if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif.', 'warning');
+      if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif. Tambahkan mapel dahulu!', 'warning');
 
       try {
         if(typeof XLSX === 'undefined') return Swal.fire('Error', 'Library SheetJS gagal dimuat.', 'error');
@@ -898,7 +910,7 @@
             </div>
           </div>
         </div>
-        <div class="card border-0 shadow-sm rounded-4"><div class="card-body p-5 text-center"><img src="${dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="90" class="mb-3" style="object-fit:contain;"><h4 class="fw-bold text-success mb-1">Selamat Datang di ${dbSettings.nama_sekolah || 'Aplikasi E-Ijazah'}</h4><p class="text-muted small">Sistem Informasi Pengolahan Nilai Ijazah Terpadu Tahun Ajaran ${dbSettings.tahun_pelajaran || '-'}</p></div></div>`;
+        <div class="card border-0 shadow-sm rounded-4"><div class="card-body p-5 text-center"><img src="${dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="90" class="mb-3" style="object-fit:contain;"><h4 class="fw-bold text-success mb-1">Selamat Datang di Aplikasi E-Ijazah</h4><p class="text-muted small">Sistem Informasi Pengolahan Nilai Ijazah Terpadu Tahun Ajaran ${dbSettings.tahun_pelajaran || '-'}</p></div></div>`;
     }
 
     function renderStudents() {
@@ -947,7 +959,7 @@
       tempLogoBase64 = null;
       var c = document.getElementById('settingsContainer');
       c.innerHTML = 
-        `<form id="formSetting" onsubmit="event.preventDefault(); saveSettingsOpt();"><div class="row g-4 mb-4"><div class="col-lg-7"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-school me-2"></i>Profil Madrasah</h6></div><div class="card-body p-4"><div class="mb-3"><label class="form-label small fw-bold">Nama Madrasah</label><input type="text" class="form-control" id="setNamaSekolah" value="${dbSettings.nama_sekolah||''}" required></div><div class="mb-3"><label class="form-label small fw-bold">Alamat Madrasah</label><textarea class="form-control" id="setAlamat" rows="2">${dbSettings.alamat||''}</textarea></div><div class="row"><div class="col-md-6 mb-3"><label class="form-label small fw-bold">Kota/Kabupaten</label><input type="text" class="form-control" id="setKota" value="${dbSettings.kota||''}"></div><div class="col-md-6 mb-3"><label class="form-label small fw-bold">Tahun Pelajaran</label><input type="text" class="form-control" id="setTahun" value="${dbSettings.tahun_pelajaran||''}" required></div></div><div class="mb-3"><label class="form-label small fw-bold">Nama Kepala Madrasah</label><input type="text" class="form-control" id="setKepala" value="${dbSettings.kepala_sekolah||''}" required></div><div class="mb-2"><label class="form-label small fw-bold">Upload Logo (JPG/PNG)</label><input type="file" class="form-control" id="setLogoFile" accept=".jpg, .jpeg, .png" onchange="previewLogo(event)"><div class="mt-2 text-center"><img id="previewLogoImg" src="${dbSettings.logo||'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="60" style="object-fit:contain; border:1px solid #ddd; padding:5px; border-radius:5px;"></div></div></div></div></div><div class="col-lg-5"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-scale-balanced me-2"></i>Bobot Nilai Kalkulasi (%)</h6></div><div class="card-body p-4"><div class="alert alert-info border-0 bg-info bg-opacity-10 text-info-emphasis d-flex gap-2 small"><i class="fa-solid fa-circle-info mt-1"></i><span>Total bobot wajib 100%.</span></div><div class="mb-4"><label class="fw-bold mb-2 small">Bobot Rapor (Sem 1-5)</label><div class="input-group"><input type="number" class="form-control form-control-lg" id="setRapor" value="${dbSettings.persen_rapor}" required oninput="document.getElementById('setUjian').value = 100 - (parseInt(this.value)||0)"><span class="input-group-text bg-white">%</span></div></div><div class="mb-2"><label class="fw-bold mb-2 small">Bobot Ujian Akhir</label><div class="input-group"><input type="number" class="form-control form-control-lg bg-light" id="setUjian" value="${dbSettings.persen_ujian}" readonly><span class="input-group-text bg-white">%</span></div></div><div class="mt-4 border-top pt-3"><label class="fw-bold mb-2 small">Format Nilai Akhir</label><select class="form-select form-select-lg" id="setFormatNilai"><option value="Bulat" ${dbSettings.format_nilai === 'Bulat' ? 'selected' : ''}>Bulat (Contoh: 88)</option><option value="Pecahan" ${dbSettings.format_nilai === 'Pecahan' ? 'selected' : ''}>Pecahan (Contoh: 87.50)</option></select></div></div></div></div></div><div class="text-end"><button type="submit" class="btn btn-success px-5 rounded-pill shadow-sm py-2 fw-bold" id="btnSaveSet"><i class="fa-solid fa-save me-2"></i>Simpan Perubahan</button></div></form>`;
+        `<form id="formSetting" onsubmit="event.preventDefault(); saveSettingsOpt();"><div class="row g-4 mb-4"><div class="col-lg-7"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-heading me-2"></i>Bagian Kop Surat Jadwal</h6></div><div class="card-body p-4"><div class="mb-3"><label class="form-label fw-bold">Ganti Logo Madrasah (Opsional):</label><input type="file" class="form-control" id="setLogoFile" accept=".jpg, .jpeg, .png" onchange="previewLogo(event)"><div class="mt-2"><img id="previewLogoImg" src="${dbSettings.logo||'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="60" style="object-fit:contain; border:1px solid #ddd; padding:5px; border-radius:5px;"></div></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 1:</label><input type="text" class="form-control" id="setKop1" value="${dbSettings.kop_1||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 2:</label><input type="text" class="form-control" id="setKop2" value="${dbSettings.kop_2||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 3:</label><input type="text" class="form-control" id="setKop3" value="${dbSettings.kop_3||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 4:</label><input type="text" class="form-control" id="setKop4" value="${dbSettings.kop_4||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 5:</label><input type="text" class="form-control" id="setKop5" value="${dbSettings.kop_5||''}"></div><hr class="my-4"><h6 class="fw-bold text-success mb-3">Informasi Tambahan</h6><div class="row"><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kota/Tempat TTD</label><input type="text" class="form-control" id="setKota" value="${dbSettings.kota||''}"></div><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Tahun Pelajaran</label><input type="text" class="form-control" id="setTahun" value="${dbSettings.tahun_pelajaran||''}" required></div><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kepala Sekolah</label><input type="text" class="form-control" id="setKepala" value="${dbSettings.kepala_sekolah||''}" required></div></div></div></div></div><div class="col-lg-5"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-scale-balanced me-2"></i>Bobot Nilai Kalkulasi (%)</h6></div><div class="card-body p-4"><div class="alert alert-info border-0 bg-info bg-opacity-10 text-info-emphasis d-flex gap-2 small"><i class="fa-solid fa-circle-info mt-1"></i><span>Total bobot wajib 100%.</span></div><div class="mb-4"><label class="fw-bold mb-2 small">Bobot Rapor (Sem 1-5)</label><div class="input-group"><input type="number" class="form-control form-control-lg" id="setRapor" value="${dbSettings.persen_rapor}" required oninput="document.getElementById('setUjian').value = 100 - (parseInt(this.value)||0)"><span class="input-group-text bg-white">%</span></div></div><div class="mb-2"><label class="fw-bold mb-2 small">Bobot Ujian Akhir</label><div class="input-group"><input type="number" class="form-control form-control-lg bg-light" id="setUjian" value="${dbSettings.persen_ujian}" readonly><span class="input-group-text bg-white">%</span></div></div><div class="mt-4 border-top pt-3"><label class="fw-bold mb-2 small">Format Nilai Akhir</label><select class="form-select form-select-lg" id="setFormatNilai"><option value="Bulat" ${dbSettings.format_nilai === 'Bulat' ? 'selected' : ''}>Bulat (Contoh: 88)</option><option value="Pecahan" ${dbSettings.format_nilai === 'Pecahan' ? 'selected' : ''}>Pecahan (Contoh: 87.50)</option></select></div></div></div></div></div><div class="text-end"><button type="submit" class="btn btn-success px-5 rounded-pill shadow-sm py-2 fw-bold" id="btnSaveSet"><i class="fa-solid fa-save me-2"></i>Simpan Perubahan</button></div></form>`;
     }
 
     function renderRapor() {
@@ -980,16 +992,24 @@
       
       filteredStudents.sort(function(a, b) { return a.nama.localeCompare(b.nama); });
       
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th class="text-center" width="50">No</th><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th class="text-center">Rata-rata Ijazah</th><th class="text-center">Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
+      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th class="text-center" width="50">No</th><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th class="text-center">Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
       
       filteredStudents.forEach(function(j, idx) {
+        var st = dbStudents.find(s => s.id === j.student_id) || {};
+        var statLulus = st.status_kelulusan || 'LULUS';
+        var statColor = statLulus === 'LULUS' ? 'text-success' : 'text-danger';
+
         h += `<tr>
                 <td class="text-center">${idx + 1}</td>
                 <td>${j.nisn}</td>
                 <td class="fw-semibold">${j.nama}</td>
                 <td>${j.kelas}</td>
-                <td class="text-center"><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">${formatNilaiAkhir(j.rata_ijazah)}</span></td>
-                <td class="text-center"><span class="badge bg-primary">LULUS</span></td>
+                <td class="text-center" width="150">
+                  <select class="form-select form-select-sm fw-bold border-0 bg-light status-select ${statColor}" onchange="updateStatusLulus('${j.student_id}', this.value)">
+                    <option value="LULUS" class="text-success" ${statLulus === 'LULUS' ? 'selected' : ''}>LULUS</option>
+                    <option value="TIDAK LULUS" class="text-danger" ${statLulus === 'TIDAK LULUS' ? 'selected' : ''}>TIDAK LULUS</option>
+                  </select>
+                </td>
                 <td class="text-end"><button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="cetakSKL('${j.student_id}')"><i class="fa-solid fa-print"></i> Cetak</button></td>
               </tr>`;
       });
@@ -1030,11 +1050,24 @@
     function previewLogo(event) { var file = event.target.files[0]; if(!file) return; var reader = new FileReader(); reader.onload = function(e) { tempLogoBase64 = e.target.result; document.getElementById('previewLogoImg').src = tempLogoBase64; }; reader.readAsDataURL(file); }
 
     async function saveSettingsOpt() { 
-      var payload = { persen_rapor: parseInt(document.getElementById('setRapor').value), persen_ujian: parseInt(document.getElementById('setUjian').value), nama_sekolah: document.getElementById('setNamaSekolah').value, alamat: document.getElementById('setAlamat').value, kota: document.getElementById('setKota').value, tahun_pelajaran: document.getElementById('setTahun').value, kepala_sekolah: document.getElementById('setKepala').value, logo: tempLogoBase64 ? tempLogoBase64 : dbSettings.logo, format_nilai: document.getElementById('setFormatNilai').value }; 
+      var payload = { 
+        persen_rapor: parseInt(document.getElementById('setRapor').value), 
+        persen_ujian: parseInt(document.getElementById('setUjian').value), 
+        kop_1: document.getElementById('setKop1').value,
+        kop_2: document.getElementById('setKop2').value,
+        kop_3: document.getElementById('setKop3').value,
+        kop_4: document.getElementById('setKop4').value,
+        kop_5: document.getElementById('setKop5').value,
+        kota: document.getElementById('setKota').value, 
+        tahun_pelajaran: document.getElementById('setTahun').value, 
+        kepala_sekolah: document.getElementById('setKepala').value, 
+        logo: tempLogoBase64 ? tempLogoBase64 : dbSettings.logo, 
+        format_nilai: document.getElementById('setFormatNilai').value 
+      }; 
       if(payload.persen_rapor + payload.persen_ujian !== 100) return Swal.fire('Warning','Total bobot rapor & ujian harus 100%','warning'); 
       var btn = document.getElementById('btnSaveSet'); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...'; btn.disabled = true; 
       
-      await fbRequest('settings', 'PUT', payload);
+      await fbRequest('settings', 'PATCH', payload); // Use PATCH to prevent overwriting SKL settings
       dbSettings = Object.assign(dbSettings, payload); updateAppProfile(dbSettings); 
       btn.innerHTML = '<i class="fa-solid fa-save me-2"></i>Simpan Perubahan'; btn.disabled = false; 
       Swal.fire('Sukses','Konfigurasi tersimpan di sistem','success'); 
@@ -1043,8 +1076,8 @@
     // --- SKL SETTINGS ---
     function openSKLSettings() {
       document.getElementById('sklNoSurat').value = dbSettings.skl_no_surat || '';
-      document.getElementById('sklPembuka').value = dbSettings.skl_pembuka || `Yang bertanda tangan di bawah ini Kepala ${dbSettings.nama_sekolah} ${dbSettings.kota}, menerangkan bahwa:`;
-      document.getElementById('sklTengah').value = dbSettings.skl_tengah || `Telah mengikuti kegiatan Ujian Sekolah tahun pelajaran ${dbSettings.tahun_pelajaran}, dan berdasarkan Kriteria kelulusan sekolah dinyatakan:`;
+      document.getElementById('sklPembuka').value = dbSettings.skl_pembuka || `Yang bertanda tangan di bawah ini Kepala ${dbSettings.kop_2 || ''} ${dbSettings.kota || ''}, menerangkan bahwa :`;
+      document.getElementById('sklTengah').value = dbSettings.skl_tengah || `Telah mengikuti kegiatan Ujian Nasional tahun pelajaran ${dbSettings.tahun_pelajaran || ''}, dan berdasarkan Kriteria lulusan sekolah dinyatakan :`;
       document.getElementById('sklTgl').value = dbSettings.skl_tgl || '';
       document.getElementById('sklNip').value = dbSettings.skl_nip || '';
       new bootstrap.Modal(document.getElementById('modalSKL')).show();
@@ -1075,7 +1108,7 @@
       var payload = { nisn: p.nisn, no_ujian: p.no_ujian, nama: p.nama, tempat_lahir: p.tempat_lahir, tgl_lahir: p.tgl_lahir, sekolah_asal: p.sekolah_asal, kelas: p.kelas, tahun_ajaran: p.tahun_ajaran, status: p.status };
       bootstrap.Modal.getInstance(document.getElementById('modalStudent')).hide(); 
       Swal.fire({icon:'info', title:'Menyimpan...', showConfirmButton:false});
-      await fbRequest(`students/${tId}`, 'PUT', payload);
+      await fbRequest(`students/${tId}`, 'PATCH', payload);
       await fetchStudents();
       Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false});
     }
@@ -1159,12 +1192,12 @@
             return found ? r[found] : '';
           };
 
-          var nisn = String(getVal(['nisn']));
-          var nama = String(getVal(['namalengkap', 'nama', 'namasiswa', '1nama', '1namalengkap']));
-          var no_ujian = String(getVal(['noujian', 'nomorujian', 'no', '5no', '5noujian']));
-          var tmp = String(getVal(['tempatlahir', 'tempat', '2tempat']));
-          var tgl = String(getVal(['tanggallahir', 'tgllahir', 'tanggal', '2tanggallahir', '3tanggal']));
-          var sekolahAsal = String(getVal(['sekolahasal', 'sekolah', '3sekolah']));
+          var nama = String(getVal(['1namalengkap', '1nama', 'namalengkap', 'nama', 'namasiswa']));
+          var tmp = String(getVal(['2tempatlahir', 'tempatlahir', 'tempat', '2tempat']));
+          var tgl = String(getVal(['3tanggallahir', 'tanggallahir', 'tgllahir', 'tanggal', '3tanggal']));
+          var sekolahAsal = String(getVal(['4sekolahasal', 'sekolahasal', 'sekolah', '4sekolah']));
+          var nisn = String(getVal(['5nisn', 'nisn']));
+          var no_ujian = String(getVal(['6noujian', 'noujian', 'nomorujian', 'no', '6no']));
           var kelas = String(getVal(['kelas']));
           var tahun = String(getVal(['tahunajaran', 'ta', 'tahun']));
           var status = String(getVal(['status'])) || 'Aktif';
@@ -1178,8 +1211,8 @@
               no_ujian: no_ujian, 
               nama: nama, 
               tempat_lahir: tmp, 
-              tgl_lahir: tgl,
-              sekolah_asal: sekolahAsal, 
+              tgl_lahir: tgl, 
+              sekolah_asal: sekolahAsal,
               kelas: kelas, 
               tahun_ajaran: tahun, 
               status: status 
@@ -1309,8 +1342,13 @@
     // --- SKL PRINT GENERATOR ---
     function generateSKLHTML(student) {
         var logoUrl = dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg';
-        var namaSekolah = dbSettings.nama_sekolah || 'Madrasah Hebat';
-        var alamat = dbSettings.alamat || '';
+        
+        var kop1 = dbSettings.kop_1 || '';
+        var kop2 = dbSettings.kop_2 || '';
+        var kop3 = dbSettings.kop_3 || '';
+        var kop4 = dbSettings.kop_4 || '';
+        var kop5 = dbSettings.kop_5 || '';
+        
         var kota = dbSettings.kota || '';
         var kepalaSekolah = dbSettings.kepala_sekolah || '';
         
@@ -1319,16 +1357,21 @@
         var tmpLahir = fullStudent.tempat_lahir || '-';
         var tglLahir = fullStudent.tgl_lahir || '-';
         var ttl = tmpLahir + ', ' + tglLahir;
-        var sekolahAsal = fullStudent.sekolah_asal || dbSettings.nama_sekolah;
+        var sekolahAsal = fullStudent.sekolah_asal || kop2;
+        
+        var statLulus = fullStudent.status_kelulusan || 'LULUS';
+        var displayStatus = statLulus === 'LULUS' ? 'L U L U S' : 'T I D A K &nbsp; L U L U S';
 
         var html = `
         <div class="page-break" style="page-break-after: always; padding: 20px 40px; font-family: 'Times New Roman', Times, serif; color: #000;">
             <div style="display: flex; align-items: center; border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 30px;">
                 <img src="${logoUrl}" alt="Logo" style="width: 90px; height: 90px; object-fit: contain; margin-right: 20px;">
                 <div style="text-align: center; flex-grow: 1;">
-                    <h3 style="margin: 0; font-size: 18px; text-transform: uppercase;">KEMENTERIAN AGAMA REPUBLIK INDONESIA</h3>
-                    <h2 style="margin: 5px 0 0 0; font-size: 22px; font-weight: bold; text-transform: uppercase;">${namaSekolah}</h2>
-                    <p style="margin: 5px 0 0 0; font-size: 13px;">${alamat} ${kota}</p>
+                    ${kop1 ? `<div style="font-size: 16px; text-transform: uppercase;">${kop1}</div>` : ''}
+                    ${kop2 ? `<div style="font-size: 22px; font-weight: bold; text-transform: uppercase; margin: 3px 0;">${kop2}</div>` : ''}
+                    ${kop3 ? `<div style="font-size: 14px;">${kop3}</div>` : ''}
+                    ${kop4 ? `<div style="font-size: 12px;">${kop4}</div>` : ''}
+                    ${kop5 ? `<div style="font-size: 12px;">${kop5}</div>` : ''}
                 </div>
             </div>
             
@@ -1339,7 +1382,7 @@
             
             <div style="font-size: 15px; line-height: 1.6;">
                 <p style="text-indent: 40px; margin-bottom: 20px;">
-                    ${dbSettings.skl_pembuka || `Yang bertanda tangan di bawah ini Kepala ${namaSekolah} ${kota}, menerangkan bahwa :`}
+                    ${dbSettings.skl_pembuka || `Yang bertanda tangan di bawah ini Kepala ${kop2} ${kota}, menerangkan bahwa :`}
                 </p>
                 
                 <table style="width: 85%; margin: 0 auto 20px auto; font-size: 15px;">
@@ -1351,10 +1394,10 @@
                 </table>
                 
                 <p style="text-indent: 40px; margin-bottom: 30px;">
-                    ${dbSettings.skl_tengah || `Telah mengikuti kegiatan Ujian Sekolah tahun pelajaran ${dbSettings.tahun_pelajaran || '-'}, dan berdasarkan Kriteria kelulusan sekolah dinyatakan :`}
+                    ${dbSettings.skl_tengah || `Telah mengikuti kegiatan Ujian Nasional tahun pelajaran ${dbSettings.tahun_pelajaran || '-'}, dan berdasarkan Kriteria kelulusan sekolah dinyatakan :`}
                 </p>
                 
-                <h2 style="text-align: center; font-size: 26px; font-weight: bold; margin: 40px 0; letter-spacing: 8px;">L U L U S</h2>
+                <h2 style="text-align: center; font-size: 26px; font-weight: bold; margin: 40px 0; letter-spacing: 8px;">${displayStatus}</h2>
                 
                 <p style="text-indent: 40px; margin-bottom: 50px;">Demikian surat keterangan ini dibuat untuk dapat digunakan sebagaimana mestinya.</p>
             </div>
@@ -1426,7 +1469,12 @@
       });
 
       var logoUrl = dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg';
-      var namaSekolah = dbSettings.nama_sekolah || 'Madrasah Hebat'; var thnPelajaran = dbSettings.tahun_pelajaran || '-';
+      
+      var kop1 = dbSettings.kop_1 || '';
+      var kop2 = dbSettings.kop_2 || '';
+      var kop3 = dbSettings.kop_3 || '';
+      var kop4 = dbSettings.kop_4 || '';
+      var kop5 = dbSettings.kop_5 || '';
       var titleKelas = selectedKelas === 'Semua' ? 'Seluruh Kelas' : 'Kelas ' + selectedKelas;
 
       var html = `
@@ -1435,12 +1483,9 @@
         <title>Rekap Nilai Ijazah - ${titleKelas}</title>
         <style>
           body { font-family: Arial, sans-serif; font-size: 11px; margin: 20px; color: #000; }
-          .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; position: relative; }
+          .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; position: relative; }
           .header img { height: 70px; position: absolute; left: 0; }
           .header-content { text-align: center; width: 100%; }
-          .header h2 { margin: 0; padding: 0; font-size: 16px; font-weight: bold; text-transform: uppercase; }
-          .header h3 { margin: 5px 0 0 0; padding: 0; font-size: 18px; font-weight: bold; text-transform: uppercase; }
-          .header p { margin: 5px 0 0 0; font-size: 12px; }
           .title { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 20px; text-transform: uppercase; }
           table { width: 100%; border-collapse: collapse; margin-bottom: 20px; page-break-inside: auto; }
           tr { page-break-inside: avoid; page-break-after: auto; }
@@ -1455,7 +1500,16 @@
         </style>
       </head>
       <body>
-        <div class="header"><img src="${logoUrl}" alt="Logo"><div class="header-content"><h2>KEMENTERIAN AGAMA REPUBLIK INDONESIA</h2><h3>${namaSekolah}</h3><p>Tahun Pelajaran: ${thnPelajaran} | Daftar Kumpulan Nilai Ijazah</p></div></div>
+        <div class="header">
+            <img src="${logoUrl}" alt="Logo" style="width: 70px; height: 70px; object-fit: contain;">
+            <div class="header-content">
+                ${kop1 ? `<div style="font-size: 14px; text-transform: uppercase;">${kop1}</div>` : ''}
+                ${kop2 ? `<div style="font-size: 18px; font-weight: bold; text-transform: uppercase; margin: 2px 0;">${kop2}</div>` : ''}
+                ${kop3 ? `<div style="font-size: 11px;">${kop3}</div>` : ''}
+                ${kop4 ? `<div style="font-size: 10px;">${kop4}</div>` : ''}
+                ${kop5 ? `<div style="font-size: 10px;">${kop5}</div>` : ''}
+            </div>
+        </div>
         <div class="title">REKAPITULASI NILAI IJAZAH - ${titleKelas}</div>
         <table><thead><tr><th rowspan="2" style="width:25px;">No</th><th rowspan="2" style="width:70px;">NISN</th><th rowspan="2" style="width:160px;">Nama Siswa</th><th colspan="${subjects.length}">Nilai Ujian / Mata Pelajaran</th><th rowspan="2" style="width:50px;">Jumlah<br>Nilai</th><th rowspan="2" style="width:50px;">Rata-<br>rata</th><th rowspan="2" style="width:45px;">Peringkat</th></tr><tr>${thMapel}</tr></thead><tbody>${trData}</tbody></table>
         <script>setTimeout(function() { window.print(); window.close(); }, 500);<\/script>
