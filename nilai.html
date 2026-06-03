@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Kartu Peserta Ujian - Realtime Database</title>
+    <title>Aplikasi Kartu Peserta Ujian - Realtime Database Permanent Settings</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -338,6 +338,7 @@
         bukaTab('tab-kartu');
     }
 
+    // OTOMATIS PERMANEN: Fungsi simpan Kop sekarang mengirim teks & gambar Base64 ke Firebase
     window.terapkanKop = async function() {
         const dataKop = {
             t1: document.getElementById('input-kop-1').value,
@@ -350,10 +351,12 @@
             ttd: window.ttdGlobalSrc || ""
         };
 
+        // Sinkronisasi ke Firebase
         if (window.firebase_simpanPengaturan) {
             await window.firebase_simpanPengaturan(dataKop);
         }
 
+        // Tampilkan langsung di kartu preview
         document.getElementById('teks-kop-1').innerText = dataKop.t1;
         document.getElementById('teks-kop-2').innerText = dataKop.t2;
         document.getElementById('teks-kop-3').innerText = dataKop.t3;
@@ -365,6 +368,7 @@
         bukaTab('tab-kartu');
     }
     
+    // OTOMATIS PERMANEN: Gambar diconvert ke Base64 Teks agar bisa masuk database
     window.gantiLogo = function(event) {
         const file = event.target.files[0];
         if(file) {
@@ -484,18 +488,18 @@
             window.dataPeserta = dataOnline;
             window.renderTabel();
         } catch (error) {
-            console.error("Firebase Error: ", error);
-            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">Gagal memuat dari Realtime Database. Pastikan koneksi benar.</td></tr>`;
+            console.error(error);
         }
     }
 
-    // 2. Muat Kop Surat
+    // OTOMATIS PERMANEN: Fungsi untuk menarik data pengaturan Kop & TTD saat halaman dibuka
     async function muatPengaturanKop() {
         try {
             const snapshot = await get(child(dbRef, `pengaturan/kop`));
             if (snapshot.exists()) {
                 const data = snapshot.val();
                 
+                // Isi ke kolom input
                 document.getElementById('input-kop-1').value = data.t1 || "";
                 document.getElementById('input-kop-2').value = data.t2 || "";
                 document.getElementById('input-kop-3').value = data.t3 || "";
@@ -503,6 +507,7 @@
                 document.getElementById('input-tgl-surat').value = data.tglSurat || "";
                 document.getElementById('input-nama-kepsek').value = data.kepsek || "";
                 
+                // Tampilkan ke preview kartu
                 document.getElementById('teks-kop-1').innerText = data.t1 || "";
                 document.getElementById('teks-kop-2').innerText = data.t2 || "";
                 document.getElementById('teks-kop-3').innerText = data.t3 || "";
@@ -524,11 +529,16 @@
         } catch (e) { console.error(e); }
     }
 
-    // 3. Update Data ke REALTIME DATABASE
+    // OTOMATIS PERMANEN: Fungsi untuk mengunggah pengaturan Kop ke Firebase
+    async function simpanPengaturanKop(dataKop) {
+        try {
+            await set(ref(db, 'pengaturan/kop'), dataKop);
+        } catch (e) { console.error(e); }
+    }
+
     async function updateSiswa(docId, data) {
         try {
-            const siswaRef = ref(db, 'siswa/' + docId);
-            await set(siswaRef, {
+            await set(ref(db, 'siswa/' + docId), {
                 nama: data.nama,
                 tglLahir: data.tglLahir,
                 noUjian: data.noUjian,
@@ -538,21 +548,18 @@
         } catch (e) { console.error(e); }
     }
 
-    // 4. Menghapus Data dari REALTIME DATABASE
     async function hapusSiswa(docId) {
         try {
-            const siswaRef = ref(db, 'siswa/' + docId);
-            await remove(siswaRef);
+            await remove(ref(db, 'siswa/' + docId));
         } catch (e) { console.error(e); }
     }
 
     window.firebase_muatData = muatDataFirebase;
     window.firebase_updateSiswa = updateSiswa;
     window.firebase_hapusSiswa = hapusSiswa;
-    window.firebase_simpanPengaturan = async function(dataKop) {
-        try { await set(ref(db, 'pengaturan/kop'), dataKop); } catch (e) { console.error(e); }
-    };
+    window.firebase_simpanPengaturan = simpanPengaturanKop;
 
+    // Load data siswa dan pengaturan Kop sekaligus saat startup
     window.addEventListener('DOMContentLoaded', () => {
         muatDataFirebase();
         muatPengaturanKop();
