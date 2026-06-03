@@ -437,7 +437,13 @@
       if (setRes) dbSettings = Object.assign(dbSettings, setRes);
       if (studRes) {
           dbStudents = Object.keys(studRes).map(k => ({...studRes[k], id: k}));
-          dbStudents.sort((a,b) => a.id.localeCompare(b.id)); // Lock sorted order by Import Index ID
+          // Mengurutkan berdasarkan ID Import (urut = index import) agar tdk diacak alfabet
+          dbStudents.sort((a,b) => {
+              var uA = a.urut !== undefined ? a.urut : 999999;
+              var uB = b.urut !== undefined ? b.urut : 999999;
+              if (uA !== uB) return uA - uB;
+              return a.id.localeCompare(b.id);
+          }); 
       }
       
       var hasAswaja = subjRes ? Object.values(subjRes).some(s => s.kode_mapel === 'ASWAJ') : false;
@@ -635,7 +641,7 @@
     function downloadTemplateRapor() { 
       if(dbStudents.length === 0) return Swal.fire('Peringatan', 'Belum ada data siswa.', 'warning'); 
       var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan);
-      if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif.', 'warning');
+      if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif. Tambahkan mapel dahulu!', 'warning');
 
       try {
         if(typeof XLSX === 'undefined') return Swal.fire('Error', 'Library SheetJS gagal dimuat.', 'error');
@@ -774,7 +780,15 @@
       showSectionLoading('studentsContainer');
       const res = await fbRequest('students');
       dbStudents = res ? Object.keys(res).map(k => ({...res[k], id: k})) : [];
-      dbStudents.sort((a, b) => a.id.localeCompare(b.id)); // 100% Lock by index excel (waktu import)
+      
+      // Mengurutkan secara eksklusif berdasar nomor "urut" hasil import excel
+      dbStudents.sort((a, b) => {
+          var uA = a.urut !== undefined ? a.urut : 999999;
+          var uB = b.urut !== undefined ? b.urut : 999999;
+          if (uA !== uB) return uA - uB;
+          return a.id.localeCompare(b.id);
+      });
+      
       if(activePage === 'students') renderStudents();
     }
 
@@ -983,8 +997,6 @@
       var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
       if(filteredStudents.length === 0) { c.innerHTML = '<div class="text-center py-5 text-muted"><p>Tidak ada data di kelas ini.</p></div>'; return; }
       
-      // Jangan diurutkan berdasarkan alfabet, biarkan tetap natural berdasarkan ID
-      
       var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th class="text-center" width="50">No</th><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th class="text-center">Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
       
       filteredStudents.forEach(function(j, idx) {
@@ -998,12 +1010,12 @@
                 <td class="fw-semibold">${j.nama}</td>
                 <td>${j.kelas}</td>
                 <td class="text-center" width="150">
-                  <select class="form-select form-select-sm fw-bold border-0 bg-light status-select ${statColor}" onchange="updateStatusLulus('${j.original_id}', this.value)">
+                  <select class="form-select form-select-sm fw-bold border-0 bg-light status-select ${statColor}" onchange="updateStatusLulus('${j.student_id}', this.value)">
                     <option value="LULUS" class="text-success" ${statLulus === 'LULUS' ? 'selected' : ''}>LULUS</option>
                     <option value="TIDAK LULUS" class="text-danger" ${statLulus === 'TIDAK LULUS' ? 'selected' : ''}>TIDAK LULUS</option>
                   </select>
                 </td>
-                <td class="text-end text-nowrap"><button class="btn btn-sm btn-light border text-success rounded-pill px-3" onclick="cetakSKL('${j.original_id}')"><i class="fa-solid fa-print"></i> Cetak</button></td>
+                <td class="text-end text-nowrap"><button class="btn btn-sm btn-light border text-success rounded-pill px-3" onclick="cetakSKL('${j.student_id}')"><i class="fa-solid fa-print"></i> Cetak</button></td>
               </tr>`;
       });
       c.innerHTML = h + '</tbody></table></div></div>';
@@ -1066,7 +1078,7 @@
       if(payload.persen_rapor + payload.persen_ujian !== 100) return Swal.fire('Warning','Total bobot rapor & ujian harus 100%','warning'); 
       var btn = document.getElementById('btnSaveSet'); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...'; btn.disabled = true; 
       
-      await fbRequest('settings', 'PATCH', payload);
+      await fbRequest('settings', 'PATCH', payload); 
       dbSettings = Object.assign(dbSettings, payload); updateAppProfile(dbSettings); 
       btn.innerHTML = '<i class="fa-solid fa-save me-2"></i>Simpan Perubahan'; btn.disabled = false; 
       Swal.fire('Sukses','Konfigurasi tersimpan di sistem','success'); 
@@ -1103,8 +1115,13 @@
     async function saveStudent(){ 
       var p={ id:document.getElementById('studId').value, isEdit:document.getElementById('studIsEdit').value, nisn:document.getElementById('studNisn').value, no_ujian:document.getElementById('studNoUjian').value, nama:document.getElementById('studNama').value, tempat_lahir:document.getElementById('studTmpLahir').value, tgl_lahir:document.getElementById('studTglLahir').value, sekolah_asal:document.getElementById('studSekolahAsal').value, kelas:document.getElementById('studKelas').value, tahun_ajaran:document.getElementById('studTahun').value, status:document.getElementById('studStatus').value }; 
       if(!p.nisn||!p.nama) return Swal.fire('Error','Lengkapi form','warning'); 
+      
+      var exist = dbStudents.find(s => s.id === p.id);
+      var urutValue = exist && exist.urut !== undefined ? exist.urut : dbStudents.length + 1;
+      
       var tId = p.isEdit === 'true' ? p.id : 'stud_'+Date.now()+'_00000'; 
-      var payload = { nisn: p.nisn, no_ujian: p.no_ujian, nama: p.nama, tempat_lahir: p.tempat_lahir, tgl_lahir: p.tgl_lahir, sekolah_asal: p.sekolah_asal, kelas: p.kelas, tahun_ajaran: p.tahun_ajaran, status: p.status };
+      var payload = { nisn: p.nisn, no_ujian: p.no_ujian, nama: p.nama, tempat_lahir: p.tempat_lahir, tgl_lahir: p.tgl_lahir, sekolah_asal: p.sekolah_asal, kelas: p.kelas, tahun_ajaran: p.tahun_ajaran, status: p.status, urut: urutValue };
+      
       bootstrap.Modal.getInstance(document.getElementById('modalStudent')).hide(); 
       Swal.fire({icon:'info', title:'Menyimpan...', showConfirmButton:false});
       await fbRequest(`students/${tId}`, 'PATCH', payload);
@@ -1203,7 +1220,6 @@
 
           if(nisn && nama) {
             var exist = dbStudents.find(s => s.nisn === nisn);
-            // Index padStart mengunci urutan asli Excel saat Firebase melakukan key-sorting
             var id = exist ? exist.id : 'stud_' + Date.now() + '_' + String(idx).padStart(5, '0');
             
             payload[id] = { 
@@ -1215,7 +1231,8 @@
               sekolah_asal: sekolahAsal,
               kelas: kelas, 
               tahun_ajaran: tahun, 
-              status: status 
+              status: status,
+              urut: idx + 1 // Add index urut for strict Excel order
             };
           }
         });
@@ -1345,7 +1362,7 @@
       var allStudents = dbIjazah.students; var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
       if(filteredStudents.length === 0) return Swal.fire('Warning', 'Tidak ada data siswa pada kelas terpilih.', 'warning');
       
-      // Calculate rank first
+      // Calculate rank in temporary sorted copy
       var tempSorted = [...filteredStudents].sort((a,b) => b.rata_ijazah - a.rata_ijazah);
       var rankMap = {};
       var currentRank = 1, prevScore = -1, displayRank = 1;
@@ -1418,6 +1435,92 @@
         <script>setTimeout(function() { window.print(); window.close(); }, 500);<\/script>
       </body>
       </html>`;
+      var printWin = window.open('', '_blank'); printWin.document.write(html); printWin.document.close();
+    }
+
+    function generateSKLHTML(student) {
+        var logoUrl = dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg';
+        
+        var kop1 = dbSettings.kop_1 || '';
+        var kop2 = dbSettings.kop_2 || '';
+        var kop3 = dbSettings.kop_3 || '';
+        var kop4 = dbSettings.kop_4 || '';
+        var kop5 = dbSettings.kop_5 || '';
+        
+        var kota = dbSettings.kota || '';
+        var kepalaSekolah = dbSettings.kepala_sekolah || '';
+        
+        var fullStudent = dbStudents.find(s => s.id === student.student_id) || {};
+        var noUjian = fullStudent.no_ujian || '-';
+        var tmpLahir = fullStudent.tempat_lahir || '-';
+        var tglLahir = fullStudent.tgl_lahir || '-';
+        var ttl = tmpLahir + ', ' + tglLahir;
+        var sekolahAsal = fullStudent.sekolah_asal || kop2;
+        
+        var statLulus = fullStudent.status_kelulusan || 'LULUS';
+        var displayStatus = statLulus === 'LULUS' ? 'L U L U S' : 'T I D A K &nbsp; L U L U S';
+
+        var html = `
+        <div class="page-break" style="page-break-after: always; padding: 20px 40px; font-family: 'Times New Roman', Times, serif; color: #000;">
+            <div style="display: flex; align-items: center; border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 30px;">
+                <img src="${logoUrl}" alt="Logo" style="width: 90px; height: 90px; object-fit: contain; margin-right: 20px;">
+                <div style="text-align: center; flex-grow: 1;">
+                    ${kop1 ? `<div style="font-size: 16px; text-transform: uppercase;">${kop1}</div>` : ''}
+                    ${kop2 ? `<div style="font-size: 22px; font-weight: bold; text-transform: uppercase; margin: 3px 0;">${kop2}</div>` : ''}
+                    ${kop3 ? `<div style="font-size: 14px;">${kop3}</div>` : ''}
+                    ${kop4 ? `<div style="font-size: 12px;">${kop4}</div>` : ''}
+                    ${kop5 ? `<div style="font-size: 12px;">${kop5}</div>` : ''}
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h3 style="margin: 0; font-size: 18px; text-decoration: underline; font-weight: bold;">SURAT KETERANGAN</h3>
+                <p style="margin: 5px 0 0 0; font-style: italic;">NOMOR : ${dbSettings.skl_no_surat || '...........................................'}</p>
+            </div>
+            
+            <div style="font-size: 15px; line-height: 1.6;">
+                <p style="text-indent: 40px; margin-bottom: 20px;">
+                    ${dbSettings.skl_pembuka || `Yang bertanda tangan di bawah ini Kepala ${kop2} ${kota}, menerangkan bahwa :`}
+                </p>
+                
+                <table style="width: 85%; margin: 0 auto 20px auto; font-size: 15px;">
+                    <tr><td style="width: 220px; padding: 5px 0;">Nama</td><td style="width: 20px;">:</td><td><strong>${student.nama}</strong></td></tr>
+                    <tr><td style="padding: 5px 0;">Tempat dan Tanggal Lahir</td><td>:</td><td>${ttl}</td></tr>
+                    <tr><td style="padding: 5px 0;">Sekolah Asal</td><td>:</td><td>${sekolahAsal}</td></tr>
+                    <tr><td style="padding: 5px 0;">NISN</td><td>:</td><td>${student.nisn}</td></tr>
+                    <tr><td style="padding: 5px 0;">Nomor Peserta</td><td>:</td><td>${noUjian}</td></tr>
+                </table>
+                
+                <p style="text-indent: 40px; margin-bottom: 30px;">
+                    ${dbSettings.skl_tengah || `Telah mengikuti kegiatan Ujian Nasional tahun pelajaran ${dbSettings.tahun_pelajaran || '-'}, dan berdasarkan Kriteria kelulusan sekolah dinyatakan :`}
+                </p>
+                
+                <h2 style="text-align: center; font-size: 26px; font-weight: bold; margin: 40px 0; letter-spacing: 8px;">${displayStatus}</h2>
+                
+                <p style="text-indent: 40px; margin-bottom: 50px;">Demikian surat keterangan ini dibuat untuk dapat digunakan sebagaimana mestinya.</p>
+            </div>
+            
+            <div style="float: right; width: 300px; font-size: 15px; text-align: left;">
+                <p style="margin: 0 0 5px 0;">${kota}, ${dbSettings.skl_tgl || '...........................'}</p>
+                <p style="margin: 0;">Kepala Sekolah</p>
+                <br><br><br><br>
+                <p style="margin: 0;"><strong>${kepalaSekolah}</strong></p>
+                <p style="margin: 0;">NIP. ${dbSettings.skl_nip || '...........................................'}</p>
+            </div>
+            <div style="clear: both;"></div>
+        </div>
+        `;
+        return html;
+    }
+
+    function cetakSKL(studentId) {
+      var student = dbIjazah.students.find(s => String(s.original_id) === String(studentId) || String(s.student_id) === String(studentId));
+      if(!student) return Swal.fire('Error', 'Data siswa tidak ditemukan', 'error');
+
+      var html = `<html><head><title>SKL - ${student.nama}</title><style>@media print { @page { size: 215mm 330mm; margin: 0; } body { margin: 0; -webkit-print-color-adjust: exact; } .page-break { box-sizing: border-box; } }</style></head><body style="margin:0;">`;
+      html += generateSKLHTML(student);
+      html += `<script>setTimeout(function() { window.print(); window.close(); }, 500);<\/script></body></html>`;
+      
       var printWin = window.open('', '_blank'); printWin.document.write(html); printWin.document.close();
     }
 
