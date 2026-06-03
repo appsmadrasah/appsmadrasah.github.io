@@ -1,3 +1,4 @@
+<!-- #by: www.madrasahebat.com-->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -8,6 +9,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Library SheetJS untuk Ekspor & Impor Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
@@ -102,11 +104,13 @@
         <button class="btn btn-light border" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
       </div>
 
+      <!-- PAGE: DASHBOARD -->
       <div id="page-dashboard" class="page-container">
         <h4 class="fw-bold mb-4">Dashboard</h4>
         <div id="dashboardContainer"></div> 
       </div>
 
+      <!-- PAGE: STUDENTS -->
       <div id="page-students" class="page-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           
@@ -126,6 +130,7 @@
         <div id="studentsContainer"></div>
       </div>
 
+      <!-- PAGE: SUBJECTS -->
       <div id="page-subjects" class="page-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <h4 class="fw-bold mb-0">Mata Pelajaran</h4>
@@ -141,11 +146,13 @@
         <div id="subjectsContainer"></div>
       </div>
 
+      <!-- PAGE: SETTINGS -->
       <div id="page-settings" class="page-container d-none">
         <h4 class="fw-bold mb-4">Pengaturan Sistem</h4>
         <div id="settingsContainer"></div>
       </div>
 
+      <!-- PAGE: RAPOR -->
       <div id="page-rapor" class="page-container d-none">
         <h4 class="fw-bold mb-4">Input Nilai Rapor</h4>
         <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -162,6 +169,7 @@
         <div id="raporContainer"></div>
       </div>
 
+      <!-- PAGE: UJIAN -->
       <div id="page-ujian" class="page-container d-none">
         <h4 class="fw-bold mb-4">Input Nilai Ujian</h4>
         <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -178,6 +186,7 @@
         <div id="ujianContainer"></div>
       </div>
 
+      <!-- PAGE: SKL -->
       <div id="page-skl" class="page-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <h4 class="fw-bold mb-0">Surat Keterangan Lulus</h4>
@@ -197,6 +206,7 @@
         <div id="sklContainer"></div>
       </div>
 
+      <!-- PAGE: IJAZAH -->
       <div id="page-ijazah" class="page-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
           <h4 class="fw-bold mb-0">Proses Nilai Ijazah</h4>
@@ -224,6 +234,7 @@
     </div>
   </div>
 
+  <!-- Modal Siswa -->
   <div class="modal fade" id="modalStudent" tabindex="-1">
     <div class="modal-dialog modal-lg">
       <div class="modal-content border-0 shadow">
@@ -284,6 +295,7 @@
     </div>
   </div>
 
+  <!-- Modal Mapel -->
   <div class="modal fade" id="modalSubject" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content border-0 shadow">
@@ -321,6 +333,7 @@
     </div>
   </div>
 
+  <!-- Modal SKL Settings -->
   <div class="modal fade" id="modalSKL" tabindex="-1">
     <div class="modal-dialog modal-lg">
       <div class="modal-content border-0 shadow">
@@ -392,6 +405,7 @@
     // --- STATE & DATA ---
     var activePage = 'dashboard';
     var tempLogoBase64 = null;
+    var tempTtdBase64 = null;
     var dbStudents = [], dbSubjects = [];
     var dbSettings = { 
       persen_rapor: 60, persen_ujian: 40, 
@@ -402,6 +416,7 @@
       kop_4: 'STATUS : TERAKRIDITASI "A" NSM : 111235240168',
       kop_5: "BHPNU SK. Kemenkumham RI. Nomor AHU-119.AH.01.08 Tahun 2013",
       logo: 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg',
+      ttd_kepsek: '',
       skl_no_surat: '', skl_pembuka: '', skl_tengah: '', skl_tgl: '', skl_nip: ''
     };
     var dbRapor = [], dbUjian = [];
@@ -583,7 +598,6 @@
 
     function downloadTemplateUjian() { 
       if(dbStudents.length === 0) return Swal.fire('Peringatan', 'Belum ada data siswa.', 'warning'); 
-      
       var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan);
       if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif. Tambahkan mapel dahulu!', 'warning');
 
@@ -968,9 +982,10 @@
 
     function renderSettings() {
       tempLogoBase64 = null;
+      tempTtdBase64 = null;
       var c = document.getElementById('settingsContainer');
       c.innerHTML = 
-        `<form id="formSetting" onsubmit="event.preventDefault(); saveSettingsOpt();"><div class="row g-4 mb-4"><div class="col-lg-7"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-heading me-2"></i>Bagian Kop Surat Jadwal</h6></div><div class="card-body p-4"><div class="mb-3"><label class="form-label fw-bold">Ganti Logo Madrasah (Opsional):</label><input type="file" class="form-control" id="setLogoFile" accept=".jpg, .jpeg, .png" onchange="previewLogo(event)"><div class="mt-2"><img id="previewLogoImg" src="${dbSettings.logo||'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="60" style="object-fit:contain; border:1px solid #ddd; padding:5px; border-radius:5px;"></div></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 1:</label><input type="text" class="form-control" id="setKop1" value="${dbSettings.kop_1||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 2:</label><input type="text" class="form-control" id="setKop2" value="${dbSettings.kop_2||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 3:</label><input type="text" class="form-control" id="setKop3" value="${dbSettings.kop_3||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 4:</label><input type="text" class="form-control" id="setKop4" value="${dbSettings.kop_4||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 5:</label><input type="text" class="form-control" id="setKop5" value="${dbSettings.kop_5||''}"></div><hr class="my-4"><h6 class="fw-bold text-success mb-3">Informasi Tambahan</h6><div class="row"><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kota/Tempat TTD</label><input type="text" class="form-control" id="setKota" value="${dbSettings.kota||''}"></div><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Tahun Pelajaran</label><input type="text" class="form-control" id="setTahun" value="${dbSettings.tahun_pelajaran||''}" required></div><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kepala Sekolah</label><input type="text" class="form-control" id="setKepala" value="${dbSettings.kepala_sekolah||''}" required></div></div></div></div></div><div class="col-lg-5"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-scale-balanced me-2"></i>Bobot Nilai Kalkulasi (%)</h6></div><div class="card-body p-4"><div class="alert alert-info border-0 bg-info bg-opacity-10 text-info-emphasis d-flex gap-2 small"><i class="fa-solid fa-circle-info mt-1"></i><span>Total bobot wajib 100%.</span></div><div class="mb-4"><label class="fw-bold mb-2 small">Bobot Rapor (Sem 1-5)</label><div class="input-group"><input type="number" class="form-control form-control-lg" id="setRapor" value="${dbSettings.persen_rapor}" required oninput="document.getElementById('setUjian').value = 100 - (parseInt(this.value)||0)"><span class="input-group-text bg-white">%</span></div></div><div class="mb-2"><label class="fw-bold mb-2 small">Bobot Ujian Akhir</label><div class="input-group"><input type="number" class="form-control form-control-lg bg-light" id="setUjian" value="${dbSettings.persen_ujian}" readonly><span class="input-group-text bg-white">%</span></div></div><div class="mt-4 border-top pt-3"><label class="fw-bold mb-2 small">Format Nilai Akhir</label><select class="form-select form-select-lg" id="setFormatNilai"><option value="Bulat" ${dbSettings.format_nilai === 'Bulat' ? 'selected' : ''}>Bulat (Contoh: 88)</option><option value="Pecahan" ${dbSettings.format_nilai === 'Pecahan' ? 'selected' : ''}>Pecahan (Contoh: 87.50)</option></select></div></div></div></div></div><div class="text-end"><button type="submit" class="btn btn-success px-5 rounded-pill shadow-sm py-2 fw-bold" id="btnSaveSet"><i class="fa-solid fa-save me-2"></i>Simpan Perubahan</button></div></form>`;
+        `<form id="formSetting" onsubmit="event.preventDefault(); saveSettingsOpt();"><div class="row g-4 mb-4"><div class="col-lg-7"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-heading me-2"></i>Bagian Kop Surat Jadwal</h6></div><div class="card-body p-4"><div class="mb-3"><label class="form-label fw-bold">Ganti Logo Madrasah (Opsional):</label><input type="file" class="form-control" id="setLogoFile" accept=".jpg, .jpeg, .png" onchange="previewLogo(event)"><div class="mt-2"><img id="previewLogoImg" src="${dbSettings.logo||'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="60" style="object-fit:contain; border:1px solid #ddd; padding:5px; border-radius:5px;"></div></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 1:</label><input type="text" class="form-control" id="setKop1" value="${dbSettings.kop_1||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 2:</label><input type="text" class="form-control" id="setKop2" value="${dbSettings.kop_2||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 3:</label><input type="text" class="form-control" id="setKop3" value="${dbSettings.kop_3||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 4:</label><input type="text" class="form-control" id="setKop4" value="${dbSettings.kop_4||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 5:</label><input type="text" class="form-control" id="setKop5" value="${dbSettings.kop_5||''}"></div><hr class="my-4"><h6 class="fw-bold text-success mb-3">Informasi Tambahan</h6><div class="row"><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kota/Tempat TTD</label><input type="text" class="form-control" id="setKota" value="${dbSettings.kota||''}"></div><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Tahun Pelajaran</label><input type="text" class="form-control" id="setTahun" value="${dbSettings.tahun_pelajaran||''}" required></div><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kepala Sekolah</label><input type="text" class="form-control" id="setKepala" value="${dbSettings.kepala_sekolah||''}" required></div><div class="col-md-12 mb-3"><label class="form-label small fw-bold">Upload Tanda Tangan Kepsek (Opsional, JPG/PNG)</label><input type="file" class="form-control" id="setTtdFile" accept=".jpg, .jpeg, .png" onchange="previewTtd(event)"><div class="mt-2 text-start"><img id="previewTtdImg" src="${dbSettings.ttd_kepsek||''}" height="60" style="object-fit:contain; border:1px solid #ddd; padding:5px; border-radius:5px; ${!dbSettings.ttd_kepsek ? 'display:none;' : ''}"></div></div></div></div></div></div><div class="col-lg-5"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-scale-balanced me-2"></i>Bobot Nilai Kalkulasi (%)</h6></div><div class="card-body p-4"><div class="alert alert-info border-0 bg-info bg-opacity-10 text-info-emphasis d-flex gap-2 small"><i class="fa-solid fa-circle-info mt-1"></i><span>Total bobot wajib 100%.</span></div><div class="mb-4"><label class="fw-bold mb-2 small">Bobot Rapor (Sem 1-5)</label><div class="input-group"><input type="number" class="form-control form-control-lg" id="setRapor" value="${dbSettings.persen_rapor}" required oninput="document.getElementById('setUjian').value = 100 - (parseInt(this.value)||0)"><span class="input-group-text bg-white">%</span></div></div><div class="mb-2"><label class="fw-bold mb-2 small">Bobot Ujian Akhir</label><div class="input-group"><input type="number" class="form-control form-control-lg bg-light" id="setUjian" value="${dbSettings.persen_ujian}" readonly><span class="input-group-text bg-white">%</span></div></div><div class="mt-4 border-top pt-3"><label class="fw-bold mb-2 small">Format Nilai Akhir</label><select class="form-select form-select-lg" id="setFormatNilai"><option value="Bulat" ${dbSettings.format_nilai === 'Bulat' ? 'selected' : ''}>Bulat (Contoh: 88)</option><option value="Pecahan" ${dbSettings.format_nilai === 'Pecahan' ? 'selected' : ''}>Pecahan (Contoh: 87.50)</option></select></div></div></div></div></div><div class="text-end"><button type="submit" class="btn btn-success px-5 rounded-pill shadow-sm py-2 fw-bold" id="btnSaveSet"><i class="fa-solid fa-save me-2"></i>Simpan Perubahan</button></div></form>`;
     }
 
     function renderRapor() {
@@ -1001,7 +1016,7 @@
       var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
       if(filteredStudents.length === 0) { c.innerHTML = '<div class="text-center py-5 text-muted"><p>Tidak ada data di kelas ini.</p></div>'; return; }
       
-      // Jangan diurutkan berdasarkan alfabet, biarkan tetap natural berdasarkan ID
+      // Jangan diurutkan berdasarkan alfabet, biarkan tetap natural berdasarkan ID Import
       
       var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th class="text-center" width="50">No</th><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th class="text-center">Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
       
@@ -1041,7 +1056,7 @@
       var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
       if(filteredStudents.length === 0) { c.innerHTML = '<div class="text-center py-5 text-muted"><p>Tidak ada data di kelas ini.</p></div>'; return; }
       
-      // Calculate rank first
+      // Calculate rank in temporary sorted copy
       var tempSorted = [...filteredStudents].sort((a,b) => b.rata_ijazah - a.rata_ijazah);
       var rankMap = {};
       var currentRank = 1, prevScore = -1, displayRank = 1;
@@ -1065,6 +1080,7 @@
 
     // --- SYSTEM CRUD & MASS SAVE LOGIC ---
     function previewLogo(event) { var file = event.target.files[0]; if(!file) return; var reader = new FileReader(); reader.onload = function(e) { tempLogoBase64 = e.target.result; document.getElementById('previewLogoImg').src = tempLogoBase64; }; reader.readAsDataURL(file); }
+    function previewTtd(event) { var file = event.target.files[0]; if(!file) return; var reader = new FileReader(); reader.onload = function(e) { tempTtdBase64 = e.target.result; var img = document.getElementById('previewTtdImg'); img.src = tempTtdBase64; img.style.display = 'inline-block'; }; reader.readAsDataURL(file); }
 
     async function saveSettingsOpt() { 
       var payload = { 
@@ -1079,6 +1095,7 @@
         tahun_pelajaran: document.getElementById('setTahun').value, 
         kepala_sekolah: document.getElementById('setKepala').value, 
         logo: tempLogoBase64 ? tempLogoBase64 : dbSettings.logo, 
+        ttd_kepsek: tempTtdBase64 ? tempTtdBase64 : dbSettings.ttd_kepsek,
         format_nilai: document.getElementById('setFormatNilai').value 
       }; 
       if(payload.persen_rapor + payload.persen_ujian !== 100) return Swal.fire('Warning','Total bobot rapor & ujian harus 100%','warning'); 
@@ -1093,8 +1110,8 @@
     // --- SKL SETTINGS ---
     function openSKLSettings() {
       document.getElementById('sklNoSurat').value = dbSettings.skl_no_surat || '';
-      document.getElementById('sklPembuka').value = dbSettings.skl_pembuka || `Yang bertanda tangan di bawah ini Kepala ${dbSettings.kop_2 || ''} ${dbSettings.kota || ''}, menerangkan bahwa :`;
-      document.getElementById('sklTengah').value = dbSettings.skl_tengah || `Telah mengikuti kegiatan Ujian Nasional tahun pelajaran ${dbSettings.tahun_pelajaran || ''}, dan berdasarkan Kriteria lulusan sekolah dinyatakan :`;
+      document.getElementById('sklPembuka').value = dbSettings.skl_pembuka || `Yang bertanda tangan di bawah ini Kepala ${dbSettings.kop_2 || ''} ${dbSettings.kota || ''}, menerangkan bahwa:`;
+      document.getElementById('sklTengah').value = dbSettings.skl_tengah || `Telah mengikuti kegiatan Ujian Madrasah tahun pelajaran ${dbSettings.tahun_pelajaran || ''}, dan berdasarkan Kriteria kelulusan sekolah dinyatakan:`;
       document.getElementById('sklTgl').value = dbSettings.skl_tgl || '';
       document.getElementById('sklNip').value = dbSettings.skl_nip || '';
       new bootstrap.Modal(document.getElementById('modalSKL')).show();
@@ -1226,6 +1243,7 @@
 
           if(nisn && nama) {
             var exist = dbStudents.find(s => s.nisn === nisn);
+            // Index padStart mengunci urutan asli Excel saat Firebase melakukan key-sorting
             var id = exist ? exist.id : 'stud_' + Date.now() + '_' + String(idx).padStart(5, '0');
             
             payload[id] = { 
@@ -1362,6 +1380,109 @@
       }); 
     }
 
+    // --- SKL PRINT GENERATOR ---
+    function generateSKLHTML(student) {
+        var logoUrl = dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg';
+        
+        var kop1 = dbSettings.kop_1 || '';
+        var kop2 = dbSettings.kop_2 || '';
+        var kop3 = dbSettings.kop_3 || '';
+        var kop4 = dbSettings.kop_4 || '';
+        var kop5 = dbSettings.kop_5 || '';
+        
+        var kota = dbSettings.kota || '';
+        var kepalaSekolah = dbSettings.kepala_sekolah || '';
+        
+        var fullStudent = dbStudents.find(s => s.id === student.student_id) || {};
+        var noUjian = fullStudent.no_ujian || '-';
+        var tmpLahir = fullStudent.tempat_lahir || '-';
+        var tglLahir = fullStudent.tgl_lahir || '-';
+        var ttl = tmpLahir + ', ' + tglLahir;
+        var sekolahAsal = fullStudent.sekolah_asal || kop2;
+        
+        var statLulus = fullStudent.status_kelulusan || 'LULUS';
+        var displayStatus = statLulus === 'LULUS' ? 'LULUS' : 'TIDAK LULUS';
+
+        var html = `
+        <div class="page-break" style="page-break-after: always; padding: 20px 40px; font-family: 'Times New Roman', Times, serif; color: #000;">
+            <div style="display: flex; align-items: center; justify-content: center; position: relative; border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 30px; min-height: 90px;">
+                <img src="${logoUrl}" alt="Logo" style="width: 90px; height: 90px; object-fit: contain; position: absolute; left: 0;">
+                <div style="text-align: center; width: 100%; padding: 0 100px;">
+                    ${kop1 ? `<div style="font-size: 16px; text-transform: uppercase;">${kop1}</div>` : ''}
+                    ${kop2 ? `<div style="font-size: 22px; font-weight: bold; text-transform: uppercase; margin: 3px 0;">${kop2}</div>` : ''}
+                    ${kop3 ? `<div style="font-size: 14px;">${kop3}</div>` : ''}
+                    ${kop4 ? `<div style="font-size: 12px;">${kop4}</div>` : ''}
+                    ${kop5 ? `<div style="font-size: 12px;">${kop5}</div>` : ''}
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h3 style="margin: 0; font-size: 18px; text-decoration: underline; font-weight: bold;">SURAT KETERANGAN</h3>
+                <p style="margin: 5px 0 0 0; font-style: italic;">NOMOR : ${dbSettings.skl_no_surat || '...........................................'}</p>
+            </div>
+            
+            <div style="font-size: 15px; line-height: 1.6;">
+                <p style="text-indent: 40px; margin-bottom: 20px;">
+                    ${dbSettings.skl_pembuka || `Yang bertanda tangan di bawah ini Kepala ${kop2} ${kota}, menerangkan bahwa:`}
+                </p>
+                
+                <table style="width: 85%; margin: 0 auto 20px auto; font-size: 15px;">
+                    <tr><td style="width: 220px; padding: 5px 0;">Nama</td><td style="width: 20px;">:</td><td><strong>${student.nama}</strong></td></tr>
+                    <tr><td style="padding: 5px 0;">Tempat dan Tanggal Lahir</td><td>:</td><td>${ttl}</td></tr>
+                    <tr><td style="padding: 5px 0;">Sekolah Asal</td><td>:</td><td>${sekolahAsal}</td></tr>
+                    <tr><td style="padding: 5px 0;">NISN</td><td>:</td><td>${student.nisn}</td></tr>
+                    <tr><td style="padding: 5px 0;">Nomor Peserta</td><td>:</td><td>${noUjian}</td></tr>
+                </table>
+                
+                <p style="text-indent: 40px; margin-bottom: 30px;">
+                    ${dbSettings.skl_tengah || `Telah mengikuti kegiatan Ujian Madrasah tahun pelajaran ${dbSettings.tahun_pelajaran || '-'}, dan berdasarkan Kriteria kelulusan sekolah dinyatakan:`}
+                </p>
+                
+                <h2 style="text-align: center; font-size: 26px; font-weight: bold; margin: 40px 0; letter-spacing: 4px;">${displayStatus}</h2>
+                
+                <p style="text-indent: 40px; margin-bottom: 50px;">Demikian surat keterangan ini dibuat untuk dapat digunakan sebagaimana mestinya.</p>
+            </div>
+            
+            <div style="float: right; width: 300px; font-size: 15px; text-align: left;">
+                <p style="margin: 0 0 5px 0;">${kota}, ${dbSettings.skl_tgl || '...........................'}</p>
+                <p style="margin: 0;">Kepala Sekolah</p>
+                ${dbSettings.ttd_kepsek ? `<img src="${dbSettings.ttd_kepsek}" style="height: 80px; margin: 10px 0; object-fit: contain;">` : '<br><br><br><br>'}
+                <p style="margin: 0;"><strong>${kepalaSekolah}</strong></p>
+                <p style="margin: 0;">NIP. ${dbSettings.skl_nip || '...........................................'}</p>
+            </div>
+            <div style="clear: both;"></div>
+        </div>
+        `;
+        return html;
+    }
+
+    function cetakSKL(studentId) {
+      var student = dbIjazah.students.find(s => String(s.original_id) === String(studentId) || String(s.student_id) === String(studentId));
+      if(!student) return Swal.fire('Error', 'Data siswa tidak ditemukan', 'error');
+
+      var html = `<html><head><title>SKL - ${student.nama}</title><style>@media print { @page { size: 215mm 330mm; margin: 0; } body { margin: 0; -webkit-print-color-adjust: exact; } .page-break { box-sizing: border-box; } }</style></head><body style="margin:0;">`;
+      html += generateSKLHTML(student);
+      html += `<script>setTimeout(function() { window.print(); window.close(); }, 500);<\/script></body></html>`;
+      
+      var printWin = window.open('', '_blank'); printWin.document.write(html); printWin.document.close();
+    }
+
+    function cetakSemuaSKL() {
+      if(!dbIjazah.students || dbIjazah.students.length === 0) return Swal.fire('Gagal', 'Belum ada data nilai.', 'error');
+      
+      var filterSelect = document.getElementById('filterKelasSKL'); var selectedKelas = filterSelect.value;
+      var allStudents = dbIjazah.students; var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
+      if(filteredStudents.length === 0) return Swal.fire('Warning', 'Tidak ada data siswa pada kelas terpilih.', 'warning');
+
+      var html = `<html><head><title>Cetak Semua SKL - Kelas ${selectedKelas}</title><style>@media print { @page { size: 215mm 330mm; margin: 0; } body { margin: 0; -webkit-print-color-adjust: exact; } .page-break { box-sizing: border-box; } }</style></head><body style="margin:0;">`;
+      filteredStudents.forEach(function(student) {
+        html += generateSKLHTML(student);
+      });
+      html += `<script>setTimeout(function() { window.print(); window.close(); }, 500);<\/script></body></html>`;
+      
+      var printWin = window.open('', '_blank'); printWin.document.write(html); printWin.document.close();
+    }
+
     function cetakPDFIjazah() {
       if(!dbIjazah.students || dbIjazah.students.length === 0) return Swal.fire('Gagal', 'Belum ada data nilai. Lakukan kalkulasi terlebih dahulu.', 'error');
       var filterSelect = document.getElementById('filterKelasIjazah'); var selectedKelas = filterSelect.value;
@@ -1441,92 +1562,6 @@
         <script>setTimeout(function() { window.print(); window.close(); }, 500);<\/script>
       </body>
       </html>`;
-      var printWin = window.open('', '_blank'); printWin.document.write(html); printWin.document.close();
-    }
-
-    function generateSKLHTML(student) {
-        var logoUrl = dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg';
-        
-        var kop1 = dbSettings.kop_1 || '';
-        var kop2 = dbSettings.kop_2 || '';
-        var kop3 = dbSettings.kop_3 || '';
-        var kop4 = dbSettings.kop_4 || '';
-        var kop5 = dbSettings.kop_5 || '';
-        
-        var kota = dbSettings.kota || '';
-        var kepalaSekolah = dbSettings.kepala_sekolah || '';
-        
-        var fullStudent = dbStudents.find(s => s.id === student.student_id) || {};
-        var noUjian = fullStudent.no_ujian || '-';
-        var tmpLahir = fullStudent.tempat_lahir || '-';
-        var tglLahir = fullStudent.tgl_lahir || '-';
-        var ttl = tmpLahir + ', ' + tglLahir;
-        var sekolahAsal = fullStudent.sekolah_asal || kop2;
-        
-        var statLulus = fullStudent.status_kelulusan || 'LULUS';
-        var displayStatus = statLulus === 'LULUS' ? 'L U L U S' : 'T I D A K &nbsp; L U L U S';
-
-        var html = `
-        <div class="page-break" style="page-break-after: always; padding: 20px 40px; font-family: 'Times New Roman', Times, serif; color: #000;">
-            <div style="display: flex; align-items: center; border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 30px;">
-                <img src="${logoUrl}" alt="Logo" style="width: 90px; height: 90px; object-fit: contain; margin-right: 20px;">
-                <div style="text-align: center; flex-grow: 1;">
-                    ${kop1 ? `<div style="font-size: 16px; text-transform: uppercase;">${kop1}</div>` : ''}
-                    ${kop2 ? `<div style="font-size: 22px; font-weight: bold; text-transform: uppercase; margin: 3px 0;">${kop2}</div>` : ''}
-                    ${kop3 ? `<div style="font-size: 14px;">${kop3}</div>` : ''}
-                    ${kop4 ? `<div style="font-size: 12px;">${kop4}</div>` : ''}
-                    ${kop5 ? `<div style="font-size: 12px;">${kop5}</div>` : ''}
-                </div>
-            </div>
-            
-            <div style="text-align: center; margin-bottom: 40px;">
-                <h3 style="margin: 0; font-size: 18px; text-decoration: underline; font-weight: bold;">SURAT KETERANGAN</h3>
-                <p style="margin: 5px 0 0 0; font-style: italic;">NOMOR : ${dbSettings.skl_no_surat || '...........................................'}</p>
-            </div>
-            
-            <div style="font-size: 15px; line-height: 1.6;">
-                <p style="text-indent: 40px; margin-bottom: 20px;">
-                    ${dbSettings.skl_pembuka || `Yang bertanda tangan di bawah ini Kepala ${kop2} ${kota}, menerangkan bahwa :`}
-                </p>
-                
-                <table style="width: 85%; margin: 0 auto 20px auto; font-size: 15px;">
-                    <tr><td style="width: 220px; padding: 5px 0;">Nama</td><td style="width: 20px;">:</td><td><strong>${student.nama}</strong></td></tr>
-                    <tr><td style="padding: 5px 0;">Tempat dan Tanggal Lahir</td><td>:</td><td>${ttl}</td></tr>
-                    <tr><td style="padding: 5px 0;">Sekolah Asal</td><td>:</td><td>${sekolahAsal}</td></tr>
-                    <tr><td style="padding: 5px 0;">NISN</td><td>:</td><td>${student.nisn}</td></tr>
-                    <tr><td style="padding: 5px 0;">Nomor Peserta</td><td>:</td><td>${noUjian}</td></tr>
-                </table>
-                
-                <p style="text-indent: 40px; margin-bottom: 30px;">
-                    ${dbSettings.skl_tengah || `Telah mengikuti kegiatan Ujian Nasional tahun pelajaran ${dbSettings.tahun_pelajaran || '-'}, dan berdasarkan Kriteria kelulusan sekolah dinyatakan :`}
-                </p>
-                
-                <h2 style="text-align: center; font-size: 26px; font-weight: bold; margin: 40px 0; letter-spacing: 8px;">${displayStatus}</h2>
-                
-                <p style="text-indent: 40px; margin-bottom: 50px;">Demikian surat keterangan ini dibuat untuk dapat digunakan sebagaimana mestinya.</p>
-            </div>
-            
-            <div style="float: right; width: 300px; font-size: 15px; text-align: left;">
-                <p style="margin: 0 0 5px 0;">${kota}, ${dbSettings.skl_tgl || '...........................'}</p>
-                <p style="margin: 0;">Kepala Sekolah</p>
-                <br><br><br><br>
-                <p style="margin: 0;"><strong>${kepalaSekolah}</strong></p>
-                <p style="margin: 0;">NIP. ${dbSettings.skl_nip || '...........................................'}</p>
-            </div>
-            <div style="clear: both;"></div>
-        </div>
-        `;
-        return html;
-    }
-
-    function cetakSKL(studentId) {
-      var student = dbIjazah.students.find(s => String(s.original_id) === String(studentId) || String(s.student_id) === String(studentId));
-      if(!student) return Swal.fire('Error', 'Data siswa tidak ditemukan', 'error');
-
-      var html = `<html><head><title>SKL - ${student.nama}</title><style>@media print { @page { size: 215mm 330mm; margin: 0; } body { margin: 0; -webkit-print-color-adjust: exact; } .page-break { box-sizing: border-box; } }</style></head><body style="margin:0;">`;
-      html += generateSKLHTML(student);
-      html += `<script>setTimeout(function() { window.print(); window.close(); }, 500);<\/script></body></html>`;
-      
       var printWin = window.open('', '_blank'); printWin.document.write(html); printWin.document.close();
     }
 
