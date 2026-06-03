@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Kartu Peserta Ujian - Susunan Excel Presisi</title>
+    <title>Aplikasi Kartu Peserta Ujian - Realtime Database</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -136,10 +136,10 @@
             <thead>
                 <tr>
                     <th style="width: 40px; text-align:center;">No.</th>
+                    <th>Nama</th>
+                    <th>Tgl Lahir</th>
                     <th>No. Ujian</th>
                     <th>NISN</th>
-                    <th>Nama Lengkap</th>
-                    <th>Tgl Lahir</th>
                     <th>Kelas</th>
                     <th style="width: 100px; text-align:center;">Aksi</th>
                 </tr>
@@ -222,10 +222,10 @@
             <span class="close-btn" onclick="tutupModalForm()">&times;</span>
         </div>
         <input type="hidden" id="form-index" value=""> 
-        <div class="form-group"><label>No. Ujian:</label><input type="text" id="form-no" autocomplete="off"></div>
-        <div class="form-group"><label>NISN:</label><input type="text" id="form-nisn" autocomplete="off"></div>
-        <div class="form-group"><label>Nama Lengkap:</label><input type="text" id="form-nama" autocomplete="off"></div>
+        <div class="form-group"><label>Nama Peserta:</label><input type="text" id="form-nama" autocomplete="off"></div>
         <div class="form-group"><label>Tanggal Lahir:</label><input type="text" id="form-tgl" placeholder="Contoh: 2006-03-08" autocomplete="off"></div>
+        <div class="form-group"><label>Nomor Ujian:</label><input type="text" id="form-no" autocomplete="off"></div>
+        <div class="form-group"><label>NISN:</label><input type="text" id="form-nisn" autocomplete="off"></div>
         <div class="form-group"><label>Kelas:</label><input type="text" id="form-kelas" autocomplete="off"></div>
         <div class="modal-footer">
             <button class="btn-batal" onclick="tutupModalForm()">Batal</button>
@@ -248,7 +248,7 @@
         const filterValue = document.getElementById("filter-kelas").value;
 
         if(window.dataPeserta.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">Tidak ada data siswa. Silakan hubungkan Excel Anda kembali.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">Tidak ada data siswa. Silakan periksa database.</td></tr>`;
             return;
         }
 
@@ -262,10 +262,10 @@
 
             const tr = `<tr>
                 <td style="text-align:center;">${nomorUrut++}</td>
-                <td>${p.noUjian || '-'}</td>
-                <td>${p.nisn || '-'}</td>
                 <td>${p.nama}</td>
                 <td>${p.tglLahir || '-'}</td>
+                <td>${p.noUjian || '-'}</td>
+                <td>${p.nisn || '-'}</td>
                 <td>${p.kelas || '-'}</td>
                 <td style="text-align:center;">
                     <button class="btn-lihat" onclick="lihatKartu(${index})" title="Preview Kartu">👁️</button>
@@ -280,10 +280,10 @@
     window.bukaModalForm = function(index) {
         document.getElementById('modalForm').style.display = 'block';
         document.getElementById('form-index').value = index;
-        document.getElementById('form-no').value = window.dataPeserta[index].noUjian || "";
-        document.getElementById('form-nisn').value = window.dataPeserta[index].nisn || "";
         document.getElementById('form-nama').value = window.dataPeserta[index].nama || "";
         document.getElementById('form-tgl').value = window.dataPeserta[index].tglLahir || "";
+        document.getElementById('form-no').value = window.dataPeserta[index].noUjian || "";
+        document.getElementById('form-nisn').value = window.dataPeserta[index].nisn || "";
         document.getElementById('form-kelas').value = window.dataPeserta[index].kelas || "";
     }
 
@@ -446,7 +446,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, get, set, update, remove, child, push } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, get, set, remove, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCae3CoI4eWy9T6yhf_yGvoHiyoAJ7gUyA",
@@ -463,7 +463,7 @@
     const db = getDatabase(app);
     const dbRef = ref(db);
 
-    // 1. Fungsi Menarik Data Siswa (Dengan Pengurutan Waktu/CreatedAt)
+    // 1. Fungsi Menarik Data Siswa
     async function muatDataFirebase() {
         try {
             const snapshot = await get(child(dbRef, `siswa`));
@@ -474,17 +474,18 @@
                     let item = childSnapshot.val();
                     item.docId = childSnapshot.key; 
                     
+                    if (item.username && !item.nisn) item.nisn = item.username;
+                    if (item.password && !item.kelas) item.kelas = item.password;
+                    
                     dataOnline.push(item);
                 });
             }
-            
-            // Jaminan urutan data tidak diacak (Disortir berdasarkan waktu pertama dimasukkan)
-            dataOnline.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
             window.dataPeserta = dataOnline;
             window.renderTabel();
         } catch (error) {
-            console.error(error);
+            console.error("Firebase Error: ", error);
+            document.getElementById("tabel-body").innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">Gagal memuat dari Realtime Database. Pastikan koneksi benar.</td></tr>`;
         }
     }
 
@@ -523,28 +524,11 @@
         } catch (e) { console.error(e); }
     }
 
-    async function simpanPengaturanKop(dataKop) {
-        try { await set(ref(db, 'pengaturan/kop'), dataKop); } catch (e) { console.error(e); }
-    }
-
-    async function tambahSiswa(data) {
-        try {
-            const siswaListRef = ref(db, 'siswa');
-            const newSiswaRef = push(siswaListRef);
-            await set(newSiswaRef, {
-                nama: data.nama,
-                tglLahir: data.tglLahir,
-                noUjian: data.noUjian,
-                nisn: data.nisn,
-                kelas: data.kelas,
-                createdAt: data.createdAt || Date.now() // Tracker Urutan Excel Asli
-            });
-        } catch (e) { console.error(e); }
-    }
-
+    // 3. Update Data ke REALTIME DATABASE
     async function updateSiswa(docId, data) {
         try {
-            await update(ref(db, 'siswa/' + docId), {
+            const siswaRef = ref(db, 'siswa/' + docId);
+            await set(siswaRef, {
                 nama: data.nama,
                 tglLahir: data.tglLahir,
                 noUjian: data.noUjian,
@@ -554,15 +538,20 @@
         } catch (e) { console.error(e); }
     }
 
+    // 4. Menghapus Data dari REALTIME DATABASE
     async function hapusSiswa(docId) {
-        try { await remove(ref(db, 'siswa/' + docId)); } catch (e) { console.error(e); }
+        try {
+            const siswaRef = ref(db, 'siswa/' + docId);
+            await remove(siswaRef);
+        } catch (e) { console.error(e); }
     }
 
     window.firebase_muatData = muatDataFirebase;
-    window.firebase_tambahSiswa = tambahSiswa;
     window.firebase_updateSiswa = updateSiswa;
     window.firebase_hapusSiswa = hapusSiswa;
-    window.firebase_simpanPengaturan = simpanPengaturanKop;
+    window.firebase_simpanPengaturan = async function(dataKop) {
+        try { await set(ref(db, 'pengaturan/kop'), dataKop); } catch (e) { console.error(e); }
+    };
 
     window.addEventListener('DOMContentLoaded', () => {
         muatDataFirebase();
