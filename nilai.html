@@ -154,7 +154,7 @@
             <select class="form-select w-auto min-w-200 border-success text-success fw-semibold" id="filterMapelRapor" onchange="fetchRapor()"></select>
             <div class="ms-auto d-flex gap-2 flex-wrap">
               <button class="btn btn-outline-success rounded-pill px-3 fw-semibold" onclick="downloadTemplateRapor()"><i class="fa-solid fa-file-excel me-1"></i> Download Template</button>
-              <button class="btn btn-outline-primary rounded-pill px-3 fw-semibold" onclick="document.getElementById('fileImportRapor').click()"><i class="fa-solid fa-file-import me-1"></i> Import Multi-Sheet</button>
+              <button class="btn btn-outline-primary rounded-pill px-3 fw-semibold" onclick="document.getElementById('fileImportRapor').click()"><i class="fa-solid fa-file-import me-1"></i> Import Excel</button>
               <button class="btn btn-success rounded-pill px-3 fw-bold" id="btnSaveRapor" onclick="saveRaporMassal()"><i class="fa-solid fa-save me-1"></i> Simpan Data</button>
             </div>
           </div>
@@ -170,7 +170,7 @@
             <select class="form-select w-auto min-w-200 border-success text-success fw-semibold" id="filterMapelUjian" onchange="fetchUjian()"></select>
             <div class="ms-auto d-flex gap-2 flex-wrap">
               <button class="btn btn-outline-success rounded-pill px-3 fw-semibold" onclick="downloadTemplateUjian()"><i class="fa-solid fa-file-excel me-1"></i> Download Template</button>
-              <button class="btn btn-outline-primary rounded-pill px-3 fw-semibold" onclick="document.getElementById('fileImportUjian').click()"><i class="fa-solid fa-file-import me-1"></i> Import Leger Ujian</button>
+              <button class="btn btn-outline-primary rounded-pill px-3 fw-semibold" onclick="document.getElementById('fileImportUjian').click()"><i class="fa-solid fa-file-import me-1"></i> Import Excel</button>
               <button class="btn btn-success rounded-pill px-3 fw-bold" id="btnSaveUjian" onclick="saveUjianMassal()"><i class="fa-solid fa-save me-1"></i> Simpan Data</button>
             </div>
           </div>
@@ -583,6 +583,7 @@
 
     function downloadTemplateUjian() { 
       if(dbStudents.length === 0) return Swal.fire('Peringatan', 'Belum ada data siswa.', 'warning'); 
+      
       var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan);
       if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif. Tambahkan mapel dahulu!', 'warning');
 
@@ -723,7 +724,10 @@
               var maxCol = Math.max(headerRow1.length, headerRow2.length);
               
               for(var c=0; c<maxCol; c++) {
-                var key = headerRow2[c] ? headerRow2[c].toString().trim() : (headerRow1[c] ? headerRow1[c].toString().trim() : "Col"+c);
+                var h2 = headerRow2[c] !== undefined && headerRow2[c] !== null ? headerRow2[c].toString().trim() : "";
+                var h1 = headerRow1[c] !== undefined && headerRow1[c] !== null ? headerRow1[c].toString().trim() : "";
+                var key = h2 !== "" ? h2 : h1;
+                if(!key) key = "Col" + c;
                 keys.push(key);
               }
               
@@ -997,6 +1001,8 @@
       var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
       if(filteredStudents.length === 0) { c.innerHTML = '<div class="text-center py-5 text-muted"><p>Tidak ada data di kelas ini.</p></div>'; return; }
       
+      // Jangan diurutkan berdasarkan alfabet, biarkan tetap natural berdasarkan ID
+      
       var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th class="text-center" width="50">No</th><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th class="text-center">Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
       
       filteredStudents.forEach(function(j, idx) {
@@ -1010,12 +1016,12 @@
                 <td class="fw-semibold">${j.nama}</td>
                 <td>${j.kelas}</td>
                 <td class="text-center" width="150">
-                  <select class="form-select form-select-sm fw-bold border-0 bg-light status-select ${statColor}" onchange="updateStatusLulus('${j.student_id}', this.value)">
+                  <select class="form-select form-select-sm fw-bold border-0 bg-light status-select ${statColor}" onchange="updateStatusLulus('${j.original_id}', this.value)">
                     <option value="LULUS" class="text-success" ${statLulus === 'LULUS' ? 'selected' : ''}>LULUS</option>
                     <option value="TIDAK LULUS" class="text-danger" ${statLulus === 'TIDAK LULUS' ? 'selected' : ''}>TIDAK LULUS</option>
                   </select>
                 </td>
-                <td class="text-end text-nowrap"><button class="btn btn-sm btn-light border text-success rounded-pill px-3" onclick="cetakSKL('${j.student_id}')"><i class="fa-solid fa-print"></i> Cetak</button></td>
+                <td class="text-end text-nowrap"><button class="btn btn-sm btn-light border text-success rounded-pill px-3" onclick="cetakSKL('${j.original_id}')"><i class="fa-solid fa-print"></i> Cetak</button></td>
               </tr>`;
       });
       c.innerHTML = h + '</tbody></table></div></div>';
