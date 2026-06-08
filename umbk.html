@@ -215,10 +215,6 @@
             <select class="form-select form-select-sm w-auto rounded-pill px-3" id="filterKelasIjazah" onchange="renderIjazah()">
               <option value="Semua">Semua Kelas</option>
             </select>
-            
-            <button class="btn btn-outline-success btn-sm rounded-pill shadow-sm px-3 fw-bold" onclick="downloadExcelIjazah()">
-              <i class="fa-solid fa-file-excel me-1"></i> Download Excel
-            </button>
             <button class="btn btn-outline-danger btn-sm rounded-pill shadow-sm px-3 fw-bold" onclick="cetakPDFIjazah()">
               <i class="fa-solid fa-file-pdf me-1"></i> Cetak PDF Ijazah
             </button>
@@ -714,65 +710,6 @@
         Swal.fire({icon: 'success', title: 'File Diunduh', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false});
       } catch(e) { Swal.fire('Error', 'Gagal membuat file Excel: ' + e.message, 'error'); }
     }
-    
-    function downloadExcelIjazah() {
-      if(!dbIjazah.students || dbIjazah.students.length === 0) return Swal.fire('Gagal', 'Belum ada data nilai. Lakukan kalkulasi terlebih dahulu.', 'error');
-      
-      var filterSelect = document.getElementById('filterKelasIjazah'); 
-      var selectedKelas = filterSelect.value;
-      var allStudents = dbIjazah.students; 
-      var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
-      
-      if(filteredStudents.length === 0) return Swal.fire('Warning', 'Tidak ada data siswa pada kelas terpilih.', 'warning');
-      
-      // Calculate rank in temporary sorted copy
-      var tempSorted = [...filteredStudents].sort((a,b) => b.rata_ijazah - a.rata_ijazah);
-      var rankMap = {};
-      var currentRank = 1, prevScore = -1, displayRank = 1;
-      tempSorted.forEach(j => {
-          if(j.rata_ijazah !== prevScore) { displayRank = currentRank; prevScore = j.rata_ijazah; }
-          rankMap[j.original_id] = displayRank;
-          currentRank++;
-      });
-
-      var subjects = dbIjazah.subjects;
-      
-      var header = ["No", "NISN", "Nama Siswa", "Kelas"];
-      subjects.forEach(sub => {
-          header.push(sub.nama_mapel + " (" + sub.kode_mapel + ")");
-      });
-      header.push("Jumlah Nilai", "Rata-rata", "Peringkat");
-      
-      var dataRows = [];
-      filteredStudents.forEach(function(j, idx) {
-        var studentRank = rankMap[j.original_id];
-        var row = [ idx + 1, j.nisn, j.nama, j.kelas ];
-        
-        subjects.forEach(sub => { 
-            var val = j.scores[sub.id] !== undefined ? formatNilaiAkhir(j.scores[sub.id]) : '-';
-            row.push(val); 
-        });
-        
-        row.push(formatNilaiAkhir(j.total));
-        row.push(formatNilaiAkhir(j.rata_ijazah));
-        row.push(studentRank);
-        
-        dataRows.push(row);
-      });
-      
-      var finalData = [header].concat(dataRows);
-      
-      try {
-          var ws = XLSX.utils.aoa_to_sheet(finalData);
-          var wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Rekap_Nilai_Ijazah");
-          var filename = selectedKelas === 'Semua' ? "Rekap_Nilai_Ijazah_Semua_Kelas.xlsx" : "Rekap_Nilai_Ijazah_Kelas_" + selectedKelas + ".xlsx";
-          XLSX.writeFile(wb, filename);
-          Swal.fire({icon: 'success', title: 'Berhasil', text: 'File Excel sedang diunduh.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false});
-      } catch(e) {
-          Swal.fire('Error', 'Gagal membuat file Excel: ' + e.message, 'error');
-      }
-    }
 
     function parseExcel(file, callback) { 
       var reader = new FileReader(); 
@@ -1306,6 +1243,7 @@
 
           if(nisn && nama) {
             var exist = dbStudents.find(s => s.nisn === nisn);
+            // Index padStart mengunci urutan asli Excel saat Firebase melakukan key-sorting
             var id = exist ? exist.id : 'stud_' + Date.now() + '_' + String(idx).padStart(5, '0');
             
             payload[id] = { 
@@ -1441,15 +1379,114 @@
         }
       }); 
     }
-    
-    function downloadExcelIjazah() {
+
+    // --- SKL PRINT GENERATOR ---
+    function generateSKLHTML(student) {
+        var logoUrl = dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg';
+        
+        var kop1 = dbSettings.kop_1 || '';
+        var kop2 = dbSettings.kop_2 || '';
+        var kop3 = dbSettings.kop_3 || '';
+        var kop4 = dbSettings.kop_4 || '';
+        var kop5 = dbSettings.kop_5 || '';
+        
+        var kota = dbSettings.kota || '';
+        var kepalaSekolah = dbSettings.kepala_sekolah || '';
+        
+        var fullStudent = dbStudents.find(s => s.id === student.student_id) || {};
+        var noUjian = fullStudent.no_ujian || '-';
+        var tmpLahir = fullStudent.tempat_lahir || '-';
+        var tglLahir = fullStudent.tgl_lahir || '-';
+        var ttl = tmpLahir + ', ' + tglLahir;
+        var sekolahAsal = fullStudent.sekolah_asal || kop2;
+        
+        var statLulus = fullStudent.status_kelulusan || 'LULUS';
+        var displayStatus = statLulus === 'LULUS' ? 'LULUS' : 'TIDAK LULUS';
+
+        var html = `
+        <div class="page-break" style="page-break-after: always; padding: 20px 40px; font-family: 'Times New Roman', Times, serif; color: #000;">
+            <div style="display: flex; align-items: center; justify-content: center; position: relative; border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 30px; min-height: 90px;">
+                <img src="${logoUrl}" alt="Logo" style="width: 90px; height: 90px; object-fit: contain; position: absolute; left: 0;">
+                <div style="text-align: center; width: 100%; padding: 0 100px;">
+                    ${kop1 ? `<div style="font-size: 16px; text-transform: uppercase;">${kop1}</div>` : ''}
+                    ${kop2 ? `<div style="font-size: 22px; font-weight: bold; text-transform: uppercase; margin: 3px 0;">${kop2}</div>` : ''}
+                    ${kop3 ? `<div style="font-size: 14px;">${kop3}</div>` : ''}
+                    ${kop4 ? `<div style="font-size: 12px;">${kop4}</div>` : ''}
+                    ${kop5 ? `<div style="font-size: 12px;">${kop5}</div>` : ''}
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h3 style="margin: 0; font-size: 18px; text-decoration: underline; font-weight: bold;">SURAT KETERANGAN</h3>
+                <p style="margin: 5px 0 0 0; font-style: italic;">NOMOR : ${dbSettings.skl_no_surat || '...........................................'}</p>
+            </div>
+            
+            <div style="font-size: 15px; line-height: 1.6;">
+                <p style="text-indent: 40px; margin-bottom: 20px;">
+                    ${dbSettings.skl_pembuka || `Yang bertanda tangan di bawah ini Kepala ${kop2} ${kota}, menerangkan bahwa:`}
+                </p>
+                
+                <table style="width: 85%; margin: 0 auto 20px auto; font-size: 15px;">
+                    <tr><td style="width: 220px; padding: 5px 0;">Nama</td><td style="width: 20px;">:</td><td><strong>${student.nama}</strong></td></tr>
+                    <tr><td style="padding: 5px 0;">Tempat dan Tanggal Lahir</td><td>:</td><td>${ttl}</td></tr>
+                    <tr><td style="padding: 5px 0;">Sekolah Asal</td><td>:</td><td>${sekolahAsal}</td></tr>
+                    <tr><td style="padding: 5px 0;">NISN</td><td>:</td><td>${student.nisn}</td></tr>
+                    <tr><td style="padding: 5px 0;">Nomor Peserta</td><td>:</td><td>${noUjian}</td></tr>
+                </table>
+                
+                <p style="text-indent: 40px; margin-bottom: 30px;">
+                    ${dbSettings.skl_tengah || `Telah mengikuti kegiatan Ujian Madrasah tahun pelajaran ${dbSettings.tahun_pelajaran || '-'}, dan berdasarkan Kriteria kelulusan sekolah dinyatakan:`}
+                </p>
+                
+                <h2 style="text-align: center; font-size: 26px; font-weight: bold; margin: 40px 0; letter-spacing: 4px;">${displayStatus}</h2>
+                
+                <p style="text-indent: 40px; margin-bottom: 50px;">Demikian surat keterangan ini dibuat untuk dapat digunakan sebagaimana mestinya.</p>
+            </div>
+            
+            <div style="float: right; width: 300px; font-size: 15px; text-align: left;">
+                <p style="margin: 0 0 5px 0;">${kota}, ${dbSettings.skl_tgl || '...........................'}</p>
+                <p style="margin: 0;">Kepala Sekolah</p>
+                ${dbSettings.ttd_kepsek ? `<img src="${dbSettings.ttd_kepsek}" style="height: 80px; margin: 10px 0; object-fit: contain;">` : '<br><br><br><br>'}
+                <p style="margin: 0;"><strong>${kepalaSekolah}</strong></p>
+                <p style="margin: 0;">NIP. ${dbSettings.skl_nip || '...........................................'}</p>
+            </div>
+            <div style="clear: both;"></div>
+        </div>
+        `;
+        return html;
+    }
+
+    function cetakSKL(studentId) {
+      var student = dbIjazah.students.find(s => String(s.original_id) === String(studentId) || String(s.student_id) === String(studentId));
+      if(!student) return Swal.fire('Error', 'Data siswa tidak ditemukan', 'error');
+
+      var html = `<html><head><title>SKL - ${student.nama}</title><style>@media print { @page { size: 215mm 330mm; margin: 0; } body { margin: 0; -webkit-print-color-adjust: exact; } .page-break { box-sizing: border-box; } }</style></head><body style="margin:0;">`;
+      html += generateSKLHTML(student);
+      html += `<script>setTimeout(function() { window.print(); window.close(); }, 500);<\/script></body></html>`;
+      
+      var printWin = window.open('', '_blank'); printWin.document.write(html); printWin.document.close();
+    }
+
+    function cetakSemuaSKL() {
+      if(!dbIjazah.students || dbIjazah.students.length === 0) return Swal.fire('Gagal', 'Belum ada data nilai.', 'error');
+      
+      var filterSelect = document.getElementById('filterKelasSKL'); var selectedKelas = filterSelect.value;
+      var allStudents = dbIjazah.students; var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
+      if(filteredStudents.length === 0) return Swal.fire('Warning', 'Tidak ada data siswa pada kelas terpilih.', 'warning');
+
+      var html = `<html><head><title>Cetak Semua SKL - Kelas ${selectedKelas}</title><style>@media print { @page { size: 215mm 330mm; margin: 0; } body { margin: 0; -webkit-print-color-adjust: exact; } .page-break { box-sizing: border-box; } }</style></head><body style="margin:0;">`;
+      filteredStudents.forEach(function(student) {
+        html += generateSKLHTML(student);
+      });
+      html += `<script>setTimeout(function() { window.print(); window.close(); }, 500);<\/script></body></html>`;
+      
+      var printWin = window.open('', '_blank'); printWin.document.write(html); printWin.document.close();
+    }
+
+    function cetakPDFIjazah() {
       if(!dbIjazah.students || dbIjazah.students.length === 0) return Swal.fire('Gagal', 'Belum ada data nilai. Lakukan kalkulasi terlebih dahulu.', 'error');
-      
-      var filterSelect = document.getElementById('filterKelasIjazah'); 
-      var selectedKelas = filterSelect.value;
-      var allStudents = dbIjazah.students; 
-      var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
-      
+      var filterSelect = document.getElementById('filterKelasIjazah'); var selectedKelas = filterSelect.value;
+      var allStudents = dbIjazah.students; var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
       if(filteredStudents.length === 0) return Swal.fire('Warning', 'Tidak ada data siswa pada kelas terpilih.', 'warning');
       
       // Calculate rank in temporary sorted copy
@@ -1462,1750 +1499,75 @@
           currentRank++;
       });
 
-      var subjects = dbIjazah.subjects;
-      
-      var header = ["No", "NISN", "Nama Siswa", "Kelas"];
-      subjects.forEach(sub => {
-          header.push(sub.nama_mapel + " (" + sub.kode_mapel + ")");
-      });
-      header.push("Jumlah Nilai", "Rata-rata", "Peringkat");
-      
-      var dataRows = [];
-      filteredStudents.forEach(function(j, idx) {
-        var studentRank = rankMap[j.original_id];
-        var row = [ idx + 1, j.nisn, j.nama, j.kelas ];
-        
-        subjects.forEach(sub => { 
-            var val = j.scores[sub.id] !== undefined ? formatNilaiAkhir(j.scores[sub.id]) : '-';
-            row.push(val); 
-        });
-        
-        row.push(formatNilaiAkhir(j.total));
-        row.push(formatNilaiAkhir(j.rata_ijazah));
-        row.push(studentRank);
-        
-        dataRows.push(row);
+      var subjects = dbIjazah.subjects; var thMapel = ''; 
+      subjects.forEach(sub => { 
+        var namaCetak = sub.nama_mapel;
+        if(namaCetak.toLowerCase().includes('sejarah kebudayaan islam')) namaCetak = 'SKI';
+        else if(namaCetak.toLowerCase().includes('ilmu pengetahuan alam dan sosial')) namaCetak = 'IPAS';
+        else if(namaCetak.toLowerCase().includes('seni budaya dan prakarya')) namaCetak = 'SBDP';
+        thMapel += `<th class="rotate"><div><span>${namaCetak}</span></div></th>`; 
       });
       
-      var finalData = [header].concat(dataRows);
-      
-      try {
-          var ws = XLSX.utils.aoa_to_sheet(finalData);
-          var wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Rekap_Nilai_Ijazah");
-          var filename = selectedKelas === 'Semua' ? "Rekap_Nilai_Ijazah_Semua_Kelas.xlsx" : "Rekap_Nilai_Ijazah_Kelas_" + selectedKelas + ".xlsx";
-          XLSX.writeFile(wb, filename);
-          Swal.fire({icon: 'success', title: 'Berhasil', text: 'File Excel sedang diunduh.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false});
-      } catch(e) {
-          Swal.fire('Error', 'Gagal membuat file Excel: ' + e.message, 'error');
-      }
-    }
-
-    function parseExcel(file, callback) { 
-      var reader = new FileReader(); 
-      reader.onload = function(e) { 
-        try { 
-            var workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); 
-            callback(null, XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {raw: false, defval: ""})); 
-        } 
-        catch(err) { callback(err, null); } 
-      }; 
-      reader.readAsArrayBuffer(file); 
-    }
-
-    function parseExcelAllSheets(file, callback) { 
-      var reader = new FileReader(); 
-      reader.onload = function(e) { 
-        try { 
-          var workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); 
-          var result = {};
-          workbook.SheetNames.forEach(function(sheetName) {
-            var aoa = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false, defval: "" });
-            if(aoa.length > 2) {
-              var headerRow1 = aoa[0] || [];
-              var headerRow2 = aoa[1] || [];
-              var keys = [];
-              var maxCol = Math.max(headerRow1.length, headerRow2.length);
-              
-              for(var c=0; c<maxCol; c++) {
-                var h2 = headerRow2[c] !== undefined && headerRow2[c] !== null ? headerRow2[c].toString().trim() : "";
-                var h1 = headerRow1[c] !== undefined && headerRow1[c] !== null ? headerRow1[c].toString().trim() : "";
-                var key = h2 !== "" ? h2 : h1;
-                if(!key) key = "Col" + c;
-                keys.push(key);
-              }
-              
-              var rows = [];
-              for(var r=2; r<aoa.length; r++) {
-                 var rowData = aoa[r];
-                 if(rowData && rowData.length > 0 && rowData[0]) {
-                   var obj = {};
-                   for(var c=0; c<keys.length; c++) { obj[keys[c]] = rowData[c]; }
-                   rows.push(obj);
-                 }
-              }
-              result[sheetName] = rows;
-            } else { result[sheetName] = []; }
-          });
-          callback(null, result); 
-        } catch(err) { callback(err, null); } 
-      }; 
-      reader.readAsArrayBuffer(file); 
-    }
-
-    // --- NAVIGATION ---
-    function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
-    function showPage(pageName, navEl) {
-      activePage = pageName;
-      document.querySelectorAll('.nav-item-custom').forEach(function(n) { n.classList.remove('active'); }); if (navEl) navEl.classList.add('active');
-      document.querySelectorAll('.page-container').forEach(function(p) { p.classList.add('d-none'); });
-      var target = document.getElementById('page-' + pageName); if (target) target.classList.remove('d-none');
-      if (window.innerWidth < 992) { document.querySelector('.sidebar').classList.remove('active'); document.querySelector('.sidebar-overlay').classList.remove('active'); }
-      loadPageData(pageName);
-    }
-
-    function loadPageData(pageName) {
-      if (pageName === 'dashboard') { renderDashboard(); } 
-      else if (pageName === 'students') { renderStudents(); }
-      else if (pageName === 'subjects') { renderSubjects(); }
-      else if (pageName === 'settings') { renderSettings(); }
-      else if (pageName === 'rapor') { initDropdowns('filterMapelRapor', fetchRapor); }
-      else if (pageName === 'ujian') { initDropdowns('filterMapelUjian', fetchUjian); }
-      else if (pageName === 'ijazah') { fetchIjazah('ijazah'); }
-      else if (pageName === 'skl') { fetchIjazah('skl'); }
-    }
-
-    function initDropdowns(selectId, callback) { 
-      var sel = document.getElementById(selectId); sel.innerHTML = ''; 
-      dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan).forEach(s => { 
-        sel.innerHTML += `<option value="${s.id}">${s.kode_mapel} - ${s.nama_mapel}</option>`; 
-      }); 
-      if(callback) callback(); 
-    }
-
-    // --- SYSTEM FETCHERS ---
-    async function fetchStudents() {
-      showSectionLoading('studentsContainer');
-      const res = await fbRequest('students');
-      dbStudents = res ? Object.keys(res).map(k => ({...res[k], id: k})) : [];
-      
-      // Mengurutkan secara eksklusif berdasar nomor "urut" hasil import excel
-      dbStudents.sort((a, b) => {
-          var uA = a.urut !== undefined ? a.urut : 999999;
-          var uB = b.urut !== undefined ? b.urut : 999999;
-          if (uA !== uB) return uA - uB;
-          return a.id.localeCompare(b.id);
-      });
-      
-      if(activePage === 'students') renderStudents();
-    }
-
-    async function fetchSubjects() {
-      showSectionLoading('subjectsContainer');
-      const res = await fbRequest('subjects');
-      dbSubjects = res ? Object.keys(res).map(k => ({...res[k], id: k})) : [];
-      if(activePage === 'subjects') renderSubjects();
-    }
-
-    async function fetchRapor() {
-      var mapelId = document.getElementById('filterMapelRapor').value; if(!mapelId) return; 
-      showSectionLoading('raporContainer');
-      const res = await fbRequest(`rapor/${mapelId}`);
-      
-      dbRapor = dbStudents.map(s => {
-        var r = res && res[s.id] ? res[s.id] : {};
-        
-        var s1 = r.s1 !== undefined && r.s1 !== "" ? r.s1 : "";
-        var s2 = r.s2 !== undefined && r.s2 !== "" ? r.s2 : "";
-        var s3 = r.s3 !== undefined && r.s3 !== "" ? r.s3 : "";
-        var s4 = r.s4 !== undefined && r.s4 !== "" ? r.s4 : "";
-        var s5 = r.s5 !== undefined && r.s5 !== "" ? r.s5 : "";
-        
-        var sum = 0, count = 0;
-        if(s1 !== "") { sum += Number(s1); count++; }
-        if(s2 !== "") { sum += Number(s2); count++; }
-        if(s3 !== "") { sum += Number(s3); count++; }
-        if(s4 !== "") { sum += Number(s4); count++; }
-        if(s5 !== "") { sum += Number(s5); count++; }
-        
-        var rata = count > 0 ? (sum/count).toFixed(2) : "0";
-        
-        return { 
-          student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, 
-          s1: s1, s2: s2, s3: s3, s4: s4, s5: s5, 
-          rata: rata 
-        };
-      });
-      if(activePage === 'rapor') renderRapor();
-    }
-
-    async function fetchUjian() {
-      var mapelId = document.getElementById('filterMapelUjian').value; if(!mapelId) return; 
-      showSectionLoading('ujianContainer');
-      const res = await fbRequest(`ujian/${mapelId}`);
-      
-      dbUjian = dbStudents.map(s => {
-        var u = res && res[s.id] ? res[s.id] : {};
-        return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, nilai_ujian: u.nilai_ujian !== undefined && u.nilai_ujian !== "" ? u.nilai_ujian : "" };
-      });
-      if(activePage === 'ujian') renderUjian();
-    }
-
-    async function fetchIjazah(targetPage = 'ijazah') {
-      showSectionLoading(targetPage === 'skl' ? 'sklContainer' : 'ijazahContainer');
-      const [raporRes, ujianRes] = await Promise.all([fbRequest('rapor'), fbRequest('ujian')]);
-      
-      var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan);
-      var pctRapor = dbSettings.persen_rapor / 100;
-      var pctUjian = dbSettings.persen_ujian / 100;
-      
-      var studentsData = dbStudents.filter(s => s.status === 'Aktif').map(s => {
-          var scores = {};
-          var totalAkhir = 0;
-          var countMapel = 0;
-          
-          activeSubjects.forEach(sub => {
-              var s_rapor = raporRes && raporRes[sub.id] && raporRes[sub.id][s.id] ? raporRes[sub.id][s.id] : {};
-              var s_ujian = ujianRes && ujianRes[sub.id] && ujianRes[sub.id][s.id] ? ujianRes[sub.id][s.id] : {};
-              
-              var s1 = s_rapor.s1 !== undefined && s_rapor.s1 !== "" ? s_rapor.s1 : "";
-              var s2 = s_rapor.s2 !== undefined && s_rapor.s2 !== "" ? s_rapor.s2 : "";
-              var s3 = s_rapor.s3 !== undefined && s_rapor.s3 !== "" ? s_rapor.s3 : "";
-              var s4 = s_rapor.s4 !== undefined && s_rapor.s4 !== "" ? s_rapor.s4 : "";
-              var s5 = s_rapor.s5 !== undefined && s_rapor.s5 !== "" ? s_rapor.s5 : "";
-              
-              var sumRapor = 0, countRapor = 0;
-              if(s1 !== "") { sumRapor += Number(s1); countRapor++; }
-              if(s2 !== "") { sumRapor += Number(s2); countRapor++; }
-              if(s3 !== "") { sumRapor += Number(s3); countRapor++; }
-              if(s4 !== "") { sumRapor += Number(s4); countRapor++; }
-              if(s5 !== "") { sumRapor += Number(s5); countRapor++; }
-              
-              var rataRapor = countRapor > 0 ? (sumRapor / countRapor) : 0;
-              var nilaiUjian = s_ujian.nilai_ujian !== undefined && s_ujian.nilai_ujian !== "" ? Number(s_ujian.nilai_ujian) : 0;
-              
-              var finalScore = (rataRapor * pctRapor) + (nilaiUjian * pctUjian);
-              scores[sub.id] = finalScore;
-              totalAkhir += finalScore;
-              countMapel++;
-          });
-          
-          var rataIjazah = countMapel > 0 ? (totalAkhir / countMapel) : 0;
-          return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, scores: scores, total: totalAkhir, rata_ijazah: rataIjazah, original_id: s.id };
-      });
-      
-      dbIjazah = { subjects: activeSubjects, students: studentsData };
-      if(activePage === 'ijazah') renderIjazah();
-      if(activePage === 'skl') renderSKL();
-    }
-
-    function showSectionLoading(cId) { var c = document.getElementById(cId); if(!c) return; var skel = ''; for (var i=0; i<3; i++) skel += '<div class="card border-0 shadow-sm rounded-3 mb-3"><div class="card-body"><div class="placeholder-glow d-flex gap-3"><div class="placeholder rounded bg-light" style="width:50px;height:50px;"></div><div class="flex-grow-1"><span class="placeholder col-6 rounded"></span><span class="placeholder col-3 rounded mt-2" style="height:8px;"></span></div></div></div></div>'; c.innerHTML = skel; }
-    function showFullPageLoading(msg) { var l = document.getElementById('fullPageLoader'); if (!l) return; if (msg) document.getElementById('loaderText').innerText = msg; l.style.display = 'flex'; }
-    function hideFullPageLoading() { var l = document.getElementById('fullPageLoader'); if(l) l.style.display = 'none'; }
-
-    // --- RENDERERS ---
-    function renderDashboard() {
-      var c = document.getElementById('dashboardContainer');
-      c.innerHTML = 
-        `<div class="row g-3 mb-4">
-          <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 h-100 bg-success text-white">
-              <div class="card-body p-4 d-flex align-items-center">
-                <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-3" style="width:60px;height:60px;"><i class="fa-solid fa-users fa-2x"></i></div>
-                <div><h3 class="fw-bold mb-0">${dbStudents.length}</h3><small class="opacity-75">Total Siswa Terdaftar</small></div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 h-100 bg-primary text-white">
-              <div class="card-body p-4 d-flex align-items-center">
-                <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-3" style="width:60px;height:60px;"><i class="fa-solid fa-book fa-2x"></i></div>
-                <div><h3 class="fw-bold mb-0">${dbSubjects.length}</h3><small class="opacity-75">Mata Pelajaran</small></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card border-0 shadow-sm rounded-4"><div class="card-body p-5 text-center"><img src="${dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="90" class="mb-3" style="object-fit:contain;"><h4 class="fw-bold text-success mb-1">Selamat Datang di Aplikasi E-Ijazah</h4><p class="text-muted small">Sistem Informasi Pengolahan Nilai Ijazah Terpadu Tahun Ajaran ${dbSettings.tahun_pelajaran || '-'}</p></div></div>`;
-    }
-
-    function renderStudents() {
-      var c = document.getElementById('studentsContainer'); 
-      
-      var btnBulk = document.getElementById('btnBulkDelete');
-      if(btnBulk) btnBulk.classList.add('d-none');
-
-      if (dbStudents.length === 0) { c.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-inbox fa-3x text-muted mb-3 opacity-25"></i><p>Belum ada data siswa</p></div>'; return; }
-      
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th width="40" class="text-center"><input class="form-check-input" type="checkbox" id="checkAllStudents" onchange="toggleAllStudents(this)"></th><th width="50" class="text-center">No</th><th>No. Ujian</th><th>NISN</th><th>Nama Lengkap</th><th>TTL</th><th>Kelas</th><th>TA</th><th>Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
-      
-      dbStudents.forEach(function(item, index) { 
-        var bdg = item.status === 'Aktif' ? 'bg-success' : 'bg-secondary'; 
-        var noUjian = item.no_ujian || '-';
-        var ttl = (item.tempat_lahir || '-') + ', ' + (item.tgl_lahir || '-');
-        
-        h += `<tr>
-                <td class="text-center"><input class="form-check-input check-student" type="checkbox" value="${item.id}" onchange="updateBulkDeleteButton()"></td>
-                <td class="text-center">${index + 1}</td>
-                <td><span class="text-dark">${noUjian}</span></td>
-                <td><span class="fw-semibold">${item.nisn}</span></td>
-                <td>${item.nama}</td>
-                <td><small class="text-muted">${ttl}</small></td>
-                <td><span class="badge bg-light text-dark border">${item.kelas}</span></td>
-                <td><small class="text-muted">${item.tahun_ajaran}</small></td>
-                <td><span class="badge ${bdg}">${item.status}</span></td>
-                <td class="text-end text-nowrap">
-                  <button class="btn btn-sm btn-light border text-primary me-1" onclick="editStudent('${item.id}')"><i class="fa-solid fa-pen"></i></button>
-                  <button class="btn btn-sm btn-light border text-danger" onclick="deleteStudent('${item.id}')"><i class="fa-solid fa-trash"></i></button>
-                </td>
-              </tr>`; 
-      });
-      c.innerHTML = h + '</tbody></table></div></div>';
-    }
-
-    function renderSubjects() {
-      var c = document.getElementById('subjectsContainer'); if (dbSubjects.length === 0) { c.innerHTML = '<div class="text-center py-5"><p>Belum ada data mapel</p></div>'; return; }
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>Urut</th><th>Kode</th><th>Mata Pelajaran</th><th>Kelompok</th><th>Aktif</th><th class="text-end">Aksi</th></tr></thead><tbody>';
-      var srt = dbSubjects.slice().sort(function(a,b){return a.urutan-b.urutan;});
-      srt.forEach(function(item) { var bdg = item.aktif === 'Ya' ? 'bg-success' : 'bg-danger'; h += '<tr><td>'+item.urutan+'</td><td><span class="fw-semibold">'+item.kode_mapel+'</span></td><td>'+item.nama_mapel+'</td><td><span class="badge bg-light text-dark border">' + item.kelompok + '</span></td><td><span class="badge '+bdg+'">'+item.aktif+'</span></td><td class="text-end"><button class="btn btn-sm btn-light border me-1" onclick="editSubject(\''+item.id+'\')"><i class="fa-solid fa-pen text-primary"></i></button><button class="btn btn-sm btn-light border" onclick="deleteSubject(\''+item.id+'\')"><i class="fa-solid fa-trash text-danger"></i></button></td></tr>'; });
-      c.innerHTML = h + '</tbody></table></div></div>';
-    }
-
-    function renderSettings() {
-      tempLogoBase64 = null;
-      tempTtdBase64 = null;
-      var c = document.getElementById('settingsContainer');
-      c.innerHTML = 
-        `<form id="formSetting" onsubmit="event.preventDefault(); saveSettingsOpt();"><div class="row g-4 mb-4"><div class="col-lg-7"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-heading me-2"></i>Bagian Kop Surat Jadwal</h6></div><div class="card-body p-4"><div class="mb-3"><label class="form-label fw-bold">Ganti Logo Madrasah (Opsional):</label><input type="file" class="form-control" id="setLogoFile" accept=".jpg, .jpeg, .png" onchange="previewLogo(event)"><div class="mt-2"><img id="previewLogoImg" src="${dbSettings.logo||'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="60" style="object-fit:contain; border:1px solid #ddd; padding:5px; border-radius:5px;"></div></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 1:</label><input type="text" class="form-control" id="setKop1" value="${dbSettings.kop_1||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 2:</label><input type="text" class="form-control" id="setKop2" value="${dbSettings.kop_2||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 3:</label><input type="text" class="form-control" id="setKop3" value="${dbSettings.kop_3||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 4:</label><input type="text" class="form-control" id="setKop4" value="${dbSettings.kop_4||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 5:</label><input type="text" class="form-control" id="setKop5" value="${dbSettings.kop_5||''}"></div><hr class="my-4"><h6 class="fw-bold text-success mb-3">Informasi Tambahan</h6><div class="row"><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kota/Tempat TTD</label><input type="text" class="form-control" id="setKota" value="${dbSettings.kota||''}"></div><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Tahun Pelajaran</label><input type="text" class="form-control" id="setTahun" value="${dbSettings.tahun_pelajaran||''}" required></div><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kepala Sekolah</label><input type="text" class="form-control" id="setKepala" value="${dbSettings.kepala_sekolah||''}" required></div><div class="col-md-12 mb-3"><label class="form-label small fw-bold">Upload Tanda Tangan Kepsek (Opsional, JPG/PNG)</label><input type="file" class="form-control" id="setTtdFile" accept=".jpg, .jpeg, .png" onchange="previewTtd(event)"><div class="mt-2 text-start"><img id="previewTtdImg" src="${dbSettings.ttd_kepsek||''}" height="60" style="object-fit:contain; border:1px solid #ddd; padding:5px; border-radius:5px; ${!dbSettings.ttd_kepsek ? 'display:none;' : ''}"></div></div></div></div></div></div><div class="col-lg-5"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-scale-balanced me-2"></i>Bobot Nilai Kalkulasi (%)</h6></div><div class="card-body p-4"><div class="alert alert-info border-0 bg-info bg-opacity-10 text-info-emphasis d-flex gap-2 small"><i class="fa-solid fa-circle-info mt-1"></i><span>Total bobot wajib 100%.</span></div><div class="mb-4"><label class="fw-bold mb-2 small">Bobot Rapor (Sem 1-5)</label><div class="input-group"><input type="number" class="form-control form-control-lg" id="setRapor" value="${dbSettings.persen_rapor}" required oninput="document.getElementById('setUjian').value = 100 - (parseInt(this.value)||0)"><span class="input-group-text bg-white">%</span></div></div><div class="mb-2"><label class="fw-bold mb-2 small">Bobot Ujian Akhir</label><div class="input-group"><input type="number" class="form-control form-control-lg bg-light" id="setUjian" value="${dbSettings.persen_ujian}" readonly><span class="input-group-text bg-white">%</span></div></div><div class="mt-4 border-top pt-3"><label class="fw-bold mb-2 small">Format Nilai Akhir</label><select class="form-select form-select-lg" id="setFormatNilai"><option value="Bulat" ${dbSettings.format_nilai === 'Bulat' ? 'selected' : ''}>Bulat (Contoh: 88)</option><option value="Pecahan" ${dbSettings.format_nilai === 'Pecahan' ? 'selected' : ''}>Pecahan (Contoh: 87.50)</option></select></div></div></div></div></div><div class="text-end"><button type="submit" class="btn btn-success px-5 rounded-pill shadow-sm py-2 fw-bold" id="btnSaveSet"><i class="fa-solid fa-save me-2"></i>Simpan Perubahan</button></div></form>`;
-    }
-
-    function renderRapor() {
-      var c = document.getElementById('raporContainer'); if(dbRapor.length===0){ c.innerHTML='<div class="text-center py-5 text-muted"><i class="fa-solid fa-users fa-3x mb-3 opacity-25"></i><p>Tidak ada data. Silakan tambah siswa atau import.</p></div>'; return; }
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th>Smt 1</th><th>Smt 2</th><th>Smt 3</th><th>Smt 4</th><th>Smt 5</th><th>Rata-rata</th></tr></thead><tbody id="bodyRapor">';
-      dbRapor.forEach(function(r) { h += `<tr><td>${r.nisn}</td><td><span class="fw-semibold">${r.nama}</span></td><td>${r.kelas}</td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s1" value="${r.s1}"></td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s2" value="${r.s2}"></td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s3" value="${r.s3}"></td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s4" value="${r.s4}"></td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s5" value="${r.s5}"></td><td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">${r.rata}</span></td></tr>`; });
-      c.innerHTML = h + '</tbody></table></div></div>';
-    }
-
-    function renderUjian() {
-      var c = document.getElementById('ujianContainer'); if(dbUjian.length===0){ c.innerHTML='<div class="text-center py-5 text-muted"><p>Tidak ada data. Silakan tambah siswa atau import.</p></div>'; return; }
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th>Nilai Ujian Akhir</th></tr></thead><tbody id="bodyUjian">';
-      dbUjian.forEach(function(u) { h += `<tr><td>${u.nisn}</td><td><span class="fw-semibold">${u.nama}</span></td><td>${u.kelas}</td><td><input type="number" class="table-input exam-val" data-id="${u.student_id}" value="${u.nilai_ujian}"></td></tr>`; });
-      c.innerHTML = h + '</tbody></table></div></div>';
-    }
-
-    function renderSKL() {
-      var c = document.getElementById('sklContainer');
-      if(!dbIjazah.students || dbIjazah.students.length === 0) { c.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-file-contract fa-3x text-muted opacity-25 mb-3"></i><p>Belum ada data kalkulasi. Klik "Kalkulasi Ulang" pada menu Proses Ijazah.</p></div>'; return; }
-      
-      var allStudents = dbIjazah.students;
-      var filter = document.getElementById('filterKelasSKL'); var currentVal = filter.value;
-      var classes = []; allStudents.forEach(function(s) { if(classes.indexOf(s.kelas) === -1) classes.push(s.kelas); }); classes.sort();
-      var opts = '<option value="Semua">Semua Kelas</option>'; classes.forEach(function(k) { opts += '<option value="'+k+'">'+k+'</option>'; });
-      filter.innerHTML = opts; if(classes.indexOf(currentVal) !== -1 || currentVal === 'Semua') filter.value = currentVal;
-      
-      var selectedKelas = filter.value;
-      var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
-      if(filteredStudents.length === 0) { c.innerHTML = '<div class="text-center py-5 text-muted"><p>Tidak ada data di kelas ini.</p></div>'; return; }
-      
-      // Jangan diurutkan berdasarkan alfabet, biarkan tetap natural berdasarkan ID Import
-      
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th class="text-center" width="50">No</th><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th class="text-center">Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
-      
-      filteredStudents.forEach(function(j, idx) {
-        var st = dbStudents.find(s => s.id === j.original_id) || {};
-        var statLulus = st.status_kelulusan || 'LULUS';
-        var statColor = statLulus === 'LULUS' ? 'text-success' : 'text-danger';
-
-        h += `<tr>
-                <td class="text-center">${idx + 1}</td>
-                <td>${j.nisn}</td>
-                <td class="fw-semibold">${j.nama}</td>
-                <td>${j.kelas}</td>
-                <td class="text-center" width="150">
-                  <select class="form-select form-select-sm fw-bold border-0 bg-light status-select ${statColor}" onchange="updateStatusLulus('${j.original_id}', this.value)">
-                    <option value="LULUS" class="text-success" ${statLulus === 'LULUS' ? 'selected' : ''}>LULUS</option>
-                    <option value="TIDAK LULUS" class="text-danger" ${statLulus === 'TIDAK LULUS' ? 'selected' : ''}>TIDAK LULUS</option>
-                  </select>
-                </td>
-                <td class="text-end text-nowrap"><button class="btn btn-sm btn-light border text-success rounded-pill px-3" onclick="cetakSKL('${j.original_id}')"><i class="fa-solid fa-print"></i> Cetak</button></td>
-              </tr>`;
-      });
-      c.innerHTML = h + '</tbody></table></div></div>';
-    }
-
-    function renderIjazah() {
-      var c = document.getElementById('ijazahContainer');
-      if(!dbIjazah.students || dbIjazah.students.length === 0) { c.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-calculator fa-3x text-muted opacity-25 mb-3"></i><p>Belum ada kalkulasi terbaru dari sistem. Klik "Kalkulasi Ulang".</p></div>'; return; }
-      
-      var subjects = dbIjazah.subjects; var allStudents = dbIjazah.students;
-      var filter = document.getElementById('filterKelasIjazah'); var currentVal = filter.value;
-      var classes = []; allStudents.forEach(function(s) { if(classes.indexOf(s.kelas) === -1) classes.push(s.kelas); }); classes.sort();
-      var opts = '<option value="Semua">Semua Kelas</option>'; classes.forEach(function(k) { opts += '<option value="'+k+'">'+k+'</option>'; });
-      filter.innerHTML = opts; if(classes.indexOf(currentVal) !== -1 || currentVal === 'Semua') filter.value = currentVal;
-      
-      var selectedKelas = filter.value;
-      var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
-      if(filteredStudents.length === 0) { c.innerHTML = '<div class="text-center py-5 text-muted"><p>Tidak ada data di kelas ini.</p></div>'; return; }
-      
-      // Calculate rank first
-      var tempSorted = [...filteredStudents].sort((a,b) => b.rata_ijazah - a.rata_ijazah);
-      var rankMap = {};
-      var currentRank = 1, prevScore = -1, displayRank = 1;
-      tempSorted.forEach(j => {
-          if(j.rata_ijazah !== prevScore) { displayRank = currentRank; prevScore = j.rata_ijazah; }
-          rankMap[j.original_id] = displayRank;
-          currentRank++;
-      });
-
-      var thMapel = ''; subjects.forEach(sub => { thMapel += `<th class="text-center text-nowrap" title="${sub.nama_mapel}">${sub.kode_mapel}</th>`; });
-      
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover table-bordered align-middle mb-0" style="font-size: 14px;"><thead class="table-light align-middle text-center"><tr><th rowspan="2" width="50">No</th><th rowspan="2">NISN</th><th rowspan="2" class="min-w-200">Nama Siswa</th><th rowspan="2">Kelas</th><th colspan="'+subjects.length+'">Nilai Akhir Ijazah (Per Mapel)</th><th rowspan="2">Jumlah<br>Nilai</th><th rowspan="2">Rata-<br>rata</th><th rowspan="2">Peringkat</th></tr><tr>' + thMapel + '</tr></thead><tbody>';
-      
+      var trData = '';
       filteredStudents.forEach(function(j, idx) {
         var studentRank = rankMap[j.original_id];
         var tdMapel = ''; subjects.forEach(sub => { var val = j.scores[sub.id] !== undefined ? formatNilaiAkhir(j.scores[sub.id]) : '-'; tdMapel += `<td class="text-center">${val}</td>`; });
-        h += `<tr><td class="text-center">${idx + 1}</td><td class="text-center">${j.nisn}</td><td class="text-nowrap"><span class="fw-semibold">${j.nama}</span></td><td class="text-center">${j.kelas}</td>${tdMapel}<td class="text-center fw-bold text-primary">${formatNilaiAkhir(j.total)}</td><td class="text-center"><span class="badge bg-success fs-6">${formatNilaiAkhir(j.rata_ijazah)}</span></td><td class="text-center"><span class="badge bg-danger fs-6">${studentRank}</span></td></tr>`;
-      });
-      c.innerHTML = h + '</tbody></table></div></div>';
-    }
-
-    // --- SYSTEM CRUD & MASS SAVE LOGIC ---
-    function previewLogo(event) { var file = event.target.files[0]; if(!file) return; var reader = new FileReader(); reader.onload = function(e) { tempLogoBase64 = e.target.result; document.getElementById('previewLogoImg').src = tempLogoBase64; }; reader.readAsDataURL(file); }
-    function previewTtd(event) { var file = event.target.files[0]; if(!file) return; var reader = new FileReader(); reader.onload = function(e) { tempTtdBase64 = e.target.result; var img = document.getElementById('previewTtdImg'); img.src = tempTtdBase64; img.style.display = 'inline-block'; }; reader.readAsDataURL(file); }
-
-    async function saveSettingsOpt() { 
-      var payload = { 
-        persen_rapor: parseInt(document.getElementById('setRapor').value), 
-        persen_ujian: parseInt(document.getElementById('setUjian').value), 
-        kop_1: document.getElementById('setKop1').value,
-        kop_2: document.getElementById('setKop2').value,
-        kop_3: document.getElementById('setKop3').value,
-        kop_4: document.getElementById('setKop4').value,
-        kop_5: document.getElementById('setKop5').value,
-        kota: document.getElementById('setKota').value, 
-        tahun_pelajaran: document.getElementById('setTahun').value, 
-        kepala_sekolah: document.getElementById('setKepala').value, 
-        logo: tempLogoBase64 ? tempLogoBase64 : dbSettings.logo, 
-        ttd_kepsek: tempTtdBase64 ? tempTtdBase64 : dbSettings.ttd_kepsek,
-        format_nilai: document.getElementById('setFormatNilai').value 
-      }; 
-      if(payload.persen_rapor + payload.persen_ujian !== 100) return Swal.fire('Warning','Total bobot rapor & ujian harus 100%','warning'); 
-      var btn = document.getElementById('btnSaveSet'); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...'; btn.disabled = true; 
-      
-      await fbRequest('settings', 'PATCH', payload); 
-      dbSettings = Object.assign(dbSettings, payload); updateAppProfile(dbSettings); 
-      btn.innerHTML = '<i class="fa-solid fa-save me-2"></i>Simpan Perubahan'; btn.disabled = false; 
-      Swal.fire('Sukses','Konfigurasi tersimpan di sistem','success'); 
-    }
-
-    // --- SKL SETTINGS ---
-    function openSKLSettings() {
-      document.getElementById('sklNoSurat').value = dbSettings.skl_no_surat || '';
-      document.getElementById('sklPembuka').value = dbSettings.skl_pembuka || `Yang bertanda tangan di bawah ini Kepala ${dbSettings.kop_2 || ''} ${dbSettings.kota || ''}, menerangkan bahwa:`;
-      document.getElementById('sklTengah').value = dbSettings.skl_tengah || `Telah mengikuti kegiatan Ujian Madrasah tahun pelajaran ${dbSettings.tahun_pelajaran || ''}, dan berdasarkan Kriteria kelulusan sekolah dinyatakan:`;
-      document.getElementById('sklTgl').value = dbSettings.skl_tgl || '';
-      document.getElementById('sklNip').value = dbSettings.skl_nip || '';
-      new bootstrap.Modal(document.getElementById('modalSKL')).show();
-    }
-
-    async function saveSKLSettings() {
-      var payload = {
-        skl_no_surat: document.getElementById('sklNoSurat').value,
-        skl_pembuka: document.getElementById('sklPembuka').value,
-        skl_tengah: document.getElementById('sklTengah').value,
-        skl_tgl: document.getElementById('sklTgl').value,
-        skl_nip: document.getElementById('sklNip').value
-      };
-      dbSettings = Object.assign(dbSettings, payload);
-      await fbRequest('settings', 'PATCH', payload);
-      bootstrap.Modal.getInstance(document.getElementById('modalSKL')).hide();
-      Swal.fire({icon:'success', title:'Pengaturan Teks SKL Disimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false});
-    }
-
-    // --- STUDENT CRUD ---
-    function openStudentModal(){ document.getElementById('formStudent').reset(); document.getElementById('studIsEdit').value='false'; document.getElementById('titleStudent').innerText='Tambah Siswa'; new bootstrap.Modal(document.getElementById('modalStudent')).show(); }
-    function editStudent(id){ var item=dbStudents.find(x => String(x.id)===String(id)); if(!item)return; document.getElementById('studId').value=item.id; document.getElementById('studIsEdit').value='true'; document.getElementById('studNisn').value=item.nisn; document.getElementById('studNoUjian').value=item.no_ujian||''; document.getElementById('studNama').value=item.nama; document.getElementById('studTmpLahir').value=item.tempat_lahir||''; document.getElementById('studTglLahir').value=item.tgl_lahir||''; document.getElementById('studSekolahAsal').value=item.sekolah_asal||''; document.getElementById('studKelas').value=item.kelas; document.getElementById('studTahun').value=item.tahun_ajaran; document.getElementById('studStatus').value=item.status; document.getElementById('titleStudent').innerText='Edit Siswa'; new bootstrap.Modal(document.getElementById('modalStudent')).show(); }
-    
-    async function saveStudent(){ 
-      var p={ id:document.getElementById('studId').value, isEdit:document.getElementById('studIsEdit').value, nisn:document.getElementById('studNisn').value, no_ujian:document.getElementById('studNoUjian').value, nama:document.getElementById('studNama').value, tempat_lahir:document.getElementById('studTmpLahir').value, tgl_lahir:document.getElementById('studTglLahir').value, sekolah_asal:document.getElementById('studSekolahAsal').value, kelas:document.getElementById('studKelas').value, tahun_ajaran:document.getElementById('studTahun').value, status:document.getElementById('studStatus').value }; 
-      if(!p.nisn||!p.nama) return Swal.fire('Error','Lengkapi form','warning'); 
-      
-      var exist = dbStudents.find(s => s.id === p.id);
-      var urutValue = exist && exist.urut !== undefined ? exist.urut : dbStudents.length + 1;
-      
-      var tId = p.isEdit === 'true' ? p.id : 'stud_'+Date.now()+'_00000'; 
-      var payload = { nisn: p.nisn, no_ujian: p.no_ujian, nama: p.nama, tempat_lahir: p.tempat_lahir, tgl_lahir: p.tgl_lahir, sekolah_asal: p.sekolah_asal, kelas: p.kelas, tahun_ajaran: p.tahun_ajaran, status: p.status, urut: urutValue };
-      
-      bootstrap.Modal.getInstance(document.getElementById('modalStudent')).hide(); 
-      Swal.fire({icon:'info', title:'Menyimpan...', showConfirmButton:false});
-      await fbRequest(`students/${tId}`, 'PATCH', payload);
-      await fetchStudents();
-      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false});
-    }
-
-    function deleteStudent(id){ 
-      Swal.fire({title:'Hapus data ini dari sistem?',icon:'warning',showCancelButton:true,confirmButtonColor:'#dc3545',confirmButtonText:'Ya'}).then(async res => { 
-        if(!res.isConfirmed) return; 
-        await fbRequest(`students/${id}`, 'DELETE');
-        await fetchStudents();
-      }); 
-    }
-
-    function openSubjectModal(){ document.getElementById('formSubject').reset(); document.getElementById('subjIsEdit').value='false'; document.getElementById('titleSubject').innerText='Tambah Mapel'; new bootstrap.Modal(document.getElementById('modalSubject')).show(); }
-    function editSubject(id){ var item=dbSubjects.find(x => String(x.id)===String(id)); if(!item)return; document.getElementById('subjId').value=item.id; document.getElementById('subjIsEdit').value='true'; document.getElementById('subjKode').value=item.kode_mapel; document.getElementById('subjNama').value=item.nama_mapel; document.getElementById('subjKel').value=item.kelompok; document.getElementById('subjUrut').value=item.urutan; document.getElementById('subjAktif').value=item.aktif; document.getElementById('titleSubject').innerText='Edit Mapel'; new bootstrap.Modal(document.getElementById('modalSubject')).show(); }
-    
-    async function saveSubject(){ 
-      var p={ id:document.getElementById('subjId').value, isEdit:document.getElementById('subjIsEdit').value, kode_mapel:document.getElementById('subjKode').value, nama_mapel:document.getElementById('subjNama').value, kelompok:document.getElementById('subjKel').value, urutan:Number(document.getElementById('subjUrut').value), aktif:document.getElementById('subjAktif').value }; 
-      if(!p.kode_mapel||!p.nama_mapel) return Swal.fire('Error','Lengkapi form','warning'); 
-      var tId = p.isEdit === 'true' ? p.id : 'subj_'+Date.now(); 
-      var payload = { kode_mapel: p.kode_mapel, nama_mapel: p.nama_mapel, kelompok: p.kelompok, urutan: p.urutan, aktif: p.aktif };
-      bootstrap.Modal.getInstance(document.getElementById('modalSubject')).hide(); 
-      Swal.fire({icon:'info', title:'Menyimpan...', showConfirmButton:false});
-      await fbRequest(`subjects/${tId}`, 'PUT', payload);
-      await fetchSubjects();
-      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false});
-    }
-
-    function deleteSubject(id){ 
-      Swal.fire({title:'Hapus mapel ini dari sistem?',icon:'warning',showCancelButton:true,confirmButtonColor:'#dc3545',confirmButtonText:'Ya'}).then(async res => { 
-        if(!res.isConfirmed) return; 
-        await fbRequest(`subjects/${id}`, 'DELETE');
-        await fetchSubjects();
-      }); 
-    }
-
-    async function saveRaporMassal() { 
-      var btn = document.getElementById('btnSaveRapor'); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...'; btn.disabled = true; 
-      var mapelId = document.getElementById('filterMapelRapor').value; 
-      var payload = {}; 
-      document.querySelectorAll('#bodyRapor tr').forEach(function(tr) { 
-        var id = tr.querySelector('input[data-sem="s1"]').getAttribute('data-id'); 
-        payload[id] = { 
-          s1: tr.querySelector('input[data-sem="s1"]').value, 
-          s2: tr.querySelector('input[data-sem="s2"]').value, 
-          s3: tr.querySelector('input[data-sem="s3"]').value, 
-          s4: tr.querySelector('input[data-sem="s4"]').value, 
-          s5: tr.querySelector('input[data-sem="s5"]').value 
-        }; 
-      }); 
-      await fbRequest(`rapor/${mapelId}`, 'PATCH', payload);
-      btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Data'; btn.disabled = false; 
-      await fetchRapor();
-      Swal.fire({icon:'success', title:'Tersimpan di Sistem', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
-    }
-
-    async function saveUjianMassal() { 
-      var btn = document.getElementById('btnSaveUjian'); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...'; btn.disabled = true; 
-      var mapelId = document.getElementById('filterMapelUjian').value; 
-      var payload = {}; 
-      document.querySelectorAll('#bodyUjian tr').forEach(function(tr) { 
-        var inpt = tr.querySelector('.exam-val'); 
-        payload[inpt.getAttribute('data-id')] = { nilai_ujian: inpt.value }; 
-      }); 
-      await fbRequest(`ujian/${mapelId}`, 'PATCH', payload);
-      btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Data'; btn.disabled = false; 
-      await fetchUjian();
-      Swal.fire({icon:'success', title:'Tersimpan di Sistem', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
-    }
-
-    // --- EXCEL IMPORTERS TO SYSTEM ---
-    function handleImportSiswa(e) { 
-      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
-      parseExcel(file, async function(err, json) { 
-        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
-        var payload = {};
-        
-        json.forEach((r, idx) => {
-          var keys = Object.keys(r);
-          var getVal = function(possibleNames) {
-            var found = keys.find(k => possibleNames.includes(k.toLowerCase().replace(/[^a-z0-9]/g, '')));
-            return found ? r[found] : '';
-          };
-
-          var nama = String(getVal(['1namalengkap', '1nama', 'namalengkap', 'nama', 'namasiswa']));
-          var tmp = String(getVal(['2tempatlahir', 'tempatlahir', 'tempat', '2tempat']));
-          var tgl = String(getVal(['3tanggallahir', 'tanggallahir', 'tgllahir', 'tanggal', '3tanggal']));
-          var sekolahAsal = String(getVal(['4sekolahasal', 'sekolahasal', 'sekolah', '4sekolah']));
-          var nisn = String(getVal(['5nisn', 'nisn']));
-          var no_ujian = String(getVal(['6noujian', 'noujian', 'nomorujian', 'no', '6no']));
-          var kelas = String(getVal(['kelas']));
-          var tahun = String(getVal(['tahunajaran', 'ta', 'tahun']));
-          var status = String(getVal(['status'])) || 'Aktif';
-
-          if(nisn && nama) {
-            var exist = dbStudents.find(s => s.nisn === nisn);
-            var id = exist ? exist.id : 'stud_' + Date.now() + '_' + String(idx).padStart(5, '0');
-            
-            payload[id] = { 
-              nisn: nisn, 
-              no_ujian: no_ujian, 
-              nama: nama, 
-              tempat_lahir: tmp, 
-              tgl_lahir: tgl, 
-              sekolah_asal: sekolahAsal,
-              kelas: kelas, 
-              tahun_ajaran: tahun, 
-              status: status,
-              urut: idx + 1 // Add index urut for strict Excel order
-            };
-          }
-        });
-        
-        if(Object.keys(payload).length === 0) return Swal.fire('Error', 'Format data tidak sesuai.', 'error'); 
-        Swal.fire({icon:'info', title:'Mengimpor ke sistem...', showConfirmButton:false}); 
-        await fbRequest('students', 'PATCH', payload);
-        await fetchStudents();
-        Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
-      }); 
-    }
-    
-    function handleImportMapel(e) { 
-      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
-      parseExcel(file, async function(err, json) { 
-        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
-        var payload = {};
-        json.forEach((r, idx) => {
-          var id = 'subj_' + Date.now() + '_' + idx;
-          var k = String(r['Kode']||''), n = r['Nama Mata Pelajaran']||'';
-          if(k && n) payload[id] = { kode_mapel: k, nama_mapel: n, kelompok: r['Kelompok']||'Umum', urutan: Number(r['Urutan']||1), aktif: r['Status Aktif']||'Ya' };
-        });
-        if(Object.keys(payload).length === 0) return Swal.fire('Error', 'Format data tidak sesuai.', 'error'); 
-        Swal.fire({icon:'info', title:'Mengimpor ke sistem...', showConfirmButton:false}); 
-        await fbRequest('subjects', 'PATCH', payload);
-        await fetchSubjects();
-        Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
-      }); 
-    }
-    
-    function handleImportRapor(e) { 
-      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
-      
-      parseExcelAllSheets(file, async function(err, sheets) { 
-        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
-        if(Object.keys(sheets).length === 0) return Swal.fire('Error', 'File Excel kosong.', 'error');
-
-        var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya');
-        if(activeSubjects.length === 0) return Swal.fire('Error', 'Tidak ada mapel aktif', 'error');
-
-        Swal.fire({icon:'info', title:'Mengimpor data...', text:'Mohon tunggu, sedang sinkronisasi ke sistem.', showConfirmButton:false, allowOutsideClick:false}); 
-        
-        try {
-          let flatPatch = {};
-          
-          activeSubjects.forEach(sub => {
-            for (let i = 1; i <= 5; i++) {
-              let sheetName = "Semester " + i;
-              let rows = sheets[sheetName] || [];
-              
-              rows.forEach(r => {
-                let sIdKey = Object.keys(r).find(k => k && k.includes("ID_Siswa"));
-                let sId = sIdKey ? r[sIdKey] : null;
-                
-                if (sId) {
-                  let mapelKey = Object.keys(r).find(k => k && k.trim() === sub.kode_mapel.trim());
-                  if (mapelKey) {
-                    let val = r[mapelKey];
-                    flatPatch[`${sub.id}/${sId}/s${i}`] = (val !== undefined && val !== "") ? val : "";
-                  }
-                }
-              });
-            }
-          });
-
-          if(Object.keys(flatPatch).length > 0) {
-            await fbRequest(`rapor`, 'PATCH', flatPatch);
-          }
-          
-          await fetchRapor(); 
-          Swal.fire({icon:'success',title:'Impor Leger Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
-        } catch (error) {
-          console.error(error);
-          Swal.fire('Error', 'Terjadi kesalahan jaringan saat mengimpor.', 'error');
-        }
-      }); 
-    }
-    
-    function handleImportUjian(e) { 
-      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
-      
-      parseExcelAllSheets(file, async function(err, sheets) { 
-        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
-        if(Object.keys(sheets).length === 0) return Swal.fire('Error', 'File Excel kosong.', 'error');
-
-        var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya');
-        if(activeSubjects.length === 0) return Swal.fire('Error', 'Tidak ada mapel aktif', 'error');
-
-        Swal.fire({icon:'info', title:'Mengimpor data...', text:'Mohon tunggu, sedang sinkronisasi ke sistem.', showConfirmButton:false, allowOutsideClick:false}); 
-        
-        try {
-          let flatPatch = {};
-          let sheetName = Object.keys(sheets)[0];
-          let rows = sheets[sheetName] || [];
-          
-          activeSubjects.forEach(sub => {
-            rows.forEach(r => {
-              let sIdKey = Object.keys(r).find(k => k && k.includes("ID_Siswa"));
-              let sId = sIdKey ? r[sIdKey] : null;
-              
-              if (sId) {
-                let mapelKey = Object.keys(r).find(k => k && k.trim() === sub.kode_mapel.trim());
-                if (mapelKey) {
-                  let val = r[mapelKey];
-                  flatPatch[`${sub.id}/${sId}/nilai_ujian`] = (val !== undefined && val !== "") ? val : "";
-                }
-              }
-            });
-          });
-
-          if(Object.keys(flatPatch).length > 0) {
-            await fbRequest(`ujian`, 'PATCH', flatPatch);
-          }
-          
-          await fetchUjian(); 
-          Swal.fire({icon:'success',title:'Impor Ujian Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
-        } catch (error) {
-          console.error(error);
-          Swal.fire('Error', 'Terjadi kesalahan jaringan saat mengimpor.', 'error');
-        }
-      }); 
-    }
-    
-    function downloadExcelIjazah() {
-      if(!dbIjazah.students || dbIjazah.students.length === 0) return Swal.fire('Gagal', 'Belum ada data nilai. Lakukan kalkulasi terlebih dahulu.', 'error');
-      
-      var filterSelect = document.getElementById('filterKelasIjazah'); 
-      var selectedKelas = filterSelect.value;
-      var allStudents = dbIjazah.students; 
-      var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
-      
-      if(filteredStudents.length === 0) return Swal.fire('Warning', 'Tidak ada data siswa pada kelas terpilih.', 'warning');
-      
-      // Calculate rank in temporary sorted copy
-      var tempSorted = [...filteredStudents].sort((a,b) => b.rata_ijazah - a.rata_ijazah);
-      var rankMap = {};
-      var currentRank = 1, prevScore = -1, displayRank = 1;
-      tempSorted.forEach(j => {
-          if(j.rata_ijazah !== prevScore) { displayRank = currentRank; prevScore = j.rata_ijazah; }
-          rankMap[j.original_id] = displayRank;
-          currentRank++;
+        trData += `<tr><td class="text-center">${idx + 1}</td><td class="text-center">${j.nisn}</td><td>${j.nama}</td>${tdMapel}<td class="text-center fw-bold">${formatNilaiAkhir(j.total)}</td><td class="text-center fw-bold">${formatNilaiAkhir(j.rata_ijazah)}</td><td class="text-center fw-bold">${studentRank}</td></tr>`;
       });
 
-      var subjects = dbIjazah.subjects;
+      var logoUrl = dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg';
       
-      var header = ["No", "NISN", "Nama Siswa", "Kelas"];
-      subjects.forEach(sub => {
-          header.push(sub.nama_mapel + " (" + sub.kode_mapel + ")");
-      });
-      header.push("Jumlah Nilai", "Rata-rata", "Peringkat");
-      
-      var dataRows = [];
-      filteredStudents.forEach(function(j, idx) {
-        var studentRank = rankMap[j.original_id];
-        var row = [ idx + 1, j.nisn, j.nama, j.kelas ];
-        
-        subjects.forEach(sub => { 
-            var val = j.scores[sub.id] !== undefined ? formatNilaiAkhir(j.scores[sub.id]) : '-';
-            row.push(val); 
-        });
-        
-        row.push(formatNilaiAkhir(j.total));
-        row.push(formatNilaiAkhir(j.rata_ijazah));
-        row.push(studentRank);
-        
-        dataRows.push(row);
-      });
-      
-      var finalData = [header].concat(dataRows);
-      
-      try {
-          var ws = XLSX.utils.aoa_to_sheet(finalData);
-          var wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Rekap_Nilai_Ijazah");
-          var filename = selectedKelas === 'Semua' ? "Rekap_Nilai_Ijazah_Semua_Kelas.xlsx" : "Rekap_Nilai_Ijazah_Kelas_" + selectedKelas + ".xlsx";
-          XLSX.writeFile(wb, filename);
-          Swal.fire({icon: 'success', title: 'Berhasil', text: 'File Excel sedang diunduh.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false});
-      } catch(e) {
-          Swal.fire('Error', 'Gagal membuat file Excel: ' + e.message, 'error');
-      }
-    }
+      var kop1 = dbSettings.kop_1 || '';
+      var kop2 = dbSettings.kop_2 || '';
+      var kop3 = dbSettings.kop_3 || '';
+      var kop4 = dbSettings.kop_4 || '';
+      var kop5 = dbSettings.kop_5 || '';
+      var titleKelas = selectedKelas === 'Semua' ? 'Seluruh Kelas' : 'Kelas ' + selectedKelas;
 
-    function parseExcel(file, callback) { 
-      var reader = new FileReader(); 
-      reader.onload = function(e) { 
-        try { 
-            var workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); 
-            callback(null, XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {raw: false, defval: ""})); 
-        } 
-        catch(err) { callback(err, null); } 
-      }; 
-      reader.readAsArrayBuffer(file); 
-    }
-
-    function parseExcelAllSheets(file, callback) { 
-      var reader = new FileReader(); 
-      reader.onload = function(e) { 
-        try { 
-          var workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); 
-          var result = {};
-          workbook.SheetNames.forEach(function(sheetName) {
-            var aoa = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false, defval: "" });
-            if(aoa.length > 2) {
-              var headerRow1 = aoa[0] || [];
-              var headerRow2 = aoa[1] || [];
-              var keys = [];
-              var maxCol = Math.max(headerRow1.length, headerRow2.length);
-              
-              for(var c=0; c<maxCol; c++) {
-                var h2 = headerRow2[c] !== undefined && headerRow2[c] !== null ? headerRow2[c].toString().trim() : "";
-                var h1 = headerRow1[c] !== undefined && headerRow1[c] !== null ? headerRow1[c].toString().trim() : "";
-                var key = h2 !== "" ? h2 : h1;
-                if(!key) key = "Col" + c;
-                keys.push(key);
-              }
-              
-              var rows = [];
-              for(var r=2; r<aoa.length; r++) {
-                 var rowData = aoa[r];
-                 if(rowData && rowData.length > 0 && rowData[0]) {
-                   var obj = {};
-                   for(var c=0; c<keys.length; c++) { obj[keys[c]] = rowData[c]; }
-                   rows.push(obj);
-                 }
-              }
-              result[sheetName] = rows;
-            } else { result[sheetName] = []; }
-          });
-          callback(null, result); 
-        } catch(err) { callback(err, null); } 
-      }; 
-      reader.readAsArrayBuffer(file); 
-    }
-
-    // --- NAVIGATION ---
-    function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
-    function showPage(pageName, navEl) {
-      activePage = pageName;
-      document.querySelectorAll('.nav-item-custom').forEach(function(n) { n.classList.remove('active'); }); if (navEl) navEl.classList.add('active');
-      document.querySelectorAll('.page-container').forEach(function(p) { p.classList.add('d-none'); });
-      var target = document.getElementById('page-' + pageName); if (target) target.classList.remove('d-none');
-      if (window.innerWidth < 992) { document.querySelector('.sidebar').classList.remove('active'); document.querySelector('.sidebar-overlay').classList.remove('active'); }
-      loadPageData(pageName);
-    }
-
-    function loadPageData(pageName) {
-      if (pageName === 'dashboard') { renderDashboard(); } 
-      else if (pageName === 'students') { renderStudents(); }
-      else if (pageName === 'subjects') { renderSubjects(); }
-      else if (pageName === 'settings') { renderSettings(); }
-      else if (pageName === 'rapor') { initDropdowns('filterMapelRapor', fetchRapor); }
-      else if (pageName === 'ujian') { initDropdowns('filterMapelUjian', fetchUjian); }
-      else if (pageName === 'ijazah') { fetchIjazah('ijazah'); }
-      else if (pageName === 'skl') { fetchIjazah('skl'); }
-    }
-
-    function initDropdowns(selectId, callback) { 
-      var sel = document.getElementById(selectId); sel.innerHTML = ''; 
-      dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan).forEach(s => { 
-        sel.innerHTML += `<option value="${s.id}">${s.kode_mapel} - ${s.nama_mapel}</option>`; 
-      }); 
-      if(callback) callback(); 
-    }
-
-    // --- SYSTEM FETCHERS ---
-    async function fetchStudents() {
-      showSectionLoading('studentsContainer');
-      const res = await fbRequest('students');
-      dbStudents = res ? Object.keys(res).map(k => ({...res[k], id: k})) : [];
-      
-      // Mengurutkan secara eksklusif berdasar nomor "urut" hasil import excel
-      dbStudents.sort((a, b) => {
-          var uA = a.urut !== undefined ? a.urut : 999999;
-          var uB = b.urut !== undefined ? b.urut : 999999;
-          if (uA !== uB) return uA - uB;
-          return a.id.localeCompare(b.id);
-      });
-      
-      if(activePage === 'students') renderStudents();
-    }
-
-    async function fetchSubjects() {
-      showSectionLoading('subjectsContainer');
-      const res = await fbRequest('subjects');
-      dbSubjects = res ? Object.keys(res).map(k => ({...res[k], id: k})) : [];
-      if(activePage === 'subjects') renderSubjects();
-    }
-
-    async function fetchRapor() {
-      var mapelId = document.getElementById('filterMapelRapor').value; if(!mapelId) return; 
-      showSectionLoading('raporContainer');
-      const res = await fbRequest(`rapor/${mapelId}`);
-      
-      dbRapor = dbStudents.map(s => {
-        var r = res && res[s.id] ? res[s.id] : {};
-        
-        var s1 = r.s1 !== undefined && r.s1 !== "" ? r.s1 : "";
-        var s2 = r.s2 !== undefined && r.s2 !== "" ? r.s2 : "";
-        var s3 = r.s3 !== undefined && r.s3 !== "" ? r.s3 : "";
-        var s4 = r.s4 !== undefined && r.s4 !== "" ? r.s4 : "";
-        var s5 = r.s5 !== undefined && r.s5 !== "" ? r.s5 : "";
-        
-        var sum = 0, count = 0;
-        if(s1 !== "") { sum += Number(s1); count++; }
-        if(s2 !== "") { sum += Number(s2); count++; }
-        if(s3 !== "") { sum += Number(s3); count++; }
-        if(s4 !== "") { sum += Number(s4); count++; }
-        if(s5 !== "") { sum += Number(s5); count++; }
-        
-        var rata = count > 0 ? (sum/count).toFixed(2) : "0";
-        
-        return { 
-          student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, 
-          s1: s1, s2: s2, s3: s3, s4: s4, s5: s5, 
-          rata: rata 
-        };
-      });
-      if(activePage === 'rapor') renderRapor();
-    }
-
-    async function fetchUjian() {
-      var mapelId = document.getElementById('filterMapelUjian').value; if(!mapelId) return; 
-      showSectionLoading('ujianContainer');
-      const res = await fbRequest(`ujian/${mapelId}`);
-      
-      dbUjian = dbStudents.map(s => {
-        var u = res && res[s.id] ? res[s.id] : {};
-        return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, nilai_ujian: u.nilai_ujian !== undefined && u.nilai_ujian !== "" ? u.nilai_ujian : "" };
-      });
-      if(activePage === 'ujian') renderUjian();
-    }
-
-    async function fetchIjazah(targetPage = 'ijazah') {
-      showSectionLoading(targetPage === 'skl' ? 'sklContainer' : 'ijazahContainer');
-      const [raporRes, ujianRes] = await Promise.all([fbRequest('rapor'), fbRequest('ujian')]);
-      
-      var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan);
-      var pctRapor = dbSettings.persen_rapor / 100;
-      var pctUjian = dbSettings.persen_ujian / 100;
-      
-      var studentsData = dbStudents.filter(s => s.status === 'Aktif').map(s => {
-          var scores = {};
-          var totalAkhir = 0;
-          var countMapel = 0;
-          
-          activeSubjects.forEach(sub => {
-              var s_rapor = raporRes && raporRes[sub.id] && raporRes[sub.id][s.id] ? raporRes[sub.id][s.id] : {};
-              var s_ujian = ujianRes && ujianRes[sub.id] && ujianRes[sub.id][s.id] ? ujianRes[sub.id][s.id] : {};
-              
-              var s1 = s_rapor.s1 !== undefined && s_rapor.s1 !== "" ? s_rapor.s1 : "";
-              var s2 = s_rapor.s2 !== undefined && s_rapor.s2 !== "" ? s_rapor.s2 : "";
-              var s3 = s_rapor.s3 !== undefined && s_rapor.s3 !== "" ? s_rapor.s3 : "";
-              var s4 = s_rapor.s4 !== undefined && s_rapor.s4 !== "" ? s_rapor.s4 : "";
-              var s5 = s_rapor.s5 !== undefined && s_rapor.s5 !== "" ? s_rapor.s5 : "";
-              
-              var sumRapor = 0, countRapor = 0;
-              if(s1 !== "") { sumRapor += Number(s1); countRapor++; }
-              if(s2 !== "") { sumRapor += Number(s2); countRapor++; }
-              if(s3 !== "") { sumRapor += Number(s3); countRapor++; }
-              if(s4 !== "") { sumRapor += Number(s4); countRapor++; }
-              if(s5 !== "") { sumRapor += Number(s5); countRapor++; }
-              
-              var rataRapor = countRapor > 0 ? (sumRapor / countRapor) : 0;
-              var nilaiUjian = s_ujian.nilai_ujian !== undefined && s_ujian.nilai_ujian !== "" ? Number(s_ujian.nilai_ujian) : 0;
-              
-              var finalScore = (rataRapor * pctRapor) + (nilaiUjian * pctUjian);
-              scores[sub.id] = finalScore;
-              totalAkhir += finalScore;
-              countMapel++;
-          });
-          
-          var rataIjazah = countMapel > 0 ? (totalAkhir / countMapel) : 0;
-          return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, scores: scores, total: totalAkhir, rata_ijazah: rataIjazah, original_id: s.id };
-      });
-      
-      dbIjazah = { subjects: activeSubjects, students: studentsData };
-      if(activePage === 'ijazah') renderIjazah();
-      if(activePage === 'skl') renderSKL();
-    }
-
-    function showSectionLoading(cId) { var c = document.getElementById(cId); if(!c) return; var skel = ''; for (var i=0; i<3; i++) skel += '<div class="card border-0 shadow-sm rounded-3 mb-3"><div class="card-body"><div class="placeholder-glow d-flex gap-3"><div class="placeholder rounded bg-light" style="width:50px;height:50px;"></div><div class="flex-grow-1"><span class="placeholder col-6 rounded"></span><span class="placeholder col-3 rounded mt-2" style="height:8px;"></span></div></div></div></div>'; c.innerHTML = skel; }
-    function showFullPageLoading(msg) { var l = document.getElementById('fullPageLoader'); if (!l) return; if (msg) document.getElementById('loaderText').innerText = msg; l.style.display = 'flex'; }
-    function hideFullPageLoading() { var l = document.getElementById('fullPageLoader'); if(l) l.style.display = 'none'; }
-
-    // --- RENDERERS ---
-    function renderDashboard() {
-      var c = document.getElementById('dashboardContainer');
-      c.innerHTML = 
-        `<div class="row g-3 mb-4">
-          <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 h-100 bg-success text-white">
-              <div class="card-body p-4 d-flex align-items-center">
-                <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-3" style="width:60px;height:60px;"><i class="fa-solid fa-users fa-2x"></i></div>
-                <div><h3 class="fw-bold mb-0">${dbStudents.length}</h3><small class="opacity-75">Total Siswa Terdaftar</small></div>
-              </div>
+      var html = `
+      <html>
+      <head>
+        <title>Rekap Nilai Ijazah - ${titleKelas}</title>
+        <style>
+          body { font-family: Arial, sans-serif; font-size: 11px; margin: 20px; color: #000; }
+          .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; position: relative; }
+          .header img { height: 70px; position: absolute; left: 0; }
+          .header-content { text-align: center; width: 100%; }
+          .title { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 20px; text-transform: uppercase; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; page-break-inside: auto; }
+          tr { page-break-inside: avoid; page-break-after: auto; }
+          th, td { border: 1px solid #000; padding: 4px; }
+          th { background-color: #f0f0f0; text-align: center; vertical-align: middle; font-size: 10px; }
+          .text-center { text-align: center; }
+          .fw-bold { font-weight: bold; }
+          .rotate { height: 110px; white-space: nowrap; width: 35px; }
+          .rotate > div { transform: translate(0px, 45px) rotate(-90deg); width: 25px; }
+          .rotate > div > span { padding: 5px; }
+          @media print { @page { size: 330mm 215mm; margin: 10mm; } body { margin: 0; -webkit-print-color-adjust: exact; width: 100%; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+            <img src="${logoUrl}" alt="Logo" style="width: 70px; height: 70px; object-fit: contain;">
+            <div class="header-content">
+                ${kop1 ? `<div style="font-size: 14px; text-transform: uppercase;">${kop1}</div>` : ''}
+                ${kop2 ? `<div style="font-size: 18px; font-weight: bold; text-transform: uppercase; margin: 2px 0;">${kop2}</div>` : ''}
+                ${kop3 ? `<div style="font-size: 11px;">${kop3}</div>` : ''}
+                ${kop4 ? `<div style="font-size: 10px;">${kop4}</div>` : ''}
+                ${kop5 ? `<div style="font-size: 10px;">${kop5}</div>` : ''}
             </div>
-          </div>
-          <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 h-100 bg-primary text-white">
-              <div class="card-body p-4 d-flex align-items-center">
-                <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-3" style="width:60px;height:60px;"><i class="fa-solid fa-book fa-2x"></i></div>
-                <div><h3 class="fw-bold mb-0">${dbSubjects.length}</h3><small class="opacity-75">Mata Pelajaran</small></div>
-              </div>
-            </div>
-          </div>
         </div>
-        <div class="card border-0 shadow-sm rounded-4"><div class="card-body p-5 text-center"><img src="${dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="90" class="mb-3" style="object-fit:contain;"><h4 class="fw-bold text-success mb-1">Selamat Datang di Aplikasi E-Ijazah</h4><p class="text-muted small">Sistem Informasi Pengolahan Nilai Ijazah Terpadu Tahun Ajaran ${dbSettings.tahun_pelajaran || '-'}</p></div></div>`;
+        <div class="title">REKAPITULASI NILAI IJAZAH - ${titleKelas}</div>
+        <table><thead><tr><th rowspan="2" style="width:25px;">No</th><th rowspan="2" style="width:70px;">NISN</th><th rowspan="2" style="width:160px;">Nama Siswa</th><th colspan="${subjects.length}">Nilai Ujian / Mata Pelajaran</th><th rowspan="2" style="width:50px;">Jumlah<br>Nilai</th><th rowspan="2" style="width:50px;">Rata-<br>rata</th><th rowspan="2" style="width:45px;">Peringkat</th></tr><tr>${thMapel}</tr></thead><tbody>${trData}</tbody></table>
+        <script>setTimeout(function() { window.print(); window.close(); }, 500);<\/script>
+      </body>
+      </html>`;
+      var printWin = window.open('', '_blank'); printWin.document.write(html); printWin.document.close();
     }
 
-    function renderStudents() {
-      var c = document.getElementById('studentsContainer'); 
-      
-      var btnBulk = document.getElementById('btnBulkDelete');
-      if(btnBulk) btnBulk.classList.add('d-none');
-
-      if (dbStudents.length === 0) { c.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-inbox fa-3x text-muted mb-3 opacity-25"></i><p>Belum ada data siswa</p></div>'; return; }
-      
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th width="40" class="text-center"><input class="form-check-input" type="checkbox" id="checkAllStudents" onchange="toggleAllStudents(this)"></th><th width="50" class="text-center">No</th><th>No. Ujian</th><th>NISN</th><th>Nama Lengkap</th><th>TTL</th><th>Kelas</th><th>TA</th><th>Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
-      
-      dbStudents.forEach(function(item, index) { 
-        var bdg = item.status === 'Aktif' ? 'bg-success' : 'bg-secondary'; 
-        var noUjian = item.no_ujian || '-';
-        var ttl = (item.tempat_lahir || '-') + ', ' + (item.tgl_lahir || '-');
-        
-        h += `<tr>
-                <td class="text-center"><input class="form-check-input check-student" type="checkbox" value="${item.id}" onchange="updateBulkDeleteButton()"></td>
-                <td class="text-center">${index + 1}</td>
-                <td><span class="text-dark">${noUjian}</span></td>
-                <td><span class="fw-semibold">${item.nisn}</span></td>
-                <td>${item.nama}</td>
-                <td><small class="text-muted">${ttl}</small></td>
-                <td><span class="badge bg-light text-dark border">${item.kelas}</span></td>
-                <td><small class="text-muted">${item.tahun_ajaran}</small></td>
-                <td><span class="badge ${bdg}">${item.status}</span></td>
-                <td class="text-end text-nowrap">
-                  <button class="btn btn-sm btn-light border text-primary me-1" onclick="editStudent('${item.id}')"><i class="fa-solid fa-pen"></i></button>
-                  <button class="btn btn-sm btn-light border text-danger" onclick="deleteStudent('${item.id}')"><i class="fa-solid fa-trash"></i></button>
-                </td>
-              </tr>`; 
-      });
-      c.innerHTML = h + '</tbody></table></div></div>';
-    }
-
-    function renderSubjects() {
-      var c = document.getElementById('subjectsContainer'); if (dbSubjects.length === 0) { c.innerHTML = '<div class="text-center py-5"><p>Belum ada data mapel</p></div>'; return; }
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>Urut</th><th>Kode</th><th>Mata Pelajaran</th><th>Kelompok</th><th>Aktif</th><th class="text-end">Aksi</th></tr></thead><tbody>';
-      var srt = dbSubjects.slice().sort(function(a,b){return a.urutan-b.urutan;});
-      srt.forEach(function(item) { var bdg = item.aktif === 'Ya' ? 'bg-success' : 'bg-danger'; h += '<tr><td>'+item.urutan+'</td><td><span class="fw-semibold">'+item.kode_mapel+'</span></td><td>'+item.nama_mapel+'</td><td><span class="badge bg-light text-dark border">' + item.kelompok + '</span></td><td><span class="badge '+bdg+'">'+item.aktif+'</span></td><td class="text-end"><button class="btn btn-sm btn-light border me-1" onclick="editSubject(\''+item.id+'\')"><i class="fa-solid fa-pen text-primary"></i></button><button class="btn btn-sm btn-light border" onclick="deleteSubject(\''+item.id+'\')"><i class="fa-solid fa-trash text-danger"></i></button></td></tr>'; });
-      c.innerHTML = h + '</tbody></table></div></div>';
-    }
-
-    function renderSettings() {
-      tempLogoBase64 = null;
-      tempTtdBase64 = null;
-      var c = document.getElementById('settingsContainer');
-      c.innerHTML = 
-        `<form id="formSetting" onsubmit="event.preventDefault(); saveSettingsOpt();"><div class="row g-4 mb-4"><div class="col-lg-7"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-heading me-2"></i>Bagian Kop Surat Jadwal</h6></div><div class="card-body p-4"><div class="mb-3"><label class="form-label fw-bold">Ganti Logo Madrasah (Opsional):</label><input type="file" class="form-control" id="setLogoFile" accept=".jpg, .jpeg, .png" onchange="previewLogo(event)"><div class="mt-2"><img id="previewLogoImg" src="${dbSettings.logo||'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="60" style="object-fit:contain; border:1px solid #ddd; padding:5px; border-radius:5px;"></div></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 1:</label><input type="text" class="form-control" id="setKop1" value="${dbSettings.kop_1||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 2:</label><input type="text" class="form-control" id="setKop2" value="${dbSettings.kop_2||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 3:</label><input type="text" class="form-control" id="setKop3" value="${dbSettings.kop_3||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 4:</label><input type="text" class="form-control" id="setKop4" value="${dbSettings.kop_4||''}"></div><div class="mb-3"><label class="form-label fw-bold">Teks Baris 5:</label><input type="text" class="form-control" id="setKop5" value="${dbSettings.kop_5||''}"></div><hr class="my-4"><h6 class="fw-bold text-success mb-3">Informasi Tambahan</h6><div class="row"><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kota/Tempat TTD</label><input type="text" class="form-control" id="setKota" value="${dbSettings.kota||''}"></div><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Tahun Pelajaran</label><input type="text" class="form-control" id="setTahun" value="${dbSettings.tahun_pelajaran||''}" required></div><div class="col-md-4 mb-3"><label class="form-label small fw-bold">Kepala Sekolah</label><input type="text" class="form-control" id="setKepala" value="${dbSettings.kepala_sekolah||''}" required></div><div class="col-md-12 mb-3"><label class="form-label small fw-bold">Upload Tanda Tangan Kepsek (Opsional, JPG/PNG)</label><input type="file" class="form-control" id="setTtdFile" accept=".jpg, .jpeg, .png" onchange="previewTtd(event)"><div class="mt-2 text-start"><img id="previewTtdImg" src="${dbSettings.ttd_kepsek||''}" height="60" style="object-fit:contain; border:1px solid #ddd; padding:5px; border-radius:5px; ${!dbSettings.ttd_kepsek ? 'display:none;' : ''}"></div></div></div></div></div></div><div class="col-lg-5"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold text-success mb-0"><i class="fa-solid fa-scale-balanced me-2"></i>Bobot Nilai Kalkulasi (%)</h6></div><div class="card-body p-4"><div class="alert alert-info border-0 bg-info bg-opacity-10 text-info-emphasis d-flex gap-2 small"><i class="fa-solid fa-circle-info mt-1"></i><span>Total bobot wajib 100%.</span></div><div class="mb-4"><label class="fw-bold mb-2 small">Bobot Rapor (Sem 1-5)</label><div class="input-group"><input type="number" class="form-control form-control-lg" id="setRapor" value="${dbSettings.persen_rapor}" required oninput="document.getElementById('setUjian').value = 100 - (parseInt(this.value)||0)"><span class="input-group-text bg-white">%</span></div></div><div class="mb-2"><label class="fw-bold mb-2 small">Bobot Ujian Akhir</label><div class="input-group"><input type="number" class="form-control form-control-lg bg-light" id="setUjian" value="${dbSettings.persen_ujian}" readonly><span class="input-group-text bg-white">%</span></div></div><div class="mt-4 border-top pt-3"><label class="fw-bold mb-2 small">Format Nilai Akhir</label><select class="form-select form-select-lg" id="setFormatNilai"><option value="Bulat" ${dbSettings.format_nilai === 'Bulat' ? 'selected' : ''}>Bulat (Contoh: 88)</option><option value="Pecahan" ${dbSettings.format_nilai === 'Pecahan' ? 'selected' : ''}>Pecahan (Contoh: 87.50)</option></select></div></div></div></div></div><div class="text-end"><button type="submit" class="btn btn-success px-5 rounded-pill shadow-sm py-2 fw-bold" id="btnSaveSet"><i class="fa-solid fa-save me-2"></i>Simpan Perubahan</button></div></form>`;
-    }
-
-    function renderRapor() {
-      var c = document.getElementById('raporContainer'); if(dbRapor.length===0){ c.innerHTML='<div class="text-center py-5 text-muted"><i class="fa-solid fa-users fa-3x mb-3 opacity-25"></i><p>Tidak ada data. Silakan tambah siswa atau import.</p></div>'; return; }
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th>Smt 1</th><th>Smt 2</th><th>Smt 3</th><th>Smt 4</th><th>Smt 5</th><th>Rata-rata</th></tr></thead><tbody id="bodyRapor">';
-      dbRapor.forEach(function(r) { h += `<tr><td>${r.nisn}</td><td><span class="fw-semibold">${r.nama}</span></td><td>${r.kelas}</td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s1" value="${r.s1}"></td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s2" value="${r.s2}"></td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s3" value="${r.s3}"></td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s4" value="${r.s4}"></td><td><input type="number" class="table-input rep-val" data-id="${r.student_id}" data-sem="s5" value="${r.s5}"></td><td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">${r.rata}</span></td></tr>`; });
-      c.innerHTML = h + '</tbody></table></div></div>';
-    }
-
-    function renderUjian() {
-      var c = document.getElementById('ujianContainer'); if(dbUjian.length===0){ c.innerHTML='<div class="text-center py-5 text-muted"><p>Tidak ada data. Silakan tambah siswa atau import.</p></div>'; return; }
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th>Nilai Ujian Akhir</th></tr></thead><tbody id="bodyUjian">';
-      dbUjian.forEach(function(u) { h += `<tr><td>${u.nisn}</td><td><span class="fw-semibold">${u.nama}</span></td><td>${u.kelas}</td><td><input type="number" class="table-input exam-val" data-id="${u.student_id}" value="${u.nilai_ujian}"></td></tr>`; });
-      c.innerHTML = h + '</tbody></table></div></div>';
-    }
-
-    function renderSKL() {
-      var c = document.getElementById('sklContainer');
-      if(!dbIjazah.students || dbIjazah.students.length === 0) { c.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-file-contract fa-3x text-muted opacity-25 mb-3"></i><p>Belum ada data kalkulasi. Klik "Kalkulasi Ulang" pada menu Proses Ijazah.</p></div>'; return; }
-      
-      var allStudents = dbIjazah.students;
-      var filter = document.getElementById('filterKelasSKL'); var currentVal = filter.value;
-      var classes = []; allStudents.forEach(function(s) { if(classes.indexOf(s.kelas) === -1) classes.push(s.kelas); }); classes.sort();
-      var opts = '<option value="Semua">Semua Kelas</option>'; classes.forEach(function(k) { opts += '<option value="'+k+'">'+k+'</option>'; });
-      filter.innerHTML = opts; if(classes.indexOf(currentVal) !== -1 || currentVal === 'Semua') filter.value = currentVal;
-      
-      var selectedKelas = filter.value;
-      var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
-      if(filteredStudents.length === 0) { c.innerHTML = '<div class="text-center py-5 text-muted"><p>Tidak ada data di kelas ini.</p></div>'; return; }
-      
-      // Jangan diurutkan berdasarkan alfabet, biarkan tetap natural berdasarkan ID Import
-      
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th class="text-center" width="50">No</th><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th class="text-center">Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
-      
-      filteredStudents.forEach(function(j, idx) {
-        var st = dbStudents.find(s => s.id === j.original_id) || {};
-        var statLulus = st.status_kelulusan || 'LULUS';
-        var statColor = statLulus === 'LULUS' ? 'text-success' : 'text-danger';
-
-        h += `<tr>
-                <td class="text-center">${idx + 1}</td>
-                <td>${j.nisn}</td>
-                <td class="fw-semibold">${j.nama}</td>
-                <td>${j.kelas}</td>
-                <td class="text-center" width="150">
-                  <select class="form-select form-select-sm fw-bold border-0 bg-light status-select ${statColor}" onchange="updateStatusLulus('${j.original_id}', this.value)">
-                    <option value="LULUS" class="text-success" ${statLulus === 'LULUS' ? 'selected' : ''}>LULUS</option>
-                    <option value="TIDAK LULUS" class="text-danger" ${statLulus === 'TIDAK LULUS' ? 'selected' : ''}>TIDAK LULUS</option>
-                  </select>
-                </td>
-                <td class="text-end text-nowrap"><button class="btn btn-sm btn-light border text-success rounded-pill px-3" onclick="cetakSKL('${j.original_id}')"><i class="fa-solid fa-print"></i> Cetak</button></td>
-              </tr>`;
-      });
-      c.innerHTML = h + '</tbody></table></div></div>';
-    }
-
-    function renderIjazah() {
-      var c = document.getElementById('ijazahContainer');
-      if(!dbIjazah.students || dbIjazah.students.length === 0) { c.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-calculator fa-3x text-muted opacity-25 mb-3"></i><p>Belum ada kalkulasi terbaru dari sistem. Klik "Kalkulasi Ulang".</p></div>'; return; }
-      
-      var subjects = dbIjazah.subjects; var allStudents = dbIjazah.students;
-      var filter = document.getElementById('filterKelasIjazah'); var currentVal = filter.value;
-      var classes = []; allStudents.forEach(function(s) { if(classes.indexOf(s.kelas) === -1) classes.push(s.kelas); }); classes.sort();
-      var opts = '<option value="Semua">Semua Kelas</option>'; classes.forEach(function(k) { opts += '<option value="'+k+'">'+k+'</option>'; });
-      filter.innerHTML = opts; if(classes.indexOf(currentVal) !== -1 || currentVal === 'Semua') filter.value = currentVal;
-      
-      var selectedKelas = filter.value;
-      var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
-      if(filteredStudents.length === 0) { c.innerHTML = '<div class="text-center py-5 text-muted"><p>Tidak ada data di kelas ini.</p></div>'; return; }
-      
-      // Calculate rank in temporary sorted copy
-      var tempSorted = [...filteredStudents].sort((a,b) => b.rata_ijazah - a.rata_ijazah);
-      var rankMap = {};
-      var currentRank = 1, prevScore = -1, displayRank = 1;
-      tempSorted.forEach(j => {
-          if(j.rata_ijazah !== prevScore) { displayRank = currentRank; prevScore = j.rata_ijazah; }
-          rankMap[j.original_id] = displayRank;
-          currentRank++;
-      });
-
-      var thMapel = ''; subjects.forEach(sub => { thMapel += `<th class="text-center text-nowrap" title="${sub.nama_mapel}">${sub.kode_mapel}</th>`; });
-      
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover table-bordered align-middle mb-0" style="font-size: 14px;"><thead class="table-light align-middle text-center"><tr><th rowspan="2" width="50">No</th><th rowspan="2">NISN</th><th rowspan="2" class="min-w-200">Nama Siswa</th><th rowspan="2">Kelas</th><th colspan="'+subjects.length+'">Nilai Akhir Ijazah (Per Mapel)</th><th rowspan="2">Jumlah<br>Nilai</th><th rowspan="2">Rata-<br>rata</th><th rowspan="2">Peringkat</th></tr><tr>' + thMapel + '</tr></thead><tbody>';
-      
-      filteredStudents.forEach(function(j, idx) {
-        var studentRank = rankMap[j.original_id];
-        var tdMapel = ''; subjects.forEach(sub => { var val = j.scores[sub.id] !== undefined ? formatNilaiAkhir(j.scores[sub.id]) : '-'; tdMapel += `<td class="text-center">${val}</td>`; });
-        h += `<tr><td class="text-center">${idx + 1}</td><td class="text-center">${j.nisn}</td><td class="text-nowrap"><span class="fw-semibold">${j.nama}</span></td><td class="text-center">${j.kelas}</td>${tdMapel}<td class="text-center fw-bold text-primary">${formatNilaiAkhir(j.total)}</td><td class="text-center"><span class="badge bg-success fs-6">${formatNilaiAkhir(j.rata_ijazah)}</span></td><td class="text-center"><span class="badge bg-danger fs-6">${studentRank}</span></td></tr>`;
-      });
-      c.innerHTML = h + '</tbody></table></div></div>';
-    }
-
-    // --- SYSTEM CRUD & MASS SAVE LOGIC ---
-    function previewLogo(event) { var file = event.target.files[0]; if(!file) return; var reader = new FileReader(); reader.onload = function(e) { tempLogoBase64 = e.target.result; document.getElementById('previewLogoImg').src = tempLogoBase64; }; reader.readAsDataURL(file); }
-    function previewTtd(event) { var file = event.target.files[0]; if(!file) return; var reader = new FileReader(); reader.onload = function(e) { tempTtdBase64 = e.target.result; var img = document.getElementById('previewTtdImg'); img.src = tempTtdBase64; img.style.display = 'inline-block'; }; reader.readAsDataURL(file); }
-
-    async function saveSettingsOpt() { 
-      var payload = { 
-        persen_rapor: parseInt(document.getElementById('setRapor').value), 
-        persen_ujian: parseInt(document.getElementById('setUjian').value), 
-        kop_1: document.getElementById('setKop1').value,
-        kop_2: document.getElementById('setKop2').value,
-        kop_3: document.getElementById('setKop3').value,
-        kop_4: document.getElementById('setKop4').value,
-        kop_5: document.getElementById('setKop5').value,
-        kota: document.getElementById('setKota').value, 
-        tahun_pelajaran: document.getElementById('setTahun').value, 
-        kepala_sekolah: document.getElementById('setKepala').value, 
-        logo: tempLogoBase64 ? tempLogoBase64 : dbSettings.logo, 
-        ttd_kepsek: tempTtdBase64 ? tempTtdBase64 : dbSettings.ttd_kepsek,
-        format_nilai: document.getElementById('setFormatNilai').value 
-      }; 
-      if(payload.persen_rapor + payload.persen_ujian !== 100) return Swal.fire('Warning','Total bobot rapor & ujian harus 100%','warning'); 
-      var btn = document.getElementById('btnSaveSet'); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...'; btn.disabled = true; 
-      
-      await fbRequest('settings', 'PATCH', payload); 
-      dbSettings = Object.assign(dbSettings, payload); updateAppProfile(dbSettings); 
-      btn.innerHTML = '<i class="fa-solid fa-save me-2"></i>Simpan Perubahan'; btn.disabled = false; 
-      Swal.fire('Sukses','Konfigurasi tersimpan di sistem','success'); 
-    }
-
-    // --- SKL SETTINGS ---
-    function openSKLSettings() {
-      document.getElementById('sklNoSurat').value = dbSettings.skl_no_surat || '';
-      document.getElementById('sklPembuka').value = dbSettings.skl_pembuka || `Yang bertanda tangan di bawah ini Kepala ${dbSettings.kop_2 || ''} ${dbSettings.kota || ''}, menerangkan bahwa:`;
-      document.getElementById('sklTengah').value = dbSettings.skl_tengah || `Telah mengikuti kegiatan Ujian Madrasah tahun pelajaran ${dbSettings.tahun_pelajaran || ''}, dan berdasarkan Kriteria kelulusan sekolah dinyatakan:`;
-      document.getElementById('sklTgl').value = dbSettings.skl_tgl || '';
-      document.getElementById('sklNip').value = dbSettings.skl_nip || '';
-      new bootstrap.Modal(document.getElementById('modalSKL')).show();
-    }
-
-    async function saveSKLSettings() {
-      var payload = {
-        skl_no_surat: document.getElementById('sklNoSurat').value,
-        skl_pembuka: document.getElementById('sklPembuka').value,
-        skl_tengah: document.getElementById('sklTengah').value,
-        skl_tgl: document.getElementById('sklTgl').value,
-        skl_nip: document.getElementById('sklNip').value
-      };
-      dbSettings = Object.assign(dbSettings, payload);
-      await fbRequest('settings', 'PATCH', payload);
-      bootstrap.Modal.getInstance(document.getElementById('modalSKL')).hide();
-      Swal.fire({icon:'success', title:'Pengaturan Teks SKL Disimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false});
-    }
-
-    // --- STUDENT CRUD ---
-    function openStudentModal(){ document.getElementById('formStudent').reset(); document.getElementById('studIsEdit').value='false'; document.getElementById('titleStudent').innerText='Tambah Siswa'; new bootstrap.Modal(document.getElementById('modalStudent')).show(); }
-    function editStudent(id){ var item=dbStudents.find(x => String(x.id)===String(id)); if(!item)return; document.getElementById('studId').value=item.id; document.getElementById('studIsEdit').value='true'; document.getElementById('studNisn').value=item.nisn; document.getElementById('studNoUjian').value=item.no_ujian||''; document.getElementById('studNama').value=item.nama; document.getElementById('studTmpLahir').value=item.tempat_lahir||''; document.getElementById('studTglLahir').value=item.tgl_lahir||''; document.getElementById('studSekolahAsal').value=item.sekolah_asal||''; document.getElementById('studKelas').value=item.kelas; document.getElementById('studTahun').value=item.tahun_ajaran; document.getElementById('studStatus').value=item.status; document.getElementById('titleStudent').innerText='Edit Siswa'; new bootstrap.Modal(document.getElementById('modalStudent')).show(); }
-    
-    async function saveStudent(){ 
-      var p={ id:document.getElementById('studId').value, isEdit:document.getElementById('studIsEdit').value, nisn:document.getElementById('studNisn').value, no_ujian:document.getElementById('studNoUjian').value, nama:document.getElementById('studNama').value, tempat_lahir:document.getElementById('studTmpLahir').value, tgl_lahir:document.getElementById('studTglLahir').value, sekolah_asal:document.getElementById('studSekolahAsal').value, kelas:document.getElementById('studKelas').value, tahun_ajaran:document.getElementById('studTahun').value, status:document.getElementById('studStatus').value }; 
-      if(!p.nisn||!p.nama) return Swal.fire('Error','Lengkapi form','warning'); 
-      
-      var exist = dbStudents.find(s => s.id === p.id);
-      var urutValue = exist && exist.urut !== undefined ? exist.urut : dbStudents.length + 1;
-      
-      var tId = p.isEdit === 'true' ? p.id : 'stud_'+Date.now()+'_00000'; 
-      var payload = { nisn: p.nisn, no_ujian: p.no_ujian, nama: p.nama, tempat_lahir: p.tempat_lahir, tgl_lahir: p.tgl_lahir, sekolah_asal: p.sekolah_asal, kelas: p.kelas, tahun_ajaran: p.tahun_ajaran, status: p.status, urut: urutValue };
-      
-      bootstrap.Modal.getInstance(document.getElementById('modalStudent')).hide(); 
-      Swal.fire({icon:'info', title:'Menyimpan...', showConfirmButton:false});
-      await fbRequest(`students/${tId}`, 'PATCH', payload);
-      await fetchStudents();
-      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false});
-    }
-
-    function deleteStudent(id){ 
-      Swal.fire({title:'Hapus data ini dari sistem?',icon:'warning',showCancelButton:true,confirmButtonColor:'#dc3545',confirmButtonText:'Ya'}).then(async res => { 
-        if(!res.isConfirmed) return; 
-        await fbRequest(`students/${id}`, 'DELETE');
-        await fetchStudents();
-      }); 
-    }
-
-    function openSubjectModal(){ document.getElementById('formSubject').reset(); document.getElementById('subjIsEdit').value='false'; document.getElementById('titleSubject').innerText='Tambah Mapel'; new bootstrap.Modal(document.getElementById('modalSubject')).show(); }
-    function editSubject(id){ var item=dbSubjects.find(x => String(x.id)===String(id)); if(!item)return; document.getElementById('subjId').value=item.id; document.getElementById('subjIsEdit').value='true'; document.getElementById('subjKode').value=item.kode_mapel; document.getElementById('subjNama').value=item.nama_mapel; document.getElementById('subjKel').value=item.kelompok; document.getElementById('subjUrut').value=item.urutan; document.getElementById('subjAktif').value=item.aktif; document.getElementById('titleSubject').innerText='Edit Mapel'; new bootstrap.Modal(document.getElementById('modalSubject')).show(); }
-    
-    async function saveSubject(){ 
-      var p={ id:document.getElementById('subjId').value, isEdit:document.getElementById('subjIsEdit').value, kode_mapel:document.getElementById('subjKode').value, nama_mapel:document.getElementById('subjNama').value, kelompok:document.getElementById('subjKel').value, urutan:Number(document.getElementById('subjUrut').value), aktif:document.getElementById('subjAktif').value }; 
-      if(!p.kode_mapel||!p.nama_mapel) return Swal.fire('Error','Lengkapi form','warning'); 
-      var tId = p.isEdit === 'true' ? p.id : 'subj_'+Date.now(); 
-      var payload = { kode_mapel: p.kode_mapel, nama_mapel: p.nama_mapel, kelompok: p.kelompok, urutan: p.urutan, aktif: p.aktif };
-      bootstrap.Modal.getInstance(document.getElementById('modalSubject')).hide(); 
-      Swal.fire({icon:'info', title:'Menyimpan...', showConfirmButton:false});
-      await fbRequest(`subjects/${tId}`, 'PUT', payload);
-      await fetchSubjects();
-      Swal.fire({icon:'success', title:'Tersimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false});
-    }
-
-    function deleteSubject(id){ 
-      Swal.fire({title:'Hapus mapel ini dari sistem?',icon:'warning',showCancelButton:true,confirmButtonColor:'#dc3545',confirmButtonText:'Ya'}).then(async res => { 
-        if(!res.isConfirmed) return; 
-        await fbRequest(`subjects/${id}`, 'DELETE');
-        await fetchSubjects();
-      }); 
-    }
-
-    async function saveRaporMassal() { 
-      var btn = document.getElementById('btnSaveRapor'); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...'; btn.disabled = true; 
-      var mapelId = document.getElementById('filterMapelRapor').value; 
-      var payload = {}; 
-      document.querySelectorAll('#bodyRapor tr').forEach(function(tr) { 
-        var id = tr.querySelector('input[data-sem="s1"]').getAttribute('data-id'); 
-        payload[id] = { 
-          s1: tr.querySelector('input[data-sem="s1"]').value, 
-          s2: tr.querySelector('input[data-sem="s2"]').value, 
-          s3: tr.querySelector('input[data-sem="s3"]').value, 
-          s4: tr.querySelector('input[data-sem="s4"]').value, 
-          s5: tr.querySelector('input[data-sem="s5"]').value 
-        }; 
-      }); 
-      await fbRequest(`rapor/${mapelId}`, 'PATCH', payload);
-      btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Data'; btn.disabled = false; 
-      await fetchRapor();
-      Swal.fire({icon:'success', title:'Tersimpan di Sistem', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
-    }
-
-    async function saveUjianMassal() { 
-      var btn = document.getElementById('btnSaveUjian'); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...'; btn.disabled = true; 
-      var mapelId = document.getElementById('filterMapelUjian').value; 
-      var payload = {}; 
-      document.querySelectorAll('#bodyUjian tr').forEach(function(tr) { 
-        var inpt = tr.querySelector('.exam-val'); 
-        payload[inpt.getAttribute('data-id')] = { nilai_ujian: inpt.value }; 
-      }); 
-      await fbRequest(`ujian/${mapelId}`, 'PATCH', payload);
-      btn.innerHTML = '<i class="fa-solid fa-save me-1"></i> Simpan Data'; btn.disabled = false; 
-      await fetchUjian();
-      Swal.fire({icon:'success', title:'Tersimpan di Sistem', toast:true, position:'top-end', timer:1500, showConfirmButton:false}); 
-    }
-
-    // --- EXCEL IMPORTERS TO SYSTEM ---
-    function handleImportSiswa(e) { 
-      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
-      parseExcel(file, async function(err, json) { 
-        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
-        var payload = {};
-        
-        json.forEach((r, idx) => {
-          var keys = Object.keys(r);
-          var getVal = function(possibleNames) {
-            var found = keys.find(k => possibleNames.includes(k.toLowerCase().replace(/[^a-z0-9]/g, '')));
-            return found ? r[found] : '';
-          };
-
-          var nama = String(getVal(['1namalengkap', '1nama', 'namalengkap', 'nama', 'namasiswa']));
-          var tmp = String(getVal(['2tempatlahir', 'tempatlahir', 'tempat', '2tempat']));
-          var tgl = String(getVal(['3tanggallahir', 'tanggallahir', 'tgllahir', 'tanggal', '3tanggal']));
-          var sekolahAsal = String(getVal(['4sekolahasal', 'sekolahasal', 'sekolah', '4sekolah']));
-          var nisn = String(getVal(['5nisn', 'nisn']));
-          var no_ujian = String(getVal(['6noujian', 'noujian', 'nomorujian', 'no', '6no']));
-          var kelas = String(getVal(['kelas']));
-          var tahun = String(getVal(['tahunajaran', 'ta', 'tahun']));
-          var status = String(getVal(['status'])) || 'Aktif';
-
-          if(nisn && nama) {
-            var exist = dbStudents.find(s => s.nisn === nisn);
-            var id = exist ? exist.id : 'stud_' + Date.now() + '_' + String(idx).padStart(5, '0');
-            
-            payload[id] = { 
-              nisn: nisn, 
-              no_ujian: no_ujian, 
-              nama: nama, 
-              tempat_lahir: tmp, 
-              tgl_lahir: tgl, 
-              sekolah_asal: sekolahAsal,
-              kelas: kelas, 
-              tahun_ajaran: tahun, 
-              status: status,
-              urut: idx + 1 // Add index urut for strict Excel order
-            };
-          }
-        });
-        
-        if(Object.keys(payload).length === 0) return Swal.fire('Error', 'Format data tidak sesuai.', 'error'); 
-        Swal.fire({icon:'info', title:'Mengimpor ke sistem...', showConfirmButton:false}); 
-        await fbRequest('students', 'PATCH', payload);
-        await fetchStudents();
-        Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
-      }); 
-    }
-    
-    function handleImportMapel(e) { 
-      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
-      parseExcel(file, async function(err, json) { 
-        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
-        var payload = {};
-        json.forEach((r, idx) => {
-          var id = 'subj_' + Date.now() + '_' + idx;
-          var k = String(r['Kode']||''), n = r['Nama Mata Pelajaran']||'';
-          if(k && n) payload[id] = { kode_mapel: k, nama_mapel: n, kelompok: r['Kelompok']||'Umum', urutan: Number(r['Urutan']||1), aktif: r['Status Aktif']||'Ya' };
-        });
-        if(Object.keys(payload).length === 0) return Swal.fire('Error', 'Format data tidak sesuai.', 'error'); 
-        Swal.fire({icon:'info', title:'Mengimpor ke sistem...', showConfirmButton:false}); 
-        await fbRequest('subjects', 'PATCH', payload);
-        await fetchSubjects();
-        Swal.fire({icon:'success',title:'Impor Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
-      }); 
-    }
-    
-    function handleImportRapor(e) { 
-      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
-      
-      parseExcelAllSheets(file, async function(err, sheets) { 
-        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
-        if(Object.keys(sheets).length === 0) return Swal.fire('Error', 'File Excel kosong.', 'error');
-
-        var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya');
-        if(activeSubjects.length === 0) return Swal.fire('Error', 'Tidak ada mapel aktif', 'error');
-
-        Swal.fire({icon:'info', title:'Mengimpor data...', text:'Mohon tunggu, sedang sinkronisasi ke sistem.', showConfirmButton:false, allowOutsideClick:false}); 
-        
-        try {
-          let flatPatch = {};
-          
-          activeSubjects.forEach(sub => {
-            for (let i = 1; i <= 5; i++) {
-              let sheetName = "Semester " + i;
-              let rows = sheets[sheetName] || [];
-              
-              rows.forEach(r => {
-                let sIdKey = Object.keys(r).find(k => k && (k.toLowerCase().includes("nisn") || k.includes("ID_Siswa")));
-                let sIdVal = sIdKey ? r[sIdKey] : null;
-                
-                // Cari student ID berdasarkan NISN
-                let st = dbStudents.find(s => s.nisn == sIdVal || s.id == sIdVal);
-                let sId = st ? st.id : null;
-                
-                if (sId) {
-                  let mapelKey = Object.keys(r).find(k => k && k.trim() === sub.kode_mapel.trim());
-                  if (mapelKey) {
-                    let val = r[mapelKey];
-                    flatPatch[`${sub.id}/${sId}/s${i}`] = (val !== undefined && val !== "") ? val : "";
-                  }
-                }
-              });
-            }
-          });
-
-          if(Object.keys(flatPatch).length > 0) {
-            await fbRequest(`rapor`, 'PATCH', flatPatch);
-          }
-          
-          await fetchRapor(); 
-          Swal.fire({icon:'success',title:'Impor Leger Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
-        } catch (error) {
-          console.error(error);
-          Swal.fire('Error', 'Terjadi kesalahan jaringan saat mengimpor.', 'error');
-        }
-      }); 
-    }
-    
-    function handleImportUjian(e) { 
-      var file = e.target.files[0]; if(!file) return; e.target.value = ''; 
-      
-      parseExcelAllSheets(file, async function(err, sheets) { 
-        if(err) return Swal.fire('Error', 'Gagal membaca file Excel', 'error'); 
-        if(Object.keys(sheets).length === 0) return Swal.fire('Error', 'File Excel kosong.', 'error');
-
-        var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya');
-        if(activeSubjects.length === 0) return Swal.fire('Error', 'Tidak ada mapel aktif', 'error');
-
-        Swal.fire({icon:'info', title:'Mengimpor data...', text:'Mohon tunggu, sedang sinkronisasi ke sistem.', showConfirmButton:false, allowOutsideClick:false}); 
-        
-        try {
-          let flatPatch = {};
-          let sheetName = Object.keys(sheets)[0];
-          let rows = sheets[sheetName] || [];
-          
-          activeSubjects.forEach(sub => {
-            rows.forEach(r => {
-              let sIdKey = Object.keys(r).find(k => k && (k.toLowerCase().includes("nisn") || k.includes("ID_Siswa")));
-              let sIdVal = sIdKey ? r[sIdKey] : null;
-              
-              let st = dbStudents.find(s => s.nisn == sIdVal || s.id == sIdVal);
-              let sId = st ? st.id : null;
-              
-              if (sId) {
-                let mapelKey = Object.keys(r).find(k => k && k.trim() === sub.kode_mapel.trim());
-                if (mapelKey) {
-                  let val = r[mapelKey];
-                  flatPatch[`${sub.id}/${sId}/nilai_ujian`] = (val !== undefined && val !== "") ? val : "";
-                }
-              }
-            });
-          });
-
-          if(Object.keys(flatPatch).length > 0) {
-            await fbRequest(`ujian`, 'PATCH', flatPatch);
-          }
-          
-          await fetchUjian(); 
-          Swal.fire({icon:'success',title:'Impor Ujian Berhasil',toast:true,position:'top-end',showConfirmButton:false,timer:2000});
-        } catch (error) {
-          console.error(error);
-          Swal.fire('Error', 'Terjadi kesalahan jaringan saat mengimpor.', 'error');
-        }
-      }); 
-    }
-    
-    function downloadExcelIjazah() {
-      if(!dbIjazah.students || dbIjazah.students.length === 0) return Swal.fire('Gagal', 'Belum ada data nilai. Lakukan kalkulasi terlebih dahulu.', 'error');
-      
-      var filterSelect = document.getElementById('filterKelasIjazah'); 
-      var selectedKelas = filterSelect.value;
-      var allStudents = dbIjazah.students; 
-      var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
-      
-      if(filteredStudents.length === 0) return Swal.fire('Warning', 'Tidak ada data siswa pada kelas terpilih.', 'warning');
-      
-      // Calculate rank in temporary sorted copy
-      var tempSorted = [...filteredStudents].sort((a,b) => b.rata_ijazah - a.rata_ijazah);
-      var rankMap = {};
-      var currentRank = 1, prevScore = -1, displayRank = 1;
-      tempSorted.forEach(j => {
-          if(j.rata_ijazah !== prevScore) { displayRank = currentRank; prevScore = j.rata_ijazah; }
-          rankMap[j.original_id] = displayRank;
-          currentRank++;
-      });
-
-      var subjects = dbIjazah.subjects;
-      
-      var header = ["No", "NISN", "Nama Siswa", "Kelas"];
-      subjects.forEach(sub => {
-          header.push(sub.nama_mapel + " (" + sub.kode_mapel + ")");
-      });
-      header.push("Jumlah Nilai", "Rata-rata", "Peringkat");
-      
-      var dataRows = [];
-      filteredStudents.forEach(function(j, idx) {
-        var studentRank = rankMap[j.original_id];
-        var row = [ idx + 1, j.nisn, j.nama, j.kelas ];
-        
-        subjects.forEach(sub => { 
-            var val = j.scores[sub.id] !== undefined ? formatNilaiAkhir(j.scores[sub.id]) : '-';
-            row.push(val); 
-        });
-        
-        row.push(formatNilaiAkhir(j.total));
-        row.push(formatNilaiAkhir(j.rata_ijazah));
-        row.push(studentRank);
-        
-        dataRows.push(row);
-      });
-      
-      var finalData = [header].concat(dataRows);
-      
-      try {
-          var ws = XLSX.utils.aoa_to_sheet(finalData);
-          var wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Rekap_Nilai_Ijazah");
-          var filename = selectedKelas === 'Semua' ? "Rekap_Nilai_Ijazah_Semua_Kelas.xlsx" : "Rekap_Nilai_Ijazah_Kelas_" + selectedKelas + ".xlsx";
-          XLSX.writeFile(wb, filename);
-          Swal.fire({icon: 'success', title: 'Berhasil', text: 'File Excel sedang diunduh.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false});
-      } catch(e) {
-          Swal.fire('Error', 'Gagal membuat file Excel: ' + e.message, 'error');
-      }
-    }
-
-    function parseExcel(file, callback) { 
-      var reader = new FileReader(); 
-      reader.onload = function(e) { 
-        try { 
-            var workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); 
-            callback(null, XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {raw: false, defval: ""})); 
-        } 
-        catch(err) { callback(err, null); } 
-      }; 
-      reader.readAsArrayBuffer(file); 
-    }
-
-    function parseExcelAllSheets(file, callback) { 
-      var reader = new FileReader(); 
-      reader.onload = function(e) { 
-        try { 
-          var workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'}); 
-          var result = {};
-          workbook.SheetNames.forEach(function(sheetName) {
-            var aoa = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false, defval: "" });
-            if(aoa.length > 2) {
-              var headerRow1 = aoa[0] || [];
-              var headerRow2 = aoa[1] || [];
-              var keys = [];
-              var maxCol = Math.max(headerRow1.length, headerRow2.length);
-              
-              for(var c=0; c<maxCol; c++) {
-                var h2 = headerRow2[c] !== undefined && headerRow2[c] !== null ? headerRow2[c].toString().trim() : "";
-                var h1 = headerRow1[c] !== undefined && headerRow1[c] !== null ? headerRow1[c].toString().trim() : "";
-                var key = h2 !== "" ? h2 : h1;
-                if(!key) key = "Col" + c;
-                keys.push(key);
-              }
-              
-              var rows = [];
-              for(var r=2; r<aoa.length; r++) {
-                 var rowData = aoa[r];
-                 if(rowData && rowData.length > 0 && rowData[0]) {
-                   var obj = {};
-                   for(var c=0; c<keys.length; c++) { obj[keys[c]] = rowData[c]; }
-                   rows.push(obj);
-                 }
-              }
-              result[sheetName] = rows;
-            } else { result[sheetName] = []; }
-          });
-          callback(null, result); 
-        } catch(err) { callback(err, null); } 
-      }; 
-      reader.readAsArrayBuffer(file); 
-    }
-
-    // --- NAVIGATION ---
-    function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
-    function showPage(pageName, navEl) {
-      activePage = pageName;
-      document.querySelectorAll('.nav-item-custom').forEach(function(n) { n.classList.remove('active'); }); if (navEl) navEl.classList.add('active');
-      document.querySelectorAll('.page-container').forEach(function(p) { p.classList.add('d-none'); });
-      var target = document.getElementById('page-' + pageName); if (target) target.classList.remove('d-none');
-      if (window.innerWidth < 992) { document.querySelector('.sidebar').classList.remove('active'); document.querySelector('.sidebar-overlay').classList.remove('active'); }
-      loadPageData(pageName);
-    }
-
-    function loadPageData(pageName) {
-      if (pageName === 'dashboard') { renderDashboard(); } 
-      else if (pageName === 'students') { renderStudents(); }
-      else if (pageName === 'subjects') { renderSubjects(); }
-      else if (pageName === 'settings') { renderSettings(); }
-      else if (pageName === 'rapor') { initDropdowns('filterMapelRapor', fetchRapor); }
-      else if (pageName === 'ujian') { initDropdowns('filterMapelUjian', fetchUjian); }
-      else if (pageName === 'ijazah') { fetchIjazah('ijazah'); }
-      else if (pageName === 'skl') { fetchIjazah('skl'); }
-    }
-
-    function initDropdowns(selectId, callback) { 
-      var sel = document.getElementById(selectId); sel.innerHTML = ''; 
-      dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan).forEach(s => { 
-        sel.innerHTML += `<option value="${s.id}">${s.kode_mapel} - ${s.nama_mapel}</option>`; 
-      }); 
-      if(callback) callback(); 
-    }
-
-    // --- SYSTEM FETCHERS ---
-    async function fetchStudents() {
-      showSectionLoading('studentsContainer');
-      const res = await fbRequest('students');
-      dbStudents = res ? Object.keys(res).map(k => ({...res[k], id: k})) : [];
-      
-      // Mengurutkan secara eksklusif berdasar nomor "urut" hasil import excel
-      dbStudents.sort((a, b) => {
-          var uA = a.urut !== undefined ? a.urut : 999999;
-          var uB = b.urut !== undefined ? b.urut : 999999;
-          if (uA !== uB) return uA - uB;
-          return a.id.localeCompare(b.id);
-      });
-      
-      if(activePage === 'students') renderStudents();
-    }
-
-    async function fetchSubjects() {
-      showSectionLoading('subjectsContainer');
-      const res = await fbRequest('subjects');
-      dbSubjects = res ? Object.keys(res).map(k => ({...res[k], id: k})) : [];
-      if(activePage === 'subjects') renderSubjects();
-    }
-
-    async function fetchRapor() {
-      var mapelId = document.getElementById('filterMapelRapor').value; if(!mapelId) return; 
-      showSectionLoading('raporContainer');
-      const res = await fbRequest(`rapor/${mapelId}`);
-      
-      dbRapor = dbStudents.map(s => {
-        var r = res && res[s.id] ? res[s.id] : {};
-        
-        var s1 = r.s1 !== undefined && r.s1 !== "" ? r.s1 : "";
-        var s2 = r.s2 !== undefined && r.s2 !== "" ? r.s2 : "";
-        var s3 = r.s3 !== undefined && r.s3 !== "" ? r.s3 : "";
-        var s4 = r.s4 !== undefined && r.s4 !== "" ? r.s4 : "";
-        var s5 = r.s5 !== undefined && r.s5 !== "" ? r.s5 : "";
-        
-        var sum = 0, count = 0;
-        if(s1 !== "") { sum += Number(s1); count++; }
-        if(s2 !== "") { sum += Number(s2); count++; }
-        if(s3 !== "") { sum += Number(s3); count++; }
-        if(s4 !== "") { sum += Number(s4); count++; }
-        if(s5 !== "") { sum += Number(s5); count++; }
-        
-        var rata = count > 0 ? (sum/count).toFixed(2) : "0";
-        
-        return { 
-          student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, 
-          s1: s1, s2: s2, s3: s3, s4: s4, s5: s5, 
-          rata: rata 
-        };
-      });
-      if(activePage === 'rapor') renderRapor();
-    }
-
-    async function fetchUjian() {
-      var mapelId = document.getElementById('filterMapelUjian').value; if(!mapelId) return; 
-      showSectionLoading('ujianContainer');
-      const res = await fbRequest(`ujian/${mapelId}`);
-      
-      dbUjian = dbStudents.map(s => {
-        var u = res && res[s.id] ? res[s.id] : {};
-        return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, nilai_ujian: u.nilai_ujian !== undefined && u.nilai_ujian !== "" ? u.nilai_ujian : "" };
-      });
-      if(activePage === 'ujian') renderUjian();
-    }
-
-    async function fetchIjazah(targetPage = 'ijazah') {
-      showSectionLoading(targetPage === 'skl' ? 'sklContainer' : 'ijazahContainer');
-      const [raporRes, ujianRes] = await Promise.all([fbRequest('rapor'), fbRequest('ujian')]);
-      
-      var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan);
-      var pctRapor = dbSettings.persen_rapor / 100;
-      var pctUjian = dbSettings.persen_ujian / 100;
-      
-      var studentsData = dbStudents.filter(s => s.status === 'Aktif').map(s => {
-          var scores = {};
-          var totalAkhir = 0;
-          var countMapel = 0;
-          
-          activeSubjects.forEach(sub => {
-              var s_rapor = raporRes && raporRes[sub.id] && raporRes[sub.id][s.id] ? raporRes[sub.id][s.id] : {};
-              var s_ujian = ujianRes && ujianRes[sub.id] && ujianRes[sub.id][s.id] ? ujianRes[sub.id][s.id] : {};
-              
-              var s1 = s_rapor.s1 !== undefined && s_rapor.s1 !== "" ? s_rapor.s1 : "";
-              var s2 = s_rapor.s2 !== undefined && s_rapor.s2 !== "" ? s_rapor.s2 : "";
-              var s3 = s_rapor.s3 !== undefined && s_rapor.s3 !== "" ? s_rapor.s3 : "";
-              var s4 = s_rapor.s4 !== undefined && s_rapor.s4 !== "" ? s_rapor.s4 : "";
-              var s5 = s_rapor.s5 !== undefined && s_rapor.s5 !== "" ? s_rapor.s5 : "";
-              
-              var sumRapor = 0, countRapor = 0;
-              if(s1 !== "") { sumRapor += Number(s1); countRapor++; }
-              if(s2 !== "") { sumRapor += Number(s2); countRapor++; }
-              if(s3 !== "") { sumRapor += Number(s3); countRapor++; }
-              if(s4 !== "") { sumRapor += Number(s4); countRapor++; }
-              if(s5 !== "") { sumRapor += Number(s5); countRapor++; }
-              
-              var rataRapor = countRapor > 0 ? (sumRapor / countRapor) : 0;
-              var nilaiUjian = s_ujian.nilai_ujian !== undefined && s_ujian.nilai_ujian !== "" ? Number(s_ujian.nilai_ujian) : 0;
-              
-              var finalScore = (rataRapor * pctRapor) + (nilaiUjian * pctUjian);
-              scores[sub.id] = finalScore;
-              totalAkhir += finalScore;
-              countMapel++;
-          });
-          
-          var rataIjazah = countMapel > 0 ? (totalAkhir / countMapel) : 0;
-          return { student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, scores: scores, total: totalAkhir, rata_ijazah: rataIjazah, original_id: s.id };
-      });
-      
-      dbIjazah = { subjects: activeSubjects, students: studentsData };
-      if(activePage === 'ijazah') renderIjazah();
-      if(activePage === 'skl') renderSKL();
-    }
-
-    function showSectionLoading(cId) { var c = document.getElementById(cId); if(!c) return; var skel = ''; for (var i=0; i<3; i++) skel += '<div class="card border-0 shadow-sm rounded-3 mb-3"><div class="card-body"><div class="placeholder-glow d-flex gap-3"><div class="placeholder rounded bg-light" style="width:50px;height:50px;"></div><div class="flex-grow-1"><span class="placeholder col-6 rounded"></span><span class="placeholder col-3 rounded mt-2" style="height:8px;"></span></div></div></div></div>'; c.innerHTML = skel; }
-    function showFullPageLoading(msg) { var l = document.getElementById('fullPageLoader'); if (!l) return; if (msg) document.getElementById('loaderText').innerText = msg; l.style.display = 'flex'; }
-    function hideFullPageLoading() { var l = document.getElementById('fullPageLoader'); if(l) l.style.display = 'none'; }
-
-    // --- RENDERERS ---
-    function renderDashboard() {
-      var c = document.getElementById('dashboardContainer');
-      c.innerHTML = 
-        `<div class="row g-3 mb-4">
-          <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 h-100 bg-success text-white">
-              <div class="card-body p-4 d-flex align-items-center">
-                <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-3" style="width:60px;height:60px;"><i class="fa-solid fa-users fa-2x"></i></div>
-                <div><h3 class="fw-bold mb-0">${dbStudents.length}</h3><small class="opacity-75">Total Siswa Terdaftar</small></div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 h-100 bg-primary text-white">
-              <div class="card-body p-4 d-flex align-items-center">
-                <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-3" style="width:60px;height:60px;"><i class="fa-solid fa-book fa-2x"></i></div>
-                <div><h3 class="fw-bold mb-0">${dbSubjects.length}</h3><small class="opacity-75">Mata Pelajaran</small></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card border-0 shadow-sm rounded-4"><div class="card-body p-5 text-center"><img src="${dbSettings.logo || 'https://upload.wikimedia.org/wikipedia/commons/8/82/Seal_of_the_Ministry_of_Religious_Affairs_of_the_Republic_of_Indonesia.svg'}" height="90" class="mb-3" style="object-fit:contain;"><h4 class="fw-bold text-success mb-1">Selamat Datang di Aplikasi E-Ijazah</h4><p class="text-muted small">Sistem Informasi Pengolahan Nilai Ijazah Terpadu Tahun Ajaran ${dbSettings.tahun_pelajaran || '-'}</p></div></div>`;
-    }
-
-    function renderStudents() {
-      var c = document.getElementById('studentsContainer'); 
-      
-      var btnBulk = document.getElementById('btnBulkDelete');
-      if(btnBulk) btnBulk.classList.add('d-none');
-
-      if (dbStudents.length === 0) { c.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-inbox fa-3x text-muted mb-3 opacity-25"></i><p>Belum ada data siswa</p></div>'; return; }
-      
-      var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th width="40" class="text-center"><input class="form-check-input" type="checkbox" id="checkAllStudents" onchange="toggleAllStudents(this)"></th><th width="50" class="text-center">No</th><th>No. Ujian</th><th>NISN</th><th>Nama Lengkap</th><th>TTL</th><th>Kelas</th><th>TA</th><th>Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
-      
-      dbStudents.forEach(function(item, index) { 
-        var bdg = item.status === 'Aktif' ? 'bg-success' : 'bg-secondary'; 
-        var noUjian = item.no_ujian || '-';
-        var ttl = (item.tempat_lahir || '-') + ', ' + (item.tgl_lahir || '-');
-        
-        h += `<tr>
-                <td class="text-center"><input class="form-check-input check-student" type="checkbox" value="${item.id}" onchange="updateBulkDeleteButton()"></td>
-                <td class="text-center">${index + 1}</td>
-                <td><span class="text-dark">${noUjian}</span></td>
-                <td><span class="fw-semibold">${item.nisn}</span></td>
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeApp(); 
+    });
+  </script>
+</body>
+</html>
