@@ -155,6 +155,11 @@
             <div class="ms-auto d-flex gap-2 flex-wrap">
               <button class="btn btn-outline-success rounded-pill px-3 fw-semibold" onclick="downloadTemplateRapor()"><i class="fa-solid fa-file-excel me-1"></i> Download Template</button>
               <button class="btn btn-outline-primary rounded-pill px-3 fw-semibold" onclick="document.getElementById('fileImportRapor').click()"><i class="fa-solid fa-file-import me-1"></i> Import Excel</button>
+              
+              <button class="btn btn-outline-info rounded-pill px-3 fw-semibold text-dark" onclick="downloadLegerRataRapor()">
+                <i class="fa-solid fa-download me-1"></i> Download Rata-rata
+              </button>
+
               <button class="btn btn-success rounded-pill px-3 fw-bold" id="btnSaveRapor" onclick="saveRaporMassal()"><i class="fa-solid fa-save me-1"></i> Simpan Data</button>
             </div>
           </div>
@@ -205,6 +210,10 @@
             <select class="form-select form-select-sm w-auto rounded-pill px-3" id="filterKelasIjazah" onchange="renderIjazah()">
               <option value="Semua">Semua Kelas</option>
             </select>
+            
+            <button class="btn btn-outline-success btn-sm rounded-pill shadow-sm px-3 fw-bold" onclick="downloadExcelIjazah()">
+              <i class="fa-solid fa-file-excel me-1"></i> Download Excel
+            </button>
             <button class="btn btn-outline-danger btn-sm rounded-pill shadow-sm px-3 fw-bold" onclick="cetakPDFIjazah()">
               <i class="fa-solid fa-file-pdf me-1"></i> Cetak PDF Ijazah
             </button>
@@ -367,7 +376,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Link Firebase telah diperbarui di bawah ini
     const FB_URL = "https://nilaiuamnu-default-rtdb.asia-southeast1.firebasedatabase.app";
     
     async function fbRequest(path, method = 'GET', body = null) {
@@ -440,7 +448,6 @@
       if (setRes) dbSettings = Object.assign(dbSettings, setRes);
       if (studRes) {
           dbStudents = Object.keys(studRes).map(k => ({...studRes[k], id: k}));
-          // Mengurutkan berdasarkan ID Import (urut = index import) agar tdk diacak alfabet
           dbStudents.sort((a,b) => {
               var uA = a.urut !== undefined ? a.urut : 999999;
               var uB = b.urut !== undefined ? b.urut : 999999;
@@ -699,6 +706,151 @@
       } catch(e) { Swal.fire('Error', 'Gagal membuat file Excel: ' + e.message, 'error'); }
     }
 
+    // --- FUNGSI BARU: Download Juknis / Leger Rata Rata Rapor Keseluruhan ---
+    async function downloadLegerRataRapor() {
+        if(dbStudents.length === 0) return Swal.fire('Peringatan', 'Belum ada data siswa.', 'warning'); 
+        var activeSubjects = dbSubjects.filter(s => s.aktif === 'Ya').sort((a,b) => a.urutan - b.urutan);
+        if(activeSubjects.length === 0) return Swal.fire('Peringatan', 'Belum ada mata pelajaran aktif.', 'warning');
+
+        Swal.fire({icon: 'info', title: 'Menyiapkan Data...', text: 'Mengambil nilai seluruh mata pelajaran dari server.', showConfirmButton: false, allowOutsideClick: false});
+        Swal.showLoading();
+
+        try {
+            // Ambil semua data rapor sekaligus dari Firebase
+            const raporRes = await fbRequest('rapor');
+            
+            var header1 = ["No", "NISN", "Nama Siswa", "Kelas"];
+            var header2 = ["No", "NISN", "Nama Siswa", "Kelas"];
+            
+            activeSubjects.forEach(sub => {
+                var kel = (sub.kelompok || "").trim();
+                if(kel === "" || kel === "-" || kel.toLowerCase() === "umum") {
+                    header1.push(sub.kode_mapel); header2.push(""); 
+                } else {
+                    header1.push(kel); header2.push(sub.kode_mapel); 
+                }
+            });
+
+            var dataRows = dbStudents.map(function(s, idx) {
+                var row = [idx + 1, s.nisn, s.nama, s.kelas];
+                
+                activeSubjects.forEach(sub => {
+                    var s_rapor = raporRes && raporRes[sub.id] && raporRes[sub.id][s.id] ? raporRes[sub.id][s.id] : {};
+                    
+                    var s1 = s_rapor.s1 !== undefined && s_rapor.s1 !== "" ? Number(s_rapor.s1) : null;
+                    var s2 = s_rapor.s2 !== undefined && s_rapor.s2 !== "" ? Number(s_rapor.s2) : null;
+                    var s3 = s_rapor.s3 !== undefined && s_rapor.s3 !== "" ? Number(s_rapor.s3) : null;
+                    var s4 = s_rapor.s4 !== undefined && s_rapor.s4 !== "" ? Number(s_rapor.s4) : null;
+                    var s5 = s_rapor.s5 !== undefined && s_rapor.s5 !== "" ? Number(s_rapor.s5) : null;
+                    
+                    var sum = 0, count = 0;
+                    if(s1 !== null) { sum += s1; count++; }
+                    if(s2 !== null) { sum += s2; count++; }
+                    if(s3 !== null) { sum += s3; count++; }
+                    if(s4 !== null) { sum += s4; count++; }
+                    if(s5 !== null) { sum += s5; count++; }
+                    
+                    var rataRow = count > 0 ? (sum / count) : 0;
+                    var formattedRata = count > 0 ? formatNilaiAkhir(rataRow) : '-';
+                    row.push(formattedRata);
+                });
+                return row;
+            });
+            
+            var aoa = [header1, header2].concat(dataRows);
+            var ws = XLSX.utils.aoa_to_sheet(aoa);
+            
+            var merges = [
+                {s: {r:0, c:0}, e: {r:1, c:0}}, {s: {r:0, c:1}, e: {r:1, c:1}}, {s: {r:0, c:2}, e: {r:1, c:2}}, {s: {r:0, c:3}, e: {r:1, c:3}}
+            ];
+            
+            if(activeSubjects.length > 0) {
+                var startCol = 4; var currentKel = header1[4]; var isStandalone = header2[4] === "";
+                for (var c = 5; c <= header1.length; c++) {
+                    var nextIsStandalone = c < header1.length ? header2[c] === "" : false;
+                    if (c === header1.length || header1[c] !== currentKel || isStandalone || nextIsStandalone) {
+                        if (c - 1 > startCol && !isStandalone) {
+                            merges.push({s: {r:0, c:startCol}, e: {r:0, c:c-1}});
+                        } else if(isStandalone) {
+                            for(var col = startCol; col < c; col++) { merges.push({s: {r:0, c:col}, e: {r:1, c:col}}); }
+                        }
+                        if (c < header1.length) { startCol = c; currentKel = header1[c]; isStandalone = nextIsStandalone; }
+                    }
+                }
+            }
+            ws['!merges'] = merges;
+            
+            var wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Leger Rata Rapor");
+            XLSX.writeFile(wb, "Rekap_Rata_Rata_Rapor_Siswa.xlsx");
+            
+            Swal.fire({icon: 'success', title: 'Berhasil', text: 'File Excel Juknis Rata-rata berhasil diunduh.', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false});
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'Terjadi kesalahan jaringan saat menarik data rapor.', 'error');
+        }
+    }
+    
+    function downloadExcelIjazah() {
+      if(!dbIjazah.students || dbIjazah.students.length === 0) return Swal.fire('Gagal', 'Belum ada data nilai. Lakukan kalkulasi terlebih dahulu.', 'error');
+      
+      var filterSelect = document.getElementById('filterKelasIjazah'); 
+      var selectedKelas = filterSelect.value;
+      var allStudents = dbIjazah.students; 
+      var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
+      
+      if(filteredStudents.length === 0) return Swal.fire('Warning', 'Tidak ada data siswa pada kelas terpilih.', 'warning');
+      
+      // Calculate rank in temporary sorted copy
+      var tempSorted = [...filteredStudents].sort((a,b) => b.rata_ijazah - a.rata_ijazah);
+      var rankMap = {};
+      var currentRank = 1, prevScore = -1, displayRank = 1;
+      tempSorted.forEach(j => {
+          if(j.rata_ijazah !== prevScore) { displayRank = currentRank; prevScore = j.rata_ijazah; }
+          rankMap[j.original_id] = displayRank;
+          currentRank++;
+      });
+
+      var subjects = dbIjazah.subjects;
+      
+      var header = ["No", "NISN", "Nama Siswa", "Kelas"];
+      subjects.forEach(sub => {
+          header.push(sub.nama_mapel + " (" + sub.kode_mapel + ")");
+      });
+      header.push("Jumlah Nilai", "Rata-rata", "Peringkat");
+      
+      var dataRows = [];
+      filteredStudents.forEach(function(j, idx) {
+        var studentRank = rankMap[j.original_id];
+        var row = [ idx + 1, j.nisn, j.nama, j.kelas ];
+        
+        subjects.forEach(sub => { 
+            var val = j.scores[sub.id] !== undefined ? formatNilaiAkhir(j.scores[sub.id]) : '-';
+            row.push(val); 
+        });
+        
+        row.push(formatNilaiAkhir(j.total));
+        row.push(formatNilaiAkhir(j.rata_ijazah));
+        row.push(studentRank);
+        
+        dataRows.push(row);
+      });
+      
+      var finalData = [header].concat(dataRows);
+      
+      try {
+          var ws = XLSX.utils.aoa_to_sheet(finalData);
+          var wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Rekap_Nilai_Ijazah");
+          var filename = selectedKelas === 'Semua' ? "Rekap_Nilai_Ijazah_Semua_Kelas.xlsx" : "Rekap_Nilai_Ijazah_Kelas_" + selectedKelas + ".xlsx";
+          XLSX.writeFile(wb, filename);
+          Swal.fire({icon: 'success', title: 'Berhasil', text: 'File Excel sedang diunduh.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false});
+      } catch(e) {
+          Swal.fire('Error', 'Gagal membuat file Excel: ' + e.message, 'error');
+      }
+    }
+
     function parseExcel(file, callback) { 
       var reader = new FileReader(); 
       reader.onload = function(e) { 
@@ -787,7 +939,6 @@
       const res = await fbRequest('students');
       dbStudents = res ? Object.keys(res).map(k => ({...res[k], id: k})) : [];
       
-      // Mengurutkan secara eksklusif berdasar nomor "urut" hasil import excel
       dbStudents.sort((a, b) => {
           var uA = a.urut !== undefined ? a.urut : 999999;
           var uB = b.urut !== undefined ? b.urut : 999999;
@@ -826,7 +977,9 @@
         if(s4 !== "") { sum += Number(s4); count++; }
         if(s5 !== "") { sum += Number(s5); count++; }
         
-        var rata = count > 0 ? (sum/count).toFixed(2) : "0";
+        // PENGGUNAAN FORMAT NILAI DARI PENGATURAN
+        var rataRow = count > 0 ? (sum/count) : 0;
+        var rata = count > 0 ? formatNilaiAkhir(rataRow) : "-";
         
         return { 
           student_id: s.id, nisn: s.nisn, nama: s.nama, kelas: s.kelas, 
@@ -1004,8 +1157,6 @@
       var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
       if(filteredStudents.length === 0) { c.innerHTML = '<div class="text-center py-5 text-muted"><p>Tidak ada data di kelas ini.</p></div>'; return; }
       
-      // Jangan diurutkan berdasarkan alfabet, biarkan tetap natural berdasarkan ID Import
-      
       var h = '<div class="card border-0 shadow-sm rounded-4 overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th class="text-center" width="50">No</th><th>NISN</th><th>Nama Siswa</th><th>Kelas</th><th class="text-center">Status</th><th class="text-end">Aksi</th></tr></thead><tbody>';
       
       filteredStudents.forEach(function(j, idx) {
@@ -1044,7 +1195,6 @@
       var filteredStudents = selectedKelas === 'Semua' ? allStudents : allStudents.filter(s => s.kelas === selectedKelas);
       if(filteredStudents.length === 0) { c.innerHTML = '<div class="text-center py-5 text-muted"><p>Tidak ada data di kelas ini.</p></div>'; return; }
       
-      // Calculate rank in temporary sorted copy
       var tempSorted = [...filteredStudents].sort((a,b) => b.rata_ijazah - a.rata_ijazah);
       var rankMap = {};
       var currentRank = 1, prevScore = -1, displayRank = 1;
@@ -1095,7 +1245,6 @@
       Swal.fire('Sukses','Konfigurasi tersimpan di sistem','success'); 
     }
 
-    // --- SKL SETTINGS ---
     function openSKLSettings() {
       document.getElementById('sklNoSurat').value = dbSettings.skl_no_surat || '';
       document.getElementById('sklPembuka').value = dbSettings.skl_pembuka || `Yang bertanda tangan di bawah ini Kepala ${dbSettings.kop_2 || ''} ${dbSettings.kota || ''}, menerangkan bahwa:`;
@@ -1119,7 +1268,6 @@
       Swal.fire({icon:'success', title:'Pengaturan Teks SKL Disimpan', toast:true, position:'top-end', timer:1500, showConfirmButton:false});
     }
 
-    // --- STUDENT CRUD ---
     function openStudentModal(){ document.getElementById('formStudent').reset(); document.getElementById('studIsEdit').value='false'; document.getElementById('titleStudent').innerText='Tambah Siswa'; new bootstrap.Modal(document.getElementById('modalStudent')).show(); }
     function editStudent(id){ var item=dbStudents.find(x => String(x.id)===String(id)); if(!item)return; document.getElementById('studId').value=item.id; document.getElementById('studIsEdit').value='true'; document.getElementById('studNisn').value=item.nisn; document.getElementById('studNoUjian').value=item.no_ujian||''; document.getElementById('studNama').value=item.nama; document.getElementById('studTmpLahir').value=item.tempat_lahir||''; document.getElementById('studTglLahir').value=item.tgl_lahir||''; document.getElementById('studSekolahAsal').value=item.sekolah_asal||''; document.getElementById('studKelas').value=item.kelas; document.getElementById('studTahun').value=item.tahun_ajaran; document.getElementById('studStatus').value=item.status; document.getElementById('titleStudent').innerText='Edit Siswa'; new bootstrap.Modal(document.getElementById('modalStudent')).show(); }
     
@@ -1231,7 +1379,6 @@
 
           if(nisn && nama) {
             var exist = dbStudents.find(s => s.nisn === nisn);
-            // Index padStart mengunci urutan asli Excel saat Firebase melakukan key-sorting
             var id = exist ? exist.id : 'stud_' + Date.now() + '_' + String(idx).padStart(5, '0');
             
             payload[id] = { 
@@ -1244,7 +1391,7 @@
               kelas: kelas, 
               tahun_ajaran: tahun, 
               status: status,
-              urut: idx + 1 // Add index urut for strict Excel order
+              urut: idx + 1
             };
           }
         });
@@ -1296,8 +1443,11 @@
               let rows = sheets[sheetName] || [];
               
               rows.forEach(r => {
-                let sIdKey = Object.keys(r).find(k => k && k.includes("ID_Siswa"));
-                let sId = sIdKey ? r[sIdKey] : null;
+                let sIdKey = Object.keys(r).find(k => k && (k.toLowerCase().includes("nisn") || k.includes("ID_Siswa")));
+                let sIdVal = sIdKey ? r[sIdKey] : null;
+                
+                let st = dbStudents.find(s => s.nisn == sIdVal || s.id == sIdVal);
+                let sId = st ? st.id : null;
                 
                 if (sId) {
                   let mapelKey = Object.keys(r).find(k => k && k.trim() === sub.kode_mapel.trim());
@@ -1342,8 +1492,11 @@
           
           activeSubjects.forEach(sub => {
             rows.forEach(r => {
-              let sIdKey = Object.keys(r).find(k => k && k.includes("ID_Siswa"));
-              let sId = sIdKey ? r[sIdKey] : null;
+              let sIdKey = Object.keys(r).find(k => k && (k.toLowerCase().includes("nisn") || k.includes("ID_Siswa")));
+              let sIdVal = sIdKey ? r[sIdKey] : null;
+              
+              let st = dbStudents.find(s => s.nisn == sIdVal || s.id == sIdVal);
+              let sId = st ? st.id : null;
               
               if (sId) {
                 let mapelKey = Object.keys(r).find(k => k && k.trim() === sub.kode_mapel.trim());
