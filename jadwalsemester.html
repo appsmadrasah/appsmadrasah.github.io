@@ -114,7 +114,7 @@
         @keyframes toastEnter { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes toastExit { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
 
-        /* === CUSTOM CONFIRM MODAL (PENGGANTI ALERT/CONFIRM BAWAAN) === */
+        /* === CUSTOM CONFIRM MODAL === */
         .custom-confirm-overlay { 
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.3); backdrop-filter: blur(3px); z-index: 10000; 
@@ -183,7 +183,6 @@
 
 <div id="toast-container" class="toast-container"></div>
 
-<!-- HTML UNTUK CUSTOM CONFIRM MODAL -->
 <div class="custom-confirm-overlay" id="custom-confirm-modal">
     <div class="custom-confirm-box">
         <div class="custom-confirm-icon"><i class="fas fa-exclamation-circle" id="custom-confirm-icon"></i></div>
@@ -245,12 +244,12 @@
             </table>
 
             <div class="day-tabs">
-                <button class="day-tab active" id="tab-SENIN" onclick="onHariChange('SENIN')">SENIN</button>
+                <button class="day-tab active" id="tab-SABTU" onclick="onHariChange('SABTU')">SABTU</button>
+                <button class="day-tab" id="tab-MINGGU" onclick="onHariChange('MINGGU')">MINGGU</button>
+                <button class="day-tab" id="tab-SENIN" onclick="onHariChange('SENIN')">SENIN</button>
                 <button class="day-tab" id="tab-SELASA" onclick="onHariChange('SELASA')">SELASA</button>
                 <button class="day-tab" id="tab-RABU" onclick="onHariChange('RABU')">RABU</button>
                 <button class="day-tab" id="tab-KAMIS" onclick="onHariChange('KAMIS')">KAMIS</button>
-                <button class="day-tab" id="tab-SABTU" onclick="onHariChange('SABTU')">SABTU</button>
-                <button class="day-tab" id="tab-MINGGU" onclick="onHariChange('MINGGU')">MINGGU</button>
             </div>
 
             <table class="input-grid">
@@ -457,7 +456,9 @@
     };
     
     const defaultMapel = ["Pendidikan Jasmani, Olah Raga, dan Kesehatan", "Seni dan Budaya", "Pancasila", "IPAS", "Matematika", "B. Arab", "B. Indonesia", "B. Inggris", "B. Jawa", "Qurdis", "Akidah A", "Fikih", "SKI", "ASWAJA"];
-    const daftarHari = ['SENIN', 'SELASA', 'RABU', 'KAMIS', 'SABTU', 'MINGGU'];
+    
+    // PERUBAHAN URUTAN HARI DEFAULT DI SISTEM
+    const daftarHari = ['SABTU', 'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS'];
     const waktuDefault = { 1: "07.00 - 07.35", 2: "07.35 - 08.10", 3: "08.10 - 08.45", 4: "08.45 - 09.20", 5: "09.55 - 10.30", 6: "10.30 - 11.05", 7: "11.05 - 11.40", 8: "11.40 - 12.15", 9: "12.15 - 12.50", 10: "12.50 - 13.25", 11: "13.25 - 14.00" };
 
     // === STATE APLIKASI ===
@@ -469,7 +470,7 @@
     let dbTtd = {};
     
     let currentKelas = "1";
-    let currentHari = "SENIN";
+    let currentHari = "SABTU"; // PERUBAHAN HARI DEFAULT AWAL
     let rowCounts = {}; 
 
     function toRoman(num) {
@@ -478,7 +479,6 @@
     }
 
     // === 2. FUNGSI CUSTOM CONFIRM MODAL ===
-    // Menggantikan window.confirm() bawaan browser
     function showCustomConfirm(title, message, isDanger = true) {
         return new Promise((resolve) => {
             const overlay = document.getElementById('custom-confirm-modal');
@@ -500,7 +500,6 @@
 
             overlay.classList.add('show');
 
-            // Membersihkan event listener agar tidak terjadi penumpukan fungsi (memory leak)
             const handleClose = (result) => {
                 overlay.classList.remove('show');
                 btnOk.removeEventListener('click', onOk);
@@ -689,9 +688,7 @@
         });
     }
 
-    // === PENGGUNAAN CUSTOM CONFIRM MODAL ===
     async function hapusGuruKelas(id) {
-        // Menggunakan await karena fungsi Confirm custom sekarang asynchronus
         const confirmed = await showCustomConfirm(
             "Konfirmasi Hapus Guru", 
             "Hapus guru ini dari daftar kelas? Jadwal yang sudah terisi guru ini akan tetap ada di kotak jadwal."
@@ -844,7 +841,6 @@
         }
     }
 
-    // === PENGGUNAAN CUSTOM CONFIRM MODAL ===
     async function hapusSlot(jamToDelete, id) {
         const confirmed = await showCustomConfirm(
             "Hapus Jam Pelajaran?", 
@@ -961,7 +957,8 @@
         }
 
         let matrix = {};
-        for(let k=1; k<=6; k++) { matrix[k] = {}; ['SABTU', 'AHAD', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(h => matrix[k][h] = {}); }
+        // PERUBAHAN BUG TERSEMBUNYI: Memastikan pemetaan database MINGGU sinkron dengan kertas cetak AHAD
+        for(let k=1; k<=6; k++) { matrix[k] = {}; ['SABTU', 'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(h => matrix[k][h] = {}); }
         dbJadwal.forEach(j => { if(matrix[j.kelas] && matrix[j.kelas][j.hari]) { matrix[j.kelas][j.hari][j.jam] = { m: j.mapel, g: j.guru }; } });
 
         let prevCode = {}; 
@@ -976,7 +973,7 @@
                 if (jam === 1) { tr.innerHTML += `<td rowspan="${highestJamOverall}" style="background-color: #ffffff !important;"><div class="c-row-class">${kls}</div></td>`; }
                 tr.innerHTML += `<td style="background-color: #ffffff !important; font-weight: bold;">${jam}</td>`;
 
-                ['SABTU', 'AHAD', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(hari => {
+                ['SABTU', 'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(hari => {
                     const cell = matrix[kls][hari][jam];
                     if (cell) {
                         const color = daftarGuru[cell.g] ? daftarGuru[cell.g].color : '#fff';
