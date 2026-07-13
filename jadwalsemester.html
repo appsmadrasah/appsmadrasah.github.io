@@ -100,34 +100,47 @@
         /* === NOTIFIKASI TOAST MINIMALIS & ELEGAN === */
         .toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
         .toast-box { 
-            background: #ffffff; 
-            color: #2c3e50; 
-            padding: 14px 20px; 
-            border-radius: 8px; 
+            background: #ffffff; color: #2c3e50; padding: 14px 20px; border-radius: 8px; 
             box-shadow: 0 10px 30px -5px rgba(0,0,0,0.12), 0 4px 10px -4px rgba(0,0,0,0.08); 
-            border: 1px solid #f0f0f0; 
-            font-size: 13px; 
-            font-weight: 500; 
-            display: flex; 
-            align-items: center; 
-            gap: 14px; 
-            min-width: 280px; 
-            max-width: 380px;
+            border: 1px solid #f0f0f0; font-size: 13px; font-weight: 500; display: flex; 
+            align-items: center; gap: 14px; min-width: 280px; max-width: 380px;
             animation: toastEnter 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.1) forwards, toastExit 0.4s 3.5s ease forwards; 
         }
         .toast-icon { font-size: 18px; display: flex; align-items: center; justify-content: center; }
-        .toast-success .toast-icon { color: #2ecc71; } /* Hijau Lembut */
-        .toast-warning .toast-icon { color: #f39c12; } /* Kuning/Emas Elegan */
-        .toast-error .toast-icon { color: #e74c3c; }   /* Merah Cerah */
+        .toast-success .toast-icon { color: #2ecc71; }
+        .toast-warning .toast-icon { color: #f39c12; }
+        .toast-error .toast-icon { color: #e74c3c; }
         
-        @keyframes toastEnter { 
-            from { transform: translateX(120%); opacity: 0; } 
-            to { transform: translateX(0); opacity: 1; } 
+        @keyframes toastEnter { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes toastExit { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+
+        /* === CUSTOM CONFIRM MODAL (PENGGANTI ALERT/CONFIRM BAWAAN) === */
+        .custom-confirm-overlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.3); backdrop-filter: blur(3px); z-index: 10000; 
+            justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; 
         }
-        @keyframes toastExit { 
-            from { transform: translateX(0); opacity: 1; } 
-            to { transform: translateX(120%); opacity: 0; } 
+        .custom-confirm-overlay.show { display: flex; opacity: 1; }
+        .custom-confirm-box { 
+            background: white; border-radius: 12px; width: 380px; max-width: 90%; padding: 30px 24px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15); text-align: center; 
+            transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
+        .custom-confirm-overlay.show .custom-confirm-box { transform: scale(1); }
+        .custom-confirm-icon { font-size: 45px; color: #e74c3c; margin-bottom: 15px; }
+        .custom-confirm-content h4 { margin: 0 0 10px; font-size: 18px; color: #2c3e50; }
+        .custom-confirm-content p { margin: 0 0 25px; font-size: 13.5px; color: #666; line-height: 1.5; }
+        .custom-confirm-actions { display: flex; justify-content: center; gap: 12px; }
+        .btn-confirm-cancel { 
+            background: #f1f1f1; color: #555; border: none; padding: 10px 24px; border-radius: 6px; 
+            font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; 
+        }
+        .btn-confirm-cancel:hover { background: #e4e4e4; color: #333; }
+        .btn-confirm-ok { 
+            background: #e74c3c; color: white; border: none; padding: 10px 24px; border-radius: 6px; 
+            font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; 
+        }
+        .btn-confirm-ok:hover { background: #c0392b; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3); }
 
         /* === LAYOUT CETAK F4 === */
         .cetak-wrapper { background: #555; padding: 30px 15px; border: 1px solid #ddd; overflow-x: auto; display: flex; justify-content: center; }
@@ -157,6 +170,7 @@
             body, html { background: white !important; padding: 0 !important; margin: 0 !important; }
             .container { box-shadow: none !important; padding: 0 !important; margin: 0 !important; border: none !important; max-width: 100% !important; width: 100% !important; }
             h2.page-title, .step-tabs, .btn, .top-bar-flex, .guru-kelas-table, .day-tabs, .input-grid, .btn-add-jam, h3, h4, .modal-overlay, #loading-input, #tab-input, #tab-jam, #tab-kop { display: none !important; }
+            .toast-container, .custom-confirm-overlay { display: none !important; }
             #tab-cetak { display: block !important; }
             .cetak-wrapper { background: transparent !important; padding: 0 !important; border: none !important; display: block !important; margin: 0 !important; }
             .cetak-container { width: 100% !important; min-height: auto !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; page-break-inside: avoid; }
@@ -168,6 +182,21 @@
 <body>
 
 <div id="toast-container" class="toast-container"></div>
+
+<!-- HTML UNTUK CUSTOM CONFIRM MODAL -->
+<div class="custom-confirm-overlay" id="custom-confirm-modal">
+    <div class="custom-confirm-box">
+        <div class="custom-confirm-icon"><i class="fas fa-exclamation-circle" id="custom-confirm-icon"></i></div>
+        <div class="custom-confirm-content">
+            <h4 id="custom-confirm-title">Konfirmasi</h4>
+            <p id="custom-confirm-message">Pesan konfirmasi.</p>
+        </div>
+        <div class="custom-confirm-actions">
+            <button class="btn-confirm-cancel" id="custom-confirm-btn-cancel">Batal</button>
+            <button class="btn-confirm-ok" id="custom-confirm-btn-ok">Hapus</button>
+        </div>
+    </div>
+</div>
 
 <div class="container" id="app-ui">
     <h2 class="page-title">Sistem Penyusunan Jadwal Madrasah</h2>
@@ -241,7 +270,6 @@
         </div>
     </div>
 
-    <!-- PERUBAHAN TAB JUMLAH JAM -->
     <div id="tab-jam" class="tab-content">
         <h3 style="color:#2c3e50;">Rekapitulasi Jam Mengajar Guru</h3>
         <table class="data-table" style="width: 75%; font-size:13px;">
@@ -428,7 +456,6 @@
         'S': { name: 'WIDIA NATALIA, S.Pd', color: '#FFFF99' }, 'T': { name: 'NI\'MATUZ ZUHROH', color: '#CC99FF' }
     };
     
-    // PENYESUAIAN HARI: Menghilangkan JUMAT
     const defaultMapel = ["Pendidikan Jasmani, Olah Raga, dan Kesehatan", "Seni dan Budaya", "Pancasila", "IPAS", "Matematika", "B. Arab", "B. Indonesia", "B. Inggris", "B. Jawa", "Qurdis", "Akidah A", "Fikih", "SKI", "ASWAJA"];
     const daftarHari = ['SENIN', 'SELASA', 'RABU', 'KAMIS', 'SABTU', 'MINGGU'];
     const waktuDefault = { 1: "07.00 - 07.35", 2: "07.35 - 08.10", 3: "08.10 - 08.45", 4: "08.45 - 09.20", 5: "09.55 - 10.30", 6: "10.30 - 11.05", 7: "11.05 - 11.40", 8: "11.40 - 12.15", 9: "12.15 - 12.50", 10: "12.50 - 13.25", 11: "13.25 - 14.00" };
@@ -450,7 +477,46 @@
         return roman[num] || num;
     }
 
-    // === 2. TOAST NOTIFICATION ELEGAN ===
+    // === 2. FUNGSI CUSTOM CONFIRM MODAL ===
+    // Menggantikan window.confirm() bawaan browser
+    function showCustomConfirm(title, message, isDanger = true) {
+        return new Promise((resolve) => {
+            const overlay = document.getElementById('custom-confirm-modal');
+            const titleEl = document.getElementById('custom-confirm-title');
+            const msgEl = document.getElementById('custom-confirm-message');
+            const btnOk = document.getElementById('custom-confirm-btn-ok');
+            const btnCancel = document.getElementById('custom-confirm-btn-cancel');
+            const iconEl = document.getElementById('custom-confirm-icon');
+
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            
+            if (isDanger) {
+                btnOk.style.background = '#e74c3c';
+                btnOk.innerText = 'Hapus';
+                iconEl.className = 'fas fa-exclamation-circle';
+                iconEl.style.color = '#e74c3c';
+            }
+
+            overlay.classList.add('show');
+
+            // Membersihkan event listener agar tidak terjadi penumpukan fungsi (memory leak)
+            const handleClose = (result) => {
+                overlay.classList.remove('show');
+                btnOk.removeEventListener('click', onOk);
+                btnCancel.removeEventListener('click', onCancel);
+                resolve(result);
+            };
+
+            const onOk = () => handleClose(true);
+            const onCancel = () => handleClose(false);
+
+            btnOk.addEventListener('click', onOk);
+            btnCancel.addEventListener('click', onCancel);
+        });
+    }
+
+    // === TOAST NOTIFICATION ELEGAN ===
     function showToast(message, type = "success") {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -466,7 +532,6 @@
         `;
         
         container.appendChild(toast);
-        // Menghapus elemen setelah animasi exit selesai (4000ms secara total)
         setTimeout(() => { toast.remove(); }, 4000); 
     }
 
@@ -474,14 +539,12 @@
     database.ref().on('value', function(snapshot) {
         const serverData = snapshot.val() || {};
         
-        // Memuat Master
         if (serverData.master && serverData.master.guru) daftarGuru = serverData.master.guru;
         else { daftarGuru = defaultGuru; database.ref('master/guru').set(defaultGuru); }
 
         if (serverData.master && serverData.master.mapel) daftarMapel = serverData.master.mapel;
         else { daftarMapel = defaultMapel; database.ref('master/mapel').set(defaultMapel); }
 
-        // Memuat Guru Kelas
         dbGuruKelas = [];
         if (serverData.guruKelas) {
             for (let id in serverData.guruKelas) {
@@ -489,7 +552,6 @@
             }
         }
 
-        // Memuat Jadwal & Default Minimal Baris (8 Jam)
         dbJadwal = [];
         for(let k=1; k<=6; k++) {
             daftarHari.forEach(h => { rowCounts[`${k}_${h}`] = 8; });
@@ -498,7 +560,6 @@
         if (serverData.jadwal) {
             for (let id in serverData.jadwal) { 
                 let j = serverData.jadwal[id];
-                // Pastikan yang termuat bukan hari Jumat apabila datanya terlanjur ada di database lama
                 if (j.hari !== "JUMAT") {
                     dbJadwal.push({ id: id, ...j }); 
                     let key = `${j.kelas}_${j.hari}`;
@@ -628,8 +689,15 @@
         });
     }
 
-    function hapusGuruKelas(id) {
-        if(confirm("Hapus guru ini dari daftar kelas? Jadwal yang sudah terisi guru ini akan tetap ada di kotak jadwal.")) {
+    // === PENGGUNAAN CUSTOM CONFIRM MODAL ===
+    async function hapusGuruKelas(id) {
+        // Menggunakan await karena fungsi Confirm custom sekarang asynchronus
+        const confirmed = await showCustomConfirm(
+            "Konfirmasi Hapus Guru", 
+            "Hapus guru ini dari daftar kelas? Jadwal yang sudah terisi guru ini akan tetap ada di kotak jadwal."
+        );
+
+        if (confirmed) {
             database.ref('guruKelas/' + id).remove();
         }
     }
@@ -654,7 +722,6 @@
         let maxJam = rowCounts[`${currentKelas}_${currentHari}`] || 8;
         const guruKelasFiltered = dbGuruKelas.filter(g => String(g.kelas) === String(currentKelas));
         
-        // Ambil daftar Mapel yang sudah dipesan khusus untuk Guru Mapel di kelas ini
         const mapelDigunakanGuruLain = guruKelasFiltered
             .filter(g => g.jenis === 'Guru Mapel')
             .map(g => g.mapel);
@@ -665,7 +732,6 @@
             let guruVal = record ? record.guru : '';
             let id = record ? record.id : '';
 
-            // Menyesuaikan opsi Mapel berdasarkan guru yang dipilih
             let isGuruKelas = false;
             let isGuruMapel = false;
             let mapelSpesifikMapel = "";
@@ -687,15 +753,12 @@
             rowMapelSet.add("Istirahat");
 
             if (isGuruKelas) {
-                // Tampilkan semua KECUALI mapel yang dipegang Guru Mapel (agar tidak tumpang tindih)
                 daftarMapel.forEach(m => {
                     if (!mapelDigunakanGuruLain.includes(m)) rowMapelSet.add(m);
                 });
             } else if (isGuruMapel) {
-                // Tampilkan Mapel spesifik milik dia saja
                 rowMapelSet.add(mapelSpesifikMapel);
             } else {
-                // Jika belum ada guru yang dipilih, tampilkan seluruh opsi agar bebas pilih mapel dahulu
                 daftarMapel.forEach(m => rowMapelSet.add(m));
                 guruKelasFiltered.forEach(g => rowMapelSet.add(g.mapel));
             }
@@ -707,7 +770,6 @@
                 localMapelOpts += `<option value="${m}">${m}</option>`;
             });
             
-            // Build opsi Guru 
             let rowGuruSet = new Set();
             rowGuruSet.add("-");
             guruKelasFiltered.forEach(g => rowGuruSet.add(g.guru));
@@ -732,7 +794,6 @@
             `;
             tbody.appendChild(tr);
 
-            // Timeout diterapkan karena elemen HTML baru saja dibangun
             setTimeout(() => {
                 document.getElementById(`mapel-${i}`).value = mapelVal || "-";
                 document.getElementById(`guru-${i}`).value = guruVal || "-";
@@ -783,8 +844,14 @@
         }
     }
 
-    function hapusSlot(jamToDelete, id) {
-        if(confirm(`Hapus jam ke-${jamToDelete}? Jadwal di bawahnya akan otomatis bergeser naik.`)) {
+    // === PENGGUNAAN CUSTOM CONFIRM MODAL ===
+    async function hapusSlot(jamToDelete, id) {
+        const confirmed = await showCustomConfirm(
+            "Hapus Jam Pelajaran?", 
+            `Hapus jam ke-${jamToDelete}? Jadwal di bawahnya akan otomatis bergeser naik.`
+        );
+
+        if(confirmed) {
             let key = `${currentKelas}_${currentHari}`;
             let maxJam = rowCounts[key];
             
