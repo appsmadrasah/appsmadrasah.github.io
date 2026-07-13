@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Penyusunan Jadwal Madrasah</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* === GLOBAL STYLES === */
+        * { box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { margin: 0; padding: 20px; background-color: #f9f9f9; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h2.page-title { text-align: center; margin-bottom: 25px; font-size: 24px; }
+
+        /* === TAB NAVIGATION === */
+        .step-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 15px; flex-wrap: wrap; }
+        .step-tab { padding: 10px 20px; font-weight: bold; font-size: 14px; border-radius: 5px; cursor: pointer; text-align: center; border: 1px solid #ddd; background-color: #f1f1f1; transition: 0.3s; }
+        .step-tab.active { background-color: #4CAF50; color: white; border: 2px solid #333; }
+        .step-tab:hover:not(.active) { background-color: #e2e2e2; }
+
+        /* === TAB SECTIONS === */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* === UI ELEMENTS === */
+        .btn { padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; font-size: 14px; }
+        .btn-add { background-color: #2196F3; color: white; }
+        .btn-add:hover { background-color: #1976D2; }
+        .btn-save { background-color: #4CAF50; color: white; margin-top: 15px; width: 100%; }
+        .btn-print { background-color: #f39c12; color: white; margin-bottom: 15px; }
+
+        /* Tabel Data Input */
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px; }
+        .data-table th, .data-table td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        .data-table th { background-color: #4CAF50; color: white; font-weight: bold; }
+        .data-table tr:nth-child(even) { background-color: #fdfdfd; }
+        /* Mapel dan Nama Guru rata kiri */
+        .data-table td:nth-child(4), .data-table td:nth-child(6) { text-align: left; }
+
+        /* Toolbar / Filter */
+        .toolbar { display: flex; gap: 15px; margin-bottom: 15px; align-items: center; }
+        .filter-select { padding: 9px 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; min-width: 200px; outline: none; }
+
+        /* Tombol Aksi */
+        .action-buttons { display: flex; justify-content: center; gap: 8px; }
+        .btn-action { border: none; border-radius: 4px; padding: 8px 12px; color: white; cursor: pointer; font-size: 14px; }
+        .btn-edit { background-color: #ffc107; }
+        .btn-edit:hover { background-color: #e0a800; }
+        .btn-delete { background-color: #e74c3c; }
+        .btn-delete:hover { background-color: #c0392b; }
+
+        /* === FORM KOP & TTD === */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px;}
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .form-group input[type="file"] { padding: 5px; background-color: #fff; }
+
+        /* === MODAL INPUT === */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-box { background: white; padding: 20px; border-radius: 8px; width: 450px; max-width: 90%; max-height: 90vh; overflow-y: auto;}
+        .modal-box h3 { margin-top: 0; margin-bottom: 15px; }
+        .modal-box select, .modal-box input { width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;}
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;}
+        .btn-cancel { background-color: #e74c3c; color: white; }
+
+        /* === CETAK JADWAL (F4 LAYOUT) === */
+        .cetak-wrapper { background: #fff; padding: 20px; border: 1px solid #ddd; overflow-x: auto; }
+        .cetak-container { width: 215mm; min-height: 330mm; margin: 0 auto; background: white; font-size: 10px; color: black; }
+        
+        .c-header { display: flex; align-items: center; border: 2px solid black; padding: 10px; margin-bottom: 10px; }
+        .c-header-logo { width: 60px; height: 60px; background-color: #006600; border-radius: 50%; margin-right: 15px; display: flex; justify-content: center; align-items: center; color: white; font-size: 8px; overflow: hidden; }
+        .c-header-logo img { width: 100%; height: 100%; object-fit: contain; }
+        
+        .c-header-text h1 { font-size: 14px; margin: 0; padding: 2px 0; }
+        .c-header-text h2 { font-size: 16px; font-weight: bold; margin: 0; padding: 2px 0; }
+        .c-header-text p { font-size: 10px; margin: 0; padding: 2px 0; }
+        .c-title { text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+
+        .c-main-layout { display: flex; gap: 10px; align-items: flex-start; }
+        .c-left-panel { flex: 7; }
+        .c-right-panel { flex: 3; display: flex; flex-direction: column; gap: 10px; }
+
+        .c-table { width: 100%; border-collapse: collapse; text-align: center; }
+        .c-table th, .c-table td { border: 1px solid black; padding: 3px; }
+        .c-table th { background-color: #ffffff; font-weight: bold; }
+        
+        .c-row-class { font-weight: bold; font-size: 16px; text-align: center; }
+
+        .c-berlaku { border: 3px solid #008000; border-radius: 15px; padding: 15px; text-align: center; font-weight: bold; margin-top: 10px; white-space: pre-line; }
+        
+        /* Tanda Tangan */
+        .c-signature { margin-top: 20px; text-align: center; font-size: 11px; position: relative; }
+        .c-signature-space { height: 65px; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        .c-signature-img { max-height: 60px; max-width: 150px; object-fit: contain; }
+
+        /* === MEDIA PRINT === */
+        @media print {
+            body * { visibility: hidden; }
+            body { background: white; padding: 0; margin: 0; }
+            .container { box-shadow: none; padding: 0; border: none; }
+            #cetak-view, #cetak-view * { visibility: visible; }
+            #cetak-view { position: absolute; left: 0; top: 0; width: 100%; }
+            .cetak-wrapper { border: none; padding: 0; margin: 0; }
+            @page { size: 215mm 330mm; margin: 10mm; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app-ui">
+    <h2 class="page-title">Sistem Penyusunan Jadwal Madrasah</h2>
+
+    <div class="step-tabs">
+        <div class="step-tab active" onclick="switchTab('tab-input', this)">Input Data Jadwal</div>
+        <div class="step-tab" onclick="switchTab('tab-jam', this)">Jumlah Jam</div>
+        <div class="step-tab" onclick="switchTab('tab-kop', this)">Pengaturan Kop & TTD</div>
+        <div class="step-tab" onclick="switchTab('tab-cetak', this)">Cetak Jadwal (F4)</div>
+    </div>
+
+    <div id="tab-input" class="tab-content active">
+        <div class="toolbar">
+            <button class="btn btn-add" onclick="openModal()">+ Tambah Jadwal Baru</button>
+            <select id="filter-kelas" class="filter-select" onchange="renderInputTable()">
+                <option value="all">-- Tampilkan Semua Kelas --</option>
+                <option value="1">Kelas I</option>
+                <option value="2">Kelas II</option>
+                <option value="3">Kelas III</option>
+                <option value="4">Kelas IV</option>
+                <option value="5">Kelas V</option>
+                <option value="6">Kelas VI</option>
+            </select>
+        </div>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th width="5%">No.</th>
+                    <th width="10%">Kelas</th>
+                    <th width="10%">Hari</th>
+                    <th width="20%">Mata Pelajaran</th>
+                    <th width="15%">Jam / Waktu (Input)</th>
+                    <th width="20%">Nama Guru</th>
+                    <th width="8%">Kode Guru</th>
+                    <th width="12%">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="table-input-body"></tbody>
+        </table>
+    </div>
+
+    <div id="tab-jam" class="tab-content">
+        <h3>Rekapitulasi Jam Mengajar Guru</h3>
+        <table class="data-table" style="width: 70%;">
+            <thead>
+                <tr>
+                    <th>Kode</th>
+                    <th>Nama Guru</th>
+                    <th>Total Jam Mengajar</th>
+                </tr>
+            </thead>
+            <tbody id="table-jam-body"></tbody>
+        </table>
+    </div>
+
+    <div id="tab-kop" class="tab-content">
+        <div style="display: flex; gap: 20px;">
+            <div style="flex: 1;">
+                <h3>Pengaturan Kop Surat</h3>
+                <div class="form-group">
+                    <label>Upload Logo Lembaga (.jpg, .png)</label>
+                    <input type="file" id="k-upload-logo" accept=".jpg, .jpeg, .png" onchange="previewLogo(this)">
+                </div>
+                <div class="form-group"><label>Lembaga Induk</label><input type="text" id="k-lembaga"></div>
+                <div class="form-group"><label>Nama Sekolah</label><input type="text" id="k-sekolah"></div>
+                <div class="form-group"><label>Kecamatan/Kabupaten</label><input type="text" id="k-wilayah"></div>
+                <div class="form-group"><label>Detail Akreditasi & NUPTK</label><input type="text" id="k-akreditasi"></div>
+                <div class="form-group"><label>Alamat Lengkap</label><input type="text" id="k-alamat"></div>
+                <div class="form-group"><label>Judul Jadwal (Tahun)</label><input type="text" id="k-tahun"></div>
+            </div>
+            <div style="flex: 1;">
+                <h3>Pengaturan Tanda Tangan</h3>
+                <div class="form-group"><label>Kotak Berlaku (Teks)</label><textarea id="k-berlaku" rows="4"></textarea></div>
+                <div class="form-group"><label>Nama Kepala Madrasah</label><input type="text" id="k-kepala"></div>
+                
+                <div class="form-group">
+                    <label>Upload File TTD (.jpg, .png)</label>
+                    <input type="file" id="k-upload-ttd" accept=".jpg, .jpeg, .png" onchange="previewImageTTD(this)">
+                </div>
+                
+                <button class="btn btn-save" onclick="saveKop()">Simpan Pengaturan</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-cetak" class="tab-content">
+        <button class="btn btn-print" onclick="window.print()"><i class="fas fa-print"></i> Cetak Jadwal Sekarang (F4)</button>
+        
+        <div class="cetak-wrapper" id="cetak-view">
+            <div class="cetak-container">
+                <div class="c-header">
+                    <div class="c-header-logo" id="print-logo-container">LOGO</div>
+                    <div class="c-header-text">
+                        <h1 id="print-lembaga"></h1>
+                        <h2 id="print-sekolah"></h2>
+                        <h2 id="print-wilayah"></h2>
+                        <p id="print-akreditasi"></p>
+                        <p id="print-alamat"></p>
+                    </div>
+                </div>
+                <div class="c-title" id="print-tahun"></div>
+
+                <div class="c-main-layout">
+                    <div class="c-left-panel">
+                        <table class="c-table">
+                            <thead>
+                                <tr>
+                                    <th width="3%">KLS</th>
+                                    <th width="3%">JM</th>
+                                    <th colspan="2" width="15%">SABTU</th>
+                                    <th colspan="2" width="15%">AHAD</th>
+                                    <th colspan="2" width="15%">SENIN</th>
+                                    <th colspan="2" width="15%">SELASA</th>
+                                    <th colspan="2" width="15%">RABU</th>
+                                    <th colspan="2" width="15%">KAMIS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="print-schedule-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="c-right-panel">
+                        <table class="c-table"><thead id="print-teacher-head"><tr><th colspan="2">KODE GURU</th></tr></thead><tbody id="print-teacher-body"></tbody></table>
+                        
+                        <table class="c-table">
+                            <thead><tr><th colspan="2">JAM</th></tr></thead>
+                            <tbody>
+                                <tr><td>1</td><td>07.00 - 07.35</td></tr>
+                                <tr><td>2</td><td>07.35 - 08.10</td></tr>
+                                <tr><td>3</td><td>08.10 - 08.45</td></tr>
+                                <tr><td>4</td><td>08.45 - 09.20</td></tr>
+                                <tr><td colspan="2" style="text-align: left; background:#f0f0f0;">09.20 - 09.55<br>S. Dhuha / Istirahat</td></tr>
+                                <tr><td>5</td><td>09.55 - 10.30</td></tr>
+                                <tr><td>6</td><td>10.30 - 11.05</td></tr>
+                                <tr><td>7</td><td>11.05 - 11.40</td></tr>
+                                <tr><td>8</td><td>11.40 - 12.15</td></tr>
+                            </tbody>
+                        </table>
+
+                        <div class="c-berlaku" id="print-berlaku"></div>
+                        <div class="c-signature">
+                            <p>Kepala Madrasah</p>
+                            <p>"Hidayatus Shibyan"</p>
+                            
+                            <div class="c-signature-space" id="print-ttd-container"></div>
+                            
+                            <p style="text-decoration: underline; font-weight: bold;" id="print-kepala"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-form">
+    <div class="modal-box">
+        <h3>Input Jadwal Baru</h3>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:1;">
+                <label>Kelas</label>
+                <select id="inp-kelas">
+                    <option value="1">Kelas 1</option><option value="2">Kelas 2</option>
+                    <option value="3">Kelas 3</option><option value="4">Kelas 4</option>
+                    <option value="5">Kelas 5</option><option value="6">Kelas 6</option>
+                </select>
+            </div>
+            <div style="flex:1;">
+                <label>Hari</label>
+                <select id="inp-hari">
+                    <option value="SABTU">Sabtu</option><option value="AHAD">Ahad</option>
+                    <option value="SENIN">Senin</option><option value="SELASA">Selasa</option>
+                    <option value="RABU">Rabu</option><option value="KAMIS">Kamis</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:1;">
+                <label>Jam Ke- (Untuk Cetak F4)</label>
+                <select id="inp-jam">
+                    <option value="1">Jam Ke-1</option><option value="2">Jam Ke-2</option>
+                    <option value="3">Jam Ke-3</option><option value="4">Jam Ke-4</option>
+                    <option value="5">Jam Ke-5</option><option value="6">Jam Ke-6</option>
+                    <option value="7">Jam Ke-7</option><option value="8">Jam Ke-8</option>
+                </select>
+            </div>
+            <div style="flex:1;">
+                <label>Teks Waktu (Tabel Input)</label>
+                <input type="text" id="inp-waktu" placeholder="07.00 - 07.35">
+            </div>
+        </div>
+
+        <label>Mata Pelajaran</label>
+        <input type="text" id="inp-mapel" placeholder="Contoh: B. Indonesia">
+
+        <label>Kode Guru</label>
+        <select id="inp-guru"></select>
+
+        <div class="modal-actions">
+            <button class="btn btn-cancel" onclick="closeModal()">Batal</button>
+            <button class="btn btn-add" onclick="saveJadwal()">Simpan Data</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // === 1. STATE & DATA GLOBAL ===
+    const daftarGuru = {
+        'A': { name: 'IMAM TAUFIQ, S.T', color: '#F8CBAD' },
+        'B': { name: 'SUSANTO, S.Pd', color: '#9BC2E6' },
+        'C': { name: 'MUHAMMAD NU\'IN, S.Ag', color: '#B4A7D6' },
+        'F': { name: 'DRA. UMU SYAROFAH', color: '#99CCFF' },
+        'G': { name: 'MUSTAKIM, S.Pd.I', color: '#FF0000' },
+        'I': { name: 'MUHAMMAD, S.Pd.I', color: '#C6E0B4' },
+        'J': { name: 'INDAYATI, S.Pd', color: '#00B050' },
+        'K': { name: 'RAHMAWATI YENI, SE', color: '#00B0F0' },
+        'P': { name: 'YUSRIFUL ILMY, S.Pd', color: '#FF99CC' },
+        'O': { name: 'CHANDRA NINA K, S.Pd', color: '#00FFFF' }
+    };
+    const daftarHari = ['SABTU', 'AHAD', 'SENIN', 'SELASA', 'RABU', 'KAMIS'];
+
+    let dbJadwal = [
+        { id: 1, kelas: "1", hari: "SELASA", jam: "1", waktu: "07.00 - 07.35", mapel: "Pancasila", guru: "F" },
+        { id: 2, kelas: "1", hari: "SELASA", jam: "2", waktu: "07.35 - 08.10", mapel: "B. Arab", guru: "I" },
+        { id: 3, kelas: "1", hari: "RABU", jam: "1", waktu: "07.00 - 07.35", mapel: "Akidah A", guru: "J" },
+        { id: 4, kelas: "1", hari: "RABU", jam: "2", waktu: "07.35 - 08.10", mapel: "B. Jawa", guru: "A" }
+    ];
+
+    let dbKop = {
+        lembaga: "LEMBAGA PENDIDIKAN MA'ARIF NU",
+        sekolah: 'MI "HIDAYATUS SHIBYAN"',
+        wilayah: 'KENDAL KEMLAGI KARANGGENENG LAMONGAN',
+        akreditasi: 'TERAKREDITASI : A | NSM : 112.23.24.18.358 | NPSN : 11 35 58',
+        alamat: 'Jl. Sindang Gede Kendal Kemlagi Karanggeneng Lamongan 62254',
+        tahun: 'JADWAL PELAJARAN TAHUN 2026/2027 (GANJIL)',
+        logoSrc: "" // Menampung data Base64 gambar Logo
+    };
+
+    let dbTtd = {
+        berlaku: 'BERLAKU\n\nHARI SABTU\n\n18 JANUARI 2026',
+        kepala: 'IMAM TAUFIQ, S.T',
+        imageSrc: "" // Menampung data Base64 gambar TTD
+    };
+
+    function toRoman(num) {
+        const roman = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI' };
+        return roman[num] || num;
+    }
+
+    // === 2. SISTEM TAB ===
+    function switchTab(tabId, el) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.step-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        el.classList.add('active');
+
+        if (tabId === 'tab-jam') renderJam();
+        if (tabId === 'tab-cetak') renderCetak();
+    }
+
+    // === 3. TAB 1: INPUT JADWAL ===
+    function renderInputTable() {
+        const filterKelas = document.getElementById('filter-kelas').value;
+        const tbody = document.getElementById('table-input-body');
+        tbody.innerHTML = '';
+        
+        let filteredData = dbJadwal;
+        if (filterKelas !== 'all') {
+            filteredData = dbJadwal.filter(d => d.kelas === filterKelas);
+        }
+
+        filteredData.forEach((d, index) => {
+            const tr = document.createElement('tr');
+            // Menampilkan data nama guru dari variabel daftarGuru menggunakan d.guru
+            const namaGuru = daftarGuru[d.guru] ? daftarGuru[d.guru].name : "-";
+            
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>Kelas ${toRoman(d.kelas)}</td>
+                <td>${d.hari}</td>
+                <td>${d.mapel}</td>
+                <td>Jam Ke-${d.jam} <br><small>(${d.waktu})</small></td>
+                <td>${namaGuru}</td>
+                <td><b>${d.guru}</b></td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editJadwal(${d.id})" title="Edit">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                        <button class="btn-action btn-delete" onclick="hapusJadwal(${d.id})" title="Hapus">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function hapusJadwal(id) {
+        if(confirm("Apakah Anda yakin ingin menghapus jadwal ini?")) {
+            dbJadwal = dbJadwal.filter(d => d.id !== id);
+            renderSemua();
+        }
+    }
+    
+    function editJadwal(id) { alert("Simulasi form edit untuk ID: " + id); }
+    function openModal() { document.getElementById('modal-form').style.display = 'flex'; }
+    function closeModal() { document.getElementById('modal-form').style.display = 'none'; }
+    
+    function saveJadwal() {
+        const k = document.getElementById('inp-kelas').value;
+        const h = document.getElementById('inp-hari').value;
+        const j = document.getElementById('inp-jam').value;
+        const w = document.getElementById('inp-waktu').value;
+        const m = document.getElementById('inp-mapel').value;
+        const g = document.getElementById('inp-guru').value;
+
+        if(!m) return alert("Mata Pelajaran harus diisi!");
+
+        const isExist = dbJadwal.find(x => x.kelas === k && x.hari === h && x.jam === j);
+        if(isExist) {
+            alert(`Jadwal Kelas ${k} pada hari ${h} jam ke-${j} sudah terisi!`);
+            return;
+        }
+
+        dbJadwal.push({ id: Date.now(), kelas: k, hari: h, jam: j, waktu: w, mapel: m, guru: g });
+        closeModal();
+        document.getElementById('inp-mapel').value = '';
+        renderSemua();
+    }
+
+    // === 4. TAB 2: JUMLAH JAM ===
+    function renderJam() {
+        const tbody = document.getElementById('table-jam-body');
+        tbody.innerHTML = '';
+        let jamGuru = {};
+        for(let key in daftarGuru) jamGuru[key] = 0;
+        dbJadwal.forEach(j => { if(jamGuru[j.guru] !== undefined) jamGuru[j.guru]++; });
+
+        for(let key in daftarGuru) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="background:${daftarGuru[key].color}; font-weight:bold;">${key}</td>
+                <td style="text-align:left;">${daftarGuru[key].name}</td>
+                <td><b>${jamGuru[key]} Jam</b></td>
+            `;
+            tbody.appendChild(tr);
+        }
+    }
+
+    // === 5. TAB 3: PENGATURAN KOP & LOGIKA FILES UPLOAD ===
+    function loadKopForm() {
+        document.getElementById('k-lembaga').value = dbKop.lembaga;
+        document.getElementById('k-sekolah').value = dbKop.sekolah;
+        document.getElementById('k-wilayah').value = dbKop.wilayah;
+        document.getElementById('k-akreditasi').value = dbKop.akreditasi;
+        document.getElementById('k-alamat').value = dbKop.alamat;
+        document.getElementById('k-tahun').value = dbKop.tahun;
+        document.getElementById('k-berlaku').value = dbTtd.berlaku;
+        document.getElementById('k-kepala').value = dbTtd.kepala;
+    }
+
+    // Fungsi Pembaca File Gambar Logo
+    function previewLogo(input) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                dbKop.logoSrc = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Fungsi Pembaca File Gambar TTD
+    function previewImageTTD(input) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                dbTtd.imageSrc = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function saveKop() {
+        dbKop.lembaga = document.getElementById('k-lembaga').value;
+        dbKop.sekolah = document.getElementById('k-sekolah').value;
+        dbKop.wilayah = document.getElementById('k-wilayah').value;
+        dbKop.akreditasi = document.getElementById('k-akreditasi').value;
+        dbKop.alamat = document.getElementById('k-alamat').value;
+        dbKop.tahun = document.getElementById('k-tahun').value;
+        dbTtd.berlaku = document.getElementById('k-berlaku').value;
+        dbTtd.kepala = document.getElementById('k-kepala').value;
+        alert("Pengaturan, File Logo, dan TTD Berhasil Diperbarui!");
+        renderCetak();
+    }
+
+    // === 6. TAB 4: CETAK JADWAL ===
+    function renderCetak() {
+        document.getElementById('print-lembaga').textContent = dbKop.lembaga;
+        document.getElementById('print-sekolah').textContent = dbKop.sekolah;
+        document.getElementById('print-wilayah').textContent = dbKop.wilayah;
+        document.getElementById('print-akreditasi').textContent = dbKop.akreditasi;
+        document.getElementById('print-alamat').textContent = dbKop.alamat;
+        document.getElementById('print-tahun').textContent = dbKop.tahun;
+        document.getElementById('print-berlaku').textContent = dbTtd.berlaku;
+        document.getElementById('print-kepala').textContent = dbTtd.kepala;
+
+        // Render Gambar Logo ke Kop Surat
+        const logoContainer = document.getElementById('print-logo-container');
+        logoContainer.innerHTML = '';
+        if (dbKop.logoSrc) {
+            const imgEl = document.createElement('img');
+            imgEl.src = dbKop.logoSrc;
+            logoContainer.appendChild(imgEl);
+            logoContainer.style.backgroundColor = 'transparent'; // Menghapus latar hijau jika gambar ada
+        } else {
+            logoContainer.textContent = 'LOGO';
+            logoContainer.style.backgroundColor = '#006600';
+        }
+
+        // Render Gambar TTD ke Halaman Bawah
+        const ttdContainer = document.getElementById('print-ttd-container');
+        ttdContainer.innerHTML = '';
+        if (dbTtd.imageSrc) {
+            const imgEl = document.createElement('img');
+            imgEl.src = dbTtd.imageSrc;
+            imgEl.className = 'c-signature-img';
+            ttdContainer.appendChild(imgEl);
+        }
+
+        const tBodyGuru = document.getElementById('print-teacher-body');
+        tBodyGuru.innerHTML = '';
+        for (const [code, data] of Object.entries(daftarGuru)) {
+            tBodyGuru.innerHTML += `<tr>
+                <td width="10%" style="background-color: ${data.color}; font-weight: bold;">${code}</td>
+                <td style="text-align: left; background-color: ${data.color}; font-size: 9px;">${data.name}</td>
+            </tr>`;
+        }
+
+        let matrix = {};
+        for(let k=1; k<=6; k++) {
+            matrix[k] = {};
+            daftarHari.forEach(h => matrix[k][h] = {});
+        }
+        dbJadwal.forEach(j => {
+            matrix[j.kelas][j.hari][j.jam] = { m: j.mapel, g: j.guru };
+        });
+
+        let prevCode = {}; 
+        for(let k=1; k<=6; k++) prevCode[k] = {};
+
+        const tbody = document.getElementById('print-schedule-body');
+        tbody.innerHTML = '';
+        
+        for (let kls = 1; kls <= 6; kls++) {
+            for (let jam = 1; jam <= 8; jam++) {
+                const tr = document.createElement('tr');
+                if (jam === 1) {
+                    tr.innerHTML += `<td rowspan="8"><div class="c-row-class">${kls}</div></td>`;
+                }
+                tr.innerHTML += `<td>${jam}</td>`;
+
+                daftarHari.forEach(hari => {
+                    const cell = matrix[kls][hari][jam];
+                    
+                    if (cell) {
+                        const color = daftarGuru[cell.g] ? daftarGuru[cell.g].color : '#fff';
+                        let displayCode = cell.g;
+                        if (prevCode[kls][hari] === cell.g) { displayCode = ""; }
+                        prevCode[kls][hari] = cell.g;
+
+                        tr.innerHTML += `
+                            <td style="background-color: ${color}; width: 3%; font-weight: bold; border-right: 1px solid black;">
+                                ${displayCode}
+                            </td>
+                            <td style="background-color: ${color}; width: 12%; text-align: left; padding-left: 5px;">
+                                ${cell.m}
+                            </td>
+                        `;
+                    } else {
+                        prevCode[kls][hari] = null;
+                        tr.innerHTML += `<td colspan="2">&nbsp;</td>`;
+                    }
+                });
+                tbody.appendChild(tr);
+            }
+        }
+    }
+
+    // === INISIALISASI PERTAMA KALI ===
+    function init() {
+        const selectGuru = document.getElementById('inp-guru');
+        for (const [code, data] of Object.entries(daftarGuru)) {
+            selectGuru.innerHTML += `<option value="${code}">${code} - ${data.name}</option>`;
+        }
+        loadKopForm();
+        renderSemua();
+    }
+
+    function renderSemua() {
+        renderInputTable();
+        renderJam();
+        renderCetak();
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
