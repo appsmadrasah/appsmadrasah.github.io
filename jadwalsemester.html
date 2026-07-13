@@ -49,6 +49,8 @@
         /* Tombol Aksi */
         .action-buttons { display: flex; justify-content: center; gap: 8px; }
         .btn-action { border: none; border-radius: 4px; padding: 8px 12px; color: white; cursor: pointer; font-size: 14px; }
+        .btn-edit { background-color: #ffc107; }
+        .btn-edit:hover { background-color: #e0a800; }
         .btn-delete { background-color: #e74c3c; }
         .btn-delete:hover { background-color: #c0392b; }
 
@@ -139,7 +141,7 @@
 
     <div id="tab-input" class="tab-content active">
         <div class="toolbar">
-            <button class="btn btn-add" onclick="openModal()">+ Tambah Jadwal Baru</button>
+            <button class="btn btn-add" onclick="openModalForAdd()">+ Tambah Jadwal Baru</button>
             <select id="filter-kelas" class="filter-select" onchange="renderInputTable()">
                 <option value="all">-- Tampilkan Semua Kelas --</option>
                 <option value="1">Kelas I</option>
@@ -281,7 +283,7 @@
 
 <div class="modal-overlay" id="modal-form">
     <div class="modal-box">
-        <h3>Input Jadwal Baru</h3>
+        <h3 id="modal-title">Input Jadwal Baru</h3>
         <div style="display: flex; gap: 10px;">
             <div style="flex:1;">
                 <label>Kelas</label>
@@ -376,6 +378,9 @@
     let dbJadwal = [];
     let dbKop = {};
     let dbTtd = {};
+    
+    // Variabel state untuk menentukan apakah pengguna sedang "Tambah Data Baru" atau "Edit Data Lama"
+    let editModeId = null;
 
     function toRoman(num) {
         const roman = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI' };
@@ -395,7 +400,6 @@
         toast.innerHTML = `${icon} <span style="line-height:1.4;">${message}</span>`;
         container.appendChild(toast);
 
-        // Hapus otomatis dari DOM setelah animasi keluar selesai
         setTimeout(() => { toast.remove(); }, 4000);
     }
 
@@ -464,7 +468,10 @@
                 <td><b>${d.guru}</b></td>
                 <td>
                     <div class="action-buttons">
-                        <button class="btn-action btn-delete" onclick="hapusJadwalFromFirebase('${d.id}')" title="Hapus">
+                        <button class="btn-action btn-edit" onclick="editJadwal('${d.id}')" title="Edit Jadwal">
+                            <i class="fas fa-pencil-alt"></i> Edit
+                        </button>
+                        <button class="btn-action btn-delete" onclick="hapusJadwalFromFirebase('${d.id}')" title="Hapus Jadwal">
                             <i class="fas fa-trash"></i> Hapus
                         </button>
                     </div>
@@ -474,6 +481,53 @@
         });
     }
 
+    // Fungsi Membuka Modal untuk "Tambah Data"
+    function openModalForAdd() { 
+        editModeId = null;
+        document.getElementById('modal-title').innerText = "Input Jadwal Baru";
+        
+        // Kosongkan form
+        document.getElementById('inp-kelas').value = "1";
+        document.getElementById('inp-hari').value = "SABTU";
+        document.getElementById('inp-jam').value = "1";
+        document.getElementById('inp-waktu').value = "07.00 - 07.35";
+        document.getElementById('inp-mapel').value = "";
+        document.getElementById('inp-guru').value = "";
+        
+        document.getElementById('modal-form').style.display = 'flex'; 
+    }
+
+    // Fungsi Membuka Modal untuk "Edit Data"
+    function editJadwal(id) {
+        editModeId = id;
+        document.getElementById('modal-title').innerText = "Edit Jadwal";
+        
+        // Cari data berdasarkan ID dari array yang disinkronkan dengan Firebase
+        const dataJadwal = dbJadwal.find(x => x.id === id);
+        if (!dataJadwal) return showToast("Data tidak ditemukan!", "error");
+
+        // Masukkan data lama ke dalam Input Form
+        document.getElementById('inp-kelas').value = dataJadwal.kelas;
+        document.getElementById('inp-hari').value = dataJadwal.hari;
+        document.getElementById('inp-jam').value = dataJadwal.jam;
+        document.getElementById('inp-waktu').value = dataJadwal.waktu;
+        document.getElementById('inp-mapel').value = dataJadwal.mapel;
+        
+        // Format pengisian input datalist guru (Kode - Nama)
+        if (daftarGuru[dataJadwal.guru]) {
+            document.getElementById('inp-guru').value = `${dataJadwal.guru} - ${daftarGuru[dataJadwal.guru].name}`;
+        } else {
+            document.getElementById('inp-guru').value = dataJadwal.guru;
+        }
+
+        document.getElementById('modal-form').style.display = 'flex'; 
+    }
+
+    function closeModal() { 
+        document.getElementById('modal-form').style.display = 'none'; 
+    }
+
+    // Menyimpan data (Untuk "Tambah" maupun "Edit")
     function saveJadwalToFirebase() {
         const k = document.getElementById('inp-kelas').value;
         const h = document.getElementById('inp-hari').value;
@@ -488,33 +542,44 @@
         if(!rawGuru) return showToast("Pilihan Guru wajib diisi!", "error");
         if(!daftarGuru[g]) return showToast("Kode/Nama Guru tidak valid!", "error");
 
-        // [VALIDASI 1] Pengecekan Jam yang Sama di Kelas yang Sama
-        const isExistClass = dbJadwal.find(x => x.kelas === k && x.hari === h && x.jam === j);
+        // [VALIDASI 1] Pengecekan Jam yang Sama di Kelas yang Sama (Kecuali record yang sedang diedit sendiri)
+        const isExistClass = dbJadwal.find(x => x.id !== editModeId && x.kelas === k && x.hari === h && x.jam === j);
         if(isExistClass) {
             return showToast(`Gagal! Jadwal Kelas ${toRoman(k)} pada hari ${h} jam ke-${j} sudah terisi mapel lain.`, "error");
         }
 
-        // [VALIDASI 2] Pengecekan Bentrok Guru yang Sama di Jam & Hari yang Sama (Antar Seluruh Kelas)
-        const bentrokGuru = dbJadwal.find(x => x.guru === g && x.hari === h && x.jam === j);
+        // [VALIDASI 2] Pengecekan Bentrok Guru yang Sama di Jam & Hari yang Sama (Kecuali record yang sedang diedit)
+        const bentrokGuru = dbJadwal.find(x => x.id !== editModeId && x.guru === g && x.hari === h && x.jam === j);
         if(bentrokGuru) {
             const namaGuru = daftarGuru[g].name;
             return showToast(`Bentrok Terdeteksi! <b>${namaGuru} (${g})</b> sudah terjadwal mengajar di <b>Kelas ${toRoman(bentrokGuru.kelas)}</b> pada hari ${h} jam ke-${j}.`, "warning");
         }
 
-        // Simpan ke Firebase Database jika lolos kedua validasi
-        database.ref('jadwal').push({
-            kelas: k, hari: h, jam: j, waktu: w, mapel: m, guru: g
-        }, function(error) {
-            if (error) {
-                showToast("Gagal menyimpan data ke Firebase!", "error");
-            } else {
-                showToast("Jadwal baru berhasil disimpan ke database.", "success");
-                closeModal();
-            }
-        });
-        
-        document.getElementById('inp-mapel').value = '';
-        document.getElementById('inp-guru').value = '';
+        // Siapkan Payload data JSON
+        const payloadData = { kelas: k, hari: h, jam: j, waktu: w, mapel: m, guru: g };
+
+        // Eksekusi Simpan (Tentukan ini Push Update Baru atau Menimpa Update Edit)
+        if (editModeId) {
+            // Jika mode edit, timpa node ID tersebut
+            database.ref('jadwal/' + editModeId).set(payloadData, function(error) {
+                if (error) {
+                    showToast("Gagal mengubah jadwal di Firebase!", "error");
+                } else {
+                    showToast("Jadwal berhasil diperbarui.", "success");
+                    closeModal();
+                }
+            });
+        } else {
+            // Jika Mode Tambah Baru
+            database.ref('jadwal').push(payloadData, function(error) {
+                if (error) {
+                    showToast("Gagal menyimpan data ke Firebase!", "error");
+                } else {
+                    showToast("Jadwal baru berhasil disimpan ke database.", "success");
+                    closeModal();
+                }
+            });
+        }
     }
 
     function hapusJadwalFromFirebase(id) {
@@ -524,9 +589,6 @@
             });
         }
     }
-
-    function openModal() { document.getElementById('modal-form').style.display = 'flex'; }
-    function closeModal() { document.getElementById('modal-form').style.display = 'none'; }
 
     // === 5. LOGIKA TAB 2: JUMLAH JAM GURU ===
     function renderJam() {
