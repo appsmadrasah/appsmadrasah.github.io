@@ -32,7 +32,7 @@
         .btn-add { background-color: #2196F3; color: white; }
         .btn-add:hover { background-color: #1976D2; }
         .btn-save { background-color: #4CAF50; color: white; margin-top: 15px; width: 100%; }
-        .btn-print { background-color: #f39c12; color: white; margin-bottom: 15px; }
+        .btn-print { background-color: #f39c12; color: white; margin-bottom: 15px; padding: 12px 25px; font-size: 15px; }
         .btn-edit-master { background-color: #9b59b6; color: white; }
         .btn-edit-master:hover { background-color: #8e44ad; }
         .loading-text { text-align: center; font-weight: bold; color: #888; padding: 20px; }
@@ -85,45 +85,71 @@
         @keyframes toastIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes toastOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
 
-        /* === CETAK JADWAL (F4 LAYOUT) === */
-        .cetak-wrapper { background: #fff; padding: 20px; border: 1px solid #ddd; overflow-x: auto; }
-        .cetak-container { width: 215mm; min-height: 330mm; margin: 0 auto; background: white; font-size: 10px; color: black; }
+        /* === LAYOUT SCREEN PREVIEW CETAK === */
+        .cetak-wrapper { background: #555; padding: 30px 15px; border: 1px solid #ddd; overflow-x: auto; display: flex; justify-content: center; }
+        .cetak-container { width: 215mm; min-height: 330mm; background: white; padding: 12mm 10mm; color: black; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
         
-        .c-header { display: flex; align-items: center; border: 2px solid black; padding: 10px; margin-bottom: 10px; }
-        .c-header-logo { width: 60px; height: 60px; background-color: #006600; border-radius: 50%; margin-right: 15px; display: flex; justify-content: center; align-items: center; color: white; font-size: 8px; overflow: hidden; }
+        .c-header { display: flex; align-items: center; border: 2px solid black; padding: 8px; margin-bottom: 10px; }
+        .c-header-logo { width: 55px; height: 50px; background-color: #006600; border-radius: 50%; margin-right: 12px; display: flex; justify-content: center; align-items: center; color: white; font-size: 8px; overflow: hidden; }
         .c-header-logo img { width: 100%; height: 100%; object-fit: contain; }
         
-        .c-header-text h1 { font-size: 14px; margin: 0; padding: 2px 0; }
-        .c-header-text h2 { font-size: 16px; font-weight: bold; margin: 0; padding: 2px 0; }
-        .c-header-text p { font-size: 10px; margin: 0; padding: 2px 0; }
-        .c-title { text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+        .c-header-text h1 { font-size: 13px; margin: 0; padding: 1px 0; letter-spacing: 0.5px; }
+        .c-header-text h2 { font-size: 14px; font-weight: bold; margin: 0; padding: 1px 0; }
+        .c-header-text p { font-size: 9.5px; margin: 0; padding: 1px 0; line-height: 1.2; }
+        .c-title { text-align: center; font-size: 12px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .c-main-layout { display: flex; gap: 10px; align-items: flex-start; }
-        .c-left-panel { flex: 7; }
-        .c-right-panel { flex: 3; display: flex; flex-direction: column; gap: 10px; }
+        .c-main-layout { display: flex; gap: 8px; align-items: flex-start; width: 100%; }
+        .c-left-panel { width: 73%; }
+        .c-right-panel { width: 27%; display: flex; flex-direction: column; gap: 8px; }
 
-        .c-table { width: 100%; border-collapse: collapse; text-align: center; }
-        .c-table th, .c-table td { border: 1px solid black; padding: 3px; }
-        .c-table th { background-color: #ffffff; font-weight: bold; }
+        .c-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 9px; }
+        .c-table th, .c-table td { border: 1px solid black; padding: 2.5px 2px; height: 21px; }
+        .c-table th { background-color: #ffffff; font-weight: bold; font-size: 9px; }
         
-        .c-row-class { font-weight: bold; font-size: 16px; text-align: center; }
+        .c-row-class { font-weight: bold; font-size: 14px; text-align: center; }
 
-        .c-berlaku { border: 3px solid #008000; border-radius: 15px; padding: 15px; text-align: center; font-weight: bold; margin-top: 10px; white-space: pre-line; }
+        .c-berlaku { border: 2px solid #008000; border-radius: 10px; padding: 8px; text-align: center; font-weight: bold; margin-top: 5px; white-space: pre-line; font-size: 9px; line-height: 1.3; }
         
         /* Tanda Tangan */
-        .c-signature { margin-top: 20px; text-align: center; font-size: 11px; position: relative; }
-        .c-signature-space { height: 65px; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .c-signature-img { max-height: 60px; max-width: 150px; object-fit: contain; }
+        .c-signature { margin-top: 10px; text-align: center; font-size: 10px; line-height: 1.3; }
+        .c-signature-space { height: 50px; display: flex; justify-content: center; align-items: center; overflow: hidden; margin: 2px 0; }
+        .c-signature-img { max-height: 48px; max-width: 120px; object-fit: contain; }
 
-        /* === MEDIA PRINT === */
+        /* === CONFIGURASI PRINT OUT PERMANEN (F4 AREA) === */
+        @page { 
+            size: 215mm 330mm; /* Standar Ukuran Kertas F4 */
+            margin: 0; /* Mengontrol margin via container untuk mencegah sisa kosong */
+        }
+        
         @media print {
-            body * { visibility: hidden; }
+            /* Memaksa Browser Mengaktifkan Cetak Warna Latar Belakang */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
             body { background: white; padding: 0; margin: 0; }
-            .container { box-shadow: none; padding: 0; border: none; }
-            #cetak-view, #cetak-view * { visibility: visible; }
-            #cetak-view { position: absolute; left: 0; top: 0; width: 100%; }
-            .cetak-wrapper { border: none; padding: 0; margin: 0; }
-            @page { size: 215mm 330mm; margin: 10mm; }
+            .container { box-shadow: none; padding: 0; border: none; max-width: 100% !important; }
+            
+            /* Menyembunyikan seluruh UI sistem kecuali area cetak dokumen */
+            .step-tabs, .btn, .toolbar, .data-table, h3, h4, .modal-overlay, #loading-input { display: none !important; }
+            .tab-content { display: none !important; }
+            #tab-cetak { display: block !important; width: 215mm !important; height: 330mm !important; margin: 0 !important; padding: 0 !important; }
+            .btn-print { display: none !important; }
+            
+            .cetak-wrapper { background: transparent; padding: 0; margin: 0; overflow: visible; display: block; }
+            .cetak-container { 
+                width: 215mm !important; 
+                height: 330mm !important; 
+                padding: 12mm 10mm !important; /* Margin dokumen internal aman dari roller printer */
+                box-shadow: none; 
+                page-break-inside: avoid;
+                page-break-after: avoid;
+                overflow: hidden;
+            }
+            
+            /* Memaksa Fleksibilitas Layout Kolom Tetap Presisi */
+            .c-main-layout { display: flex !important; gap: 8px !important; width: 100% !important; }
+            .c-header { display: flex !important; }
         }
     </style>
 </head>
@@ -218,8 +244,8 @@
     <div id="tab-cetak" class="tab-content">
         <button class="btn btn-print" onclick="window.print()"><i class="fas fa-print"></i> Cetak Jadwal Sekarang (F4)</button>
         
-        <div class="cetak-wrapper" id="cetak-view">
-            <div class="cetak-container">
+        <div class="cetak-wrapper">
+            <div class="cetak-container" id="cetak-view">
                 <div class="c-header">
                     <div class="c-header-logo" id="print-logo-container">LOGO</div>
                     <div class="c-header-text">
@@ -237,8 +263,8 @@
                         <table class="c-table">
                             <thead>
                                 <tr>
-                                    <th width="3%">KLS</th>
-                                    <th width="3%">JM</th>
+                                    <th width="4%">KLS</th>
+                                    <th width="4%">JM</th>
                                     <th colspan="2" width="15%">SABTU</th>
                                     <th colspan="2" width="15%">AHAD</th>
                                     <th colspan="2" width="15%">SENIN</th>
@@ -382,7 +408,7 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // === DATA DEFAULT / MASTER DATA ===
+    // === DATA MASTER DEFAULT ===
     const defaultGuru = {
         'A': { name: 'IMAM TAUFIQ, ST.', color: '#F8CBAD' },
         'B': { name: 'SUBIANTO, S.Pd', color: '#9BC2E6' },
@@ -409,7 +435,6 @@
     const defaultMapel = ["Pancasila", "IPAS", "PJOK", "SBDP", "Matematika", "B. Arab", "B. Indonesia", "B. Inggris", "B. Jawa", "Qurdis", "Akidah A", "Fikih", "SKI", "ASWAJA"];
     const daftarHari = ['SABTU', 'AHAD', 'SENIN', 'SELASA', 'RABU', 'KAMIS'];
 
-    // Variabel Penampung State Database
     let daftarGuru = {};
     let daftarMapel = [];
     let dbJadwal = [];
@@ -422,7 +447,7 @@
         return roman[num] || num;
     }
 
-    // === 2. TOAST NOTIFICATION ===
+    // === 2. SYSTEM TOAST NOTIFIKASI ===
     function showToast(message, type = "success") {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -435,11 +460,10 @@
         setTimeout(() => { toast.remove(); }, 4000);
     }
 
-    // === 3. REALTIME DATA LISTENER DARI FIREBASE ===
+    // === 3. SINKRONISASI REALTIME FIREBASE ===
     database.ref().on('value', function(snapshot) {
         const serverData = snapshot.val() || {};
         
-        // Memuat Data Master (Guru & Mapel). Jika kosong, gunakan default
         if (serverData.master && serverData.master.guru) {
             daftarGuru = serverData.master.guru;
         } else {
@@ -454,10 +478,8 @@
             database.ref('master/mapel').set(defaultMapel);
         }
         
-        // Perbarui Datalist untuk pencarian
         initDatalist();
 
-        // Memuat Jadwal
         dbJadwal = [];
         if (serverData.jadwal) {
             for (let id in serverData.jadwal) {
@@ -465,7 +487,6 @@
             }
         }
 
-        // Memuat Pengaturan Kop & TTD
         dbKop = serverData.kop || {
             lembaga: "LEMBAGA PENDIDIKAN MA'ARIF NU",
             sekolah: 'MI "HIDAYATUS SHIBYAN"',
@@ -495,7 +516,7 @@
         if (tabId === 'tab-kop') loadKopFormFields();
     }
 
-    // === 4. LOGIKA CONTROL TAB 1: CRUD JADWAL ===
+    // === 4. LOGIKA MANAGEMENT JADWAL ===
     function renderInputTable() {
         const filterKelas = document.getElementById('filter-kelas').value;
         const tbody = document.getElementById('table-input-body');
@@ -615,39 +636,30 @@
         }
     }
 
-    // === 5. LOGIKA EDIT MASTER DATA MASSAL (CASCADE UPDATE) ===
+    // === 5. UPDATE CASCADE MASTER DATA ===
     function openMasterEdit() {
-        closeModal(); // Menutup modal input utama
-        
+        closeModal();
         const selMapel = document.getElementById('edit-mapel-lama');
         selMapel.innerHTML = '';
-        daftarMapel.forEach(m => {
-            selMapel.innerHTML += `<option value="${m}">${m}</option>`;
-        });
+        daftarMapel.forEach(m => { selMapel.innerHTML += `<option value="${m}">${m}</option>`; });
 
         const selGuru = document.getElementById('edit-guru-lama');
         selGuru.innerHTML = '';
-        for(let code in daftarGuru) {
-            selGuru.innerHTML += `<option value="${code}">${code} - ${daftarGuru[code].name}</option>`;
-        }
-        
+        for(let code in daftarGuru) { selGuru.innerHTML += `<option value="${code}">${code} - ${daftarGuru[code].name}</option>`; }
         document.getElementById('modal-master-edit').style.display = 'flex';
     }
 
     function closeMasterEdit() {
         document.getElementById('modal-master-edit').style.display = 'none';
-        openModalForAdd(); // Membuka kembali modal form input
+        openModalForAdd();
     }
 
     function saveEditMapel() {
         const oldMapel = document.getElementById('edit-mapel-lama').value;
         const newMapel = document.getElementById('edit-mapel-baru').value.trim();
-        
-        if(!newMapel) return showToast("Nama mapel baru tidak boleh kosong!", "warning");
+        if(!newMapel) return showToast("Nama mapel baru kosong!", "warning");
 
         let updates = {};
-        
-        // Update di Master Array
         let mapelArr = [...daftarMapel];
         let idx = mapelArr.indexOf(oldMapel);
         if(idx !== -1) {
@@ -655,18 +667,15 @@
             updates[`master/mapel`] = mapelArr;
         }
 
-        // Update Cascade di Jadwal
         dbJadwal.forEach(j => {
-            if(j.mapel === oldMapel) {
-                updates[`jadwal/${j.id}/mapel`] = newMapel;
-            }
+            if(j.mapel === oldMapel) updates[`jadwal/${j.id}/mapel`] = newMapel;
         });
 
         database.ref().update(updates).then(() => {
-            showToast(`Mapel '${oldMapel}' berhasil diganti menjadi '${newMapel}' secara massal.`, "success");
+            showToast(`Mapel massal diperbarui.`, "success");
             document.getElementById('edit-mapel-baru').value = '';
             closeMasterEdit();
-        }).catch(() => showToast("Gagal update data massal", "error"));
+        });
     }
 
     function saveEditGuru() {
@@ -677,36 +686,26 @@
         if(!newCode) newCode = oldCode;
         if(!newName) newName = daftarGuru[oldCode].name;
         
-        // Cek jika ganti kode ke kode yang sudah eksis
-        if (newCode !== oldCode && daftarGuru[newCode]) {
-            return showToast("Kode baru sudah digunakan oleh guru lain!", "error");
-        }
+        if (newCode !== oldCode && daftarGuru[newCode]) return showToast("Kode baru sudah terpakai!", "error");
 
         const color = daftarGuru[oldCode].color; 
         let updates = {};
-        
-        // Update Node Master
-        if(oldCode !== newCode) {
-            updates[`master/guru/${oldCode}`] = null;
-        }
+        if(oldCode !== newCode) updates[`master/guru/${oldCode}`] = null;
         updates[`master/guru/${newCode}`] = { name: newName, color: color };
 
-        // Update Cascade di Jadwal
         dbJadwal.forEach(j => {
-            if(j.guru === oldCode) {
-                updates[`jadwal/${j.id}/guru`] = newCode;
-            }
+            if(j.guru === oldCode) updates[`jadwal/${j.id}/guru`] = newCode;
         });
 
         database.ref().update(updates).then(() => {
-            showToast(`Data Guru berhasil diperbarui secara massal.`, "success");
+            showToast(`Data Guru massal diperbarui.`, "success");
             document.getElementById('edit-guru-kode-baru').value = '';
             document.getElementById('edit-guru-nama-baru').value = '';
             closeMasterEdit();
-        }).catch(() => showToast("Gagal update data massal", "error"));
+        });
     }
 
-    // === 6. LOGIKA TAB 2: JUMLAH JAM GURU ===
+    // === 6. LOGIKA REKAP JAM ===
     function renderJam() {
         const tbody = document.getElementById('table-jam-body');
         tbody.innerHTML = '';
@@ -725,7 +724,7 @@
         }
     }
 
-    // === 7. LOGIKA TAB 3: MEDIA KOP & TTD ===
+    // === 7. KOP & TTD ===
     function loadKopFormFields() {
         document.getElementById('k-lembaga').value = dbKop.lembaga || "";
         document.getElementById('k-sekolah').value = dbKop.sekolah || "";
@@ -765,21 +764,19 @@
             tahun: document.getElementById('k-tahun').value,
             logoSrc: dbKop.logoSrc || ""
         };
-
         const newTtd = {
             berlaku: document.getElementById('k-berlaku').value,
             kepala: document.getElementById('k-kepala').value,
             imageSrc: dbTtd.imageSrc || ""
         };
-
         database.ref('kop').set(newKop);
         database.ref('ttd').set(newTtd, function(error) {
-            if(error) showToast("Gagal menyimpan data pengaturan!", "error");
-            else showToast("Seluruh pengaturan file media berhasil disimpan.", "success");
+            if(error) showToast("Gagal menyimpan!", "error");
+            else showToast("Pengaturan media disimpan.", "success");
         });
     }
 
-    // === 8. LOGIKA TAB 4: MATRIX LAYOUT CETAK F4 ===
+    // === 8. MATRIX LAYOUT CETAK F4 DENGAN WARNA FIX ===
     function renderCetak() {
         document.getElementById('print-lembaga').textContent = dbKop.lembaga;
         document.getElementById('print-sekolah').textContent = dbKop.sekolah;
@@ -815,8 +812,8 @@
         tBodyGuru.innerHTML = '';
         for (const [code, data] of Object.entries(daftarGuru)) {
             tBodyGuru.innerHTML += `<tr>
-                <td width="10%" style="background-color: ${data.color}; font-weight: bold;">${code}</td>
-                <td style="text-align: left; background-color: ${data.color}; font-size: 9px;">${data.name}</td>
+                <td width="12%" style="background-color: ${data.color} !important; font-weight: bold;">${code}</td>
+                <td style="text-align: left; background-color: ${data.color} !important; font-size: 8.5px; font-weight: 500;">${data.name}</td>
             </tr>`;
         }
 
@@ -842,9 +839,9 @@
             for (let jam = 1; jam <= 8; jam++) {
                 const tr = document.createElement('tr');
                 if (jam === 1) {
-                    tr.innerHTML += `<td rowspan="8"><div class="c-row-class">${kls}</div></td>`;
+                    tr.innerHTML += `<td rowspan="8" style="background-color: #ffffff !important;"><div class="c-row-class">${kls}</div></td>`;
                 }
-                tr.innerHTML += `<td>${jam}</td>`;
+                tr.innerHTML += `<td style="background-color: #ffffff !important; font-weight: bold;">${jam}</td>`;
 
                 daftarHari.forEach(hari => {
                     const cell = matrix[kls][hari][jam];
@@ -856,16 +853,16 @@
                         prevCode[kls][hari] = cell.g;
 
                         tr.innerHTML += `
-                            <td style="background-color: ${color}; width: 3%; font-weight: bold; border-right: 1px solid black;">
+                            <td style="background-color: ${color} !important; width: 3.5%; font-weight: bold; border-right: 0.5px solid rgba(0,0,0,0.5);">
                                 ${displayCode}
                             </td>
-                            <td style="background-color: ${color}; width: 12%; text-align: left; padding-left: 5px;">
+                            <td style="background-color: ${color} !important; width: 12.5%; text-align: left; padding-left: 3px; font-weight: 500;">
                                 ${cell.m}
                             </td>
                         `;
                     } else {
                         prevCode[kls][hari] = null;
-                        tr.innerHTML += `<td colspan="2">&nbsp;</td>`;
+                        tr.innerHTML += `<td colspan="2" style="background-color: #ffffff !important;">&nbsp;</td>`;
                     }
                 });
                 tbody.appendChild(tr);
@@ -879,23 +876,17 @@
         renderCetak();
     }
 
-    // === 9. SETUP DATALIST PENCARIAN ===
     function initDatalist() {
-        // Mapel Options
         const datalistMapel = document.getElementById('mapel-options');
         datalistMapel.innerHTML = '';
-        daftarMapel.forEach(m => {
-            datalistMapel.innerHTML += `<option value="${m}">`;
-        });
+        daftarMapel.forEach(m => { datalistMapel.innerHTML += `<option value="${m}">`; });
 
-        // Guru Options
         const datalistGuru = document.getElementById('guru-options');
         datalistGuru.innerHTML = '';
         for (const [code, data] of Object.entries(daftarGuru)) {
             datalistGuru.innerHTML += `<option value="${code} - ${data.name}">`;
         }
     }
-
 </script>
 </body>
 </html>
