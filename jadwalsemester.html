@@ -66,6 +66,21 @@
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;}
         .btn-cancel { background-color: #e74c3c; color: white; }
 
+        /* === NOTIFIKASI TOAST ELEGAN MINIMALIS === */
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast-box { 
+            background: #fff; color: #333; padding: 14px 20px; border-radius: 6px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); font-size: 13px; font-weight: 500; 
+            display: flex; align-items: center; gap: 12px; border-left: 4px solid #333; 
+            min-width: 320px; max-width: 450px; 
+            animation: toastIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards, toastOut 0.3s 3.7s ease forwards;
+        }
+        .toast-success { border-left-color: #2ecc71; background-color: #f6fff8; }
+        .toast-warning { border-left-color: #f1c40f; background-color: #fffdf1; }
+        .toast-error { border-left-color: #e74c3c; background-color: #fff9f9; }
+        @keyframes toastIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes toastOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+
         /* === CETAK JADWAL (F4 LAYOUT) === */
         .cetak-wrapper { background: #fff; padding: 20px; border: 1px solid #ddd; overflow-x: auto; }
         .cetak-container { width: 215mm; min-height: 330mm; margin: 0 auto; background: white; font-size: 10px; color: black; }
@@ -109,6 +124,8 @@
     </style>
 </head>
 <body>
+
+<div id="toast-container" class="toast-container"></div>
 
 <div class="container" id="app-ui">
     <h2 class="page-title">Sistem Penyusunan Jadwal Madrasah</h2>
@@ -303,26 +320,18 @@
         <label>Mata Pelajaran (Ketik untuk mencari)</label>
         <input type="text" id="inp-mapel" list="mapel-options" placeholder="Pilih atau ketik mata pelajaran...">
         <datalist id="mapel-options">
-            <option value="Pancasila"></option>
-            <option value="IPAS"></option>
-            <option value="PJOK"></option>
-            <option value="SBDP"></option>
-            <option value="Matematika"></option>
-            <option value="B. Arab"></option>
-            <option value="B. Indonesia"></option>
-            <option value="B. Inggris"></option>
-            <option value="B. Jawa"></option>
-            <option value="Qurdis"></option>
-            <option value="Akidah A"></option>
-            <option value="Fikih"></option>
-            <option value="SKI"></option>
-            <option value="ASWAJA"></option>
+            <option value="Pancasila"></option><option value="IPAS"></option>
+            <option value="PJOK"></option><option value="SBDP"></option>
+            <option value="Matematika"></option><option value="B. Arab"></option>
+            <option value="B. Indonesia"></option><option value="B. Inggris"></option>
+            <option value="B. Jawa"></option><option value="Qurdis"></option>
+            <option value="Akidah A"></option><option value="Fikih"></option>
+            <option value="SKI"></option><option value="ASWAJA"></option>
         </datalist>
 
         <label>Kode Guru (Ketik untuk mencari nama)</label>
         <input type="text" id="inp-guru" list="guru-options" placeholder="Pilih atau ketik kode/nama guru...">
-        <datalist id="guru-options">
-            </datalist>
+        <datalist id="guru-options"></datalist>
 
         <div class="modal-actions">
             <button class="btn btn-cancel" onclick="closeModal()">Batal</button>
@@ -332,14 +341,14 @@
 </div>
 
 <script>
-    // === 1. KONFIGURASI DAN INITIALISASI FIREBASE ===
+    // === 1. INITIALISASI FIREBASE REALTIME DATABASE ===
     const firebaseConfig = {
         databaseURL: "https://jadwalsemester-default-rtdb.asia-southeast1.firebasedatabase.app/"
     };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // === DATA DAFTAR GURU PETA UTAMA (DENGAN WARNA UNIK) ===
+    // === DATA DAFTAR GURU UTAMA BESERTA KODE WARNA JADWAL ===
     const daftarGuru = {
         'A': { name: 'IMAM TAUFIQ, ST.', color: '#F8CBAD' },
         'B': { name: 'SUBIANTO, S.Pd', color: '#9BC2E6' },
@@ -362,10 +371,8 @@
         'S': { name: 'WIDIA NATALIA, S.Pd', color: '#FFFF99' },
         'T': { name: 'NI\'MATUZ ZUHROH', color: '#CC99FF' }
     };
-    
     const daftarHari = ['SABTU', 'AHAD', 'SENIN', 'SELASA', 'RABU', 'KAMIS'];
 
-    // Local state data cache dari Firebase
     let dbJadwal = [];
     let dbKop = {};
     let dbTtd = {};
@@ -375,11 +382,27 @@
         return roman[num] || num;
     }
 
-    // === 2. REALTIME LISTENER DARI FIREBASE ===
+    // === 2. FUNGSI TOAST NOTIFICATION ELEGAN & MINIMALIS ===
+    function showToast(message, type = "success") {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast-box toast-${type}`;
+        
+        let icon = '<i class="fas fa-check-circle" style="color:#2ecc71;"></i>';
+        if (type === 'warning') icon = '<i class="fas fa-exclamation-triangle" style="color:#f1c40f;"></i>';
+        if (type === 'error') icon = '<i class="fas fa-times-circle" style="color:#e74c3c;"></i>';
+
+        toast.innerHTML = `${icon} <span style="line-height:1.4;">${message}</span>`;
+        container.appendChild(toast);
+
+        // Hapus otomatis dari DOM setelah animasi keluar selesai
+        setTimeout(() => { toast.remove(); }, 4000);
+    }
+
+    // === 3. REALTIME DATA LISTENER DARI FIREBASE ===
     database.ref().on('value', function(snapshot) {
         const serverData = snapshot.val() || {};
         
-        // 1. Ambil array Jadwal Pelajaran
         dbJadwal = [];
         if (serverData.jadwal) {
             for (let id in serverData.jadwal) {
@@ -387,7 +410,6 @@
             }
         }
 
-        // 2. Ambil data Kop Surat
         dbKop = serverData.kop || {
             lembaga: "LEMBAGA PENDIDIKAN MA'ARIF NU",
             sekolah: 'MI "HIDAYATUS SHIBYAN"',
@@ -398,7 +420,6 @@
             logoSrc: ""
         };
 
-        // 3. Ambil data Tanda Tangan
         dbTtd = serverData.ttd || {
             berlaku: 'BERLAKU\n\nHARI SABTU\n\n18 JANUARI 2026',
             kepala: 'IMAM TAUFIQ, S.T',
@@ -410,7 +431,6 @@
         renderSemuaView();
     });
 
-    // === 3. SISTEM PERPINDAHAN TAB ===
     function switchTab(tabId, el) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.step-tab').forEach(t => t.classList.remove('active'));
@@ -419,7 +439,7 @@
         if (tabId === 'tab-kop') loadKopFormFields();
     }
 
-    // === 4. LOGIKA INTEGRASI TAB 1: CRUD FIREBASE ===
+    // === 4. LOGIKA CONTROL TAB 1: CRUD & CEK BENTROK GURU ANTAR KELAS ===
     function renderInputTable() {
         const filterKelas = document.getElementById('filter-kelas').value;
         const tbody = document.getElementById('table-input-body');
@@ -461,27 +481,36 @@
         const w = document.getElementById('inp-waktu').value || "07.00 - 07.35";
         const m = document.getElementById('inp-mapel').value;
         
-        // Memisahkan Kode Guru dari teks datalist yang diketikkan pengguna
         let rawGuru = document.getElementById('inp-guru').value;
         let g = rawGuru.split('-')[0].trim().toUpperCase();
 
-        if(!m) return alert("Mata Pelajaran wajib diisi!");
-        
-        if(!daftarGuru[g]) {
-            return alert("Kode/Nama Guru tidak valid! Silakan pilih dari daftar pencarian.");
+        if(!m) return showToast("Mata Pelajaran wajib diisi!", "error");
+        if(!rawGuru) return showToast("Pilihan Guru wajib diisi!", "error");
+        if(!daftarGuru[g]) return showToast("Kode/Nama Guru tidak valid!", "error");
+
+        // [VALIDASI 1] Pengecekan Jam yang Sama di Kelas yang Sama
+        const isExistClass = dbJadwal.find(x => x.kelas === k && x.hari === h && x.jam === j);
+        if(isExistClass) {
+            return showToast(`Gagal! Jadwal Kelas ${toRoman(k)} pada hari ${h} jam ke-${j} sudah terisi mapel lain.`, "error");
         }
 
-        const isExist = dbJadwal.find(x => x.kelas === k && x.hari === h && x.jam === j);
-        if(isExist) {
-            alert(`Gagal! Jadwal Kelas ${k} pada hari ${h} jam ke-${j} sudah terisi.`);
-            return;
+        // [VALIDASI 2] Pengecekan Bentrok Guru yang Sama di Jam & Hari yang Sama (Antar Seluruh Kelas)
+        const bentrokGuru = dbJadwal.find(x => x.guru === g && x.hari === h && x.jam === j);
+        if(bentrokGuru) {
+            const namaGuru = daftarGuru[g].name;
+            return showToast(`Bentrok Terdeteksi! <b>${namaGuru} (${g})</b> sudah terjadwal mengajar di <b>Kelas ${toRoman(bentrokGuru.kelas)}</b> pada hari ${h} jam ke-${j}.`, "warning");
         }
 
+        // Simpan ke Firebase Database jika lolos kedua validasi
         database.ref('jadwal').push({
             kelas: k, hari: h, jam: j, waktu: w, mapel: m, guru: g
         }, function(error) {
-            if (error) alert("Gagal menyimpan data ke Firebase!");
-            else closeModal();
+            if (error) {
+                showToast("Gagal menyimpan data ke Firebase!", "error");
+            } else {
+                showToast("Jadwal baru berhasil disimpan ke database.", "success");
+                closeModal();
+            }
         });
         
         document.getElementById('inp-mapel').value = '';
@@ -489,15 +518,17 @@
     }
 
     function hapusJadwalFromFirebase(id) {
-        if(confirm("Apakah Anda yakin ingin menghapus data jadwal ini secara permanen dari database?")) {
-            database.ref('jadwal/' + id).remove();
+        if(confirm("Apakah Anda yakin ingin menghapus data jadwal ini?")) {
+            database.ref('jadwal/' + id).remove(function(err) {
+                if(!err) showToast("Jadwal berhasil dihapus.", "success");
+            });
         }
     }
 
     function openModal() { document.getElementById('modal-form').style.display = 'flex'; }
     function closeModal() { document.getElementById('modal-form').style.display = 'none'; }
 
-    // === 5. LOGIKA TAB 2: REKAP JAM MENGAJAR ===
+    // === 5. LOGIKA TAB 2: JUMLAH JAM GURU ===
     function renderJam() {
         const tbody = document.getElementById('table-jam-body');
         tbody.innerHTML = '';
@@ -516,7 +547,7 @@
         }
     }
 
-    // === 6. LOGIKA TAB 3: PENGATURAN KOP & KONTROL FILE BASE64 ===
+    // === 6. LOGIKA TAB 3: MEDIA KOP & TTD ===
     function loadKopFormFields() {
         document.getElementById('k-lembaga').value = dbKop.lembaga || "";
         document.getElementById('k-sekolah').value = dbKop.sekolah || "";
@@ -565,12 +596,15 @@
 
         database.ref('kop').set(newKop);
         database.ref('ttd').set(newTtd, function(error) {
-            if(error) alert("Gagal menyimpan ke Firebase!");
-            else alert("Seluruh pengaturan teks dan file media berhasil disimpan ke Firebase!");
+            if(error) {
+                showToast("Gagal menyimpan data pengaturan!", "error");
+            } else {
+                showToast("Seluruh pengaturan dan file media berhasil disimpan ke Firebase.", "success");
+            }
         });
     }
 
-    // === 7. LOGIKA TAB 4: PRATINJAU MATRIX JADWAL SIAP CETAK F4 ===
+    // === 7. LOGIKA TAB 4: MATRIX LAYOUT CETAK F4 ===
     function renderCetak() {
         document.getElementById('print-lembaga').textContent = dbKop.lembaga;
         document.getElementById('print-sekolah').textContent = dbKop.sekolah;
@@ -581,7 +615,6 @@
         document.getElementById('print-berlaku').textContent = dbTtd.berlaku;
         document.getElementById('print-kepala').textContent = dbTtd.kepala;
 
-        // Render pratinjau Logo
         const logoContainer = document.getElementById('print-logo-container');
         logoContainer.innerHTML = '';
         if (dbKop.logoSrc) {
@@ -594,7 +627,6 @@
             logoContainer.style.backgroundColor = '#006600';
         }
 
-        // Render pratinjau Gambar TTD
         const ttdContainer = document.getElementById('print-ttd-container');
         ttdContainer.innerHTML = '';
         if (dbTtd.imageSrc) {
@@ -645,7 +677,6 @@
                     if (cell) {
                         const color = daftarGuru[cell.g] ? daftarGuru[cell.g].color : '#fff';
                         let displayCode = cell.g;
-                        
                         if (prevCode[kls][hari] === cell.g) { displayCode = ""; }
                         prevCode[kls][hari] = cell.g;
 
@@ -673,12 +704,11 @@
         renderCetak();
     }
 
-    // === 8. BOOTSTRAP DATALIST GURU ===
+    // === 8. SETUP DATALIST SEARCH PADA STARTUP ===
     function initApp() {
         const datalistGuru = document.getElementById('guru-options');
         datalistGuru.innerHTML = '';
         for (const [code, data] of Object.entries(daftarGuru)) {
-            // Memasukkan format "A - NAMA GURU" ke dalam opsi pencarian
             datalistGuru.innerHTML += `<option value="${code} - ${data.name}">`;
         }
     }
