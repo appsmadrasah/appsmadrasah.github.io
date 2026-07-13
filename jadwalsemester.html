@@ -300,11 +300,29 @@
             </div>
         </div>
 
-        <label>Mata Pelajaran</label>
-        <input type="text" id="inp-mapel" placeholder="Contoh: B. Indonesia">
+        <label>Mata Pelajaran (Ketik untuk mencari)</label>
+        <input type="text" id="inp-mapel" list="mapel-options" placeholder="Pilih atau ketik mata pelajaran...">
+        <datalist id="mapel-options">
+            <option value="Pancasila"></option>
+            <option value="IPAS"></option>
+            <option value="PJOK"></option>
+            <option value="SBDP"></option>
+            <option value="Matematika"></option>
+            <option value="B. Arab"></option>
+            <option value="B. Indonesia"></option>
+            <option value="B. Inggris"></option>
+            <option value="B. Jawa"></option>
+            <option value="Qurdis"></option>
+            <option value="Akidah A"></option>
+            <option value="Fikih"></option>
+            <option value="SKI"></option>
+            <option value="ASWAJA"></option>
+        </datalist>
 
-        <label>Kode Guru</label>
-        <select id="inp-guru"></select>
+        <label>Kode Guru (Ketik untuk mencari nama)</label>
+        <input type="text" id="inp-guru" list="guru-options" placeholder="Pilih atau ketik kode/nama guru...">
+        <datalist id="guru-options">
+            </datalist>
 
         <div class="modal-actions">
             <button class="btn btn-cancel" onclick="closeModal()">Batal</button>
@@ -321,22 +339,30 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // === DATA DAFTAR GURU PETA UTAMA ===
+    // === DATA DAFTAR GURU PETA UTAMA (DENGAN WARNA UNIK) ===
     const daftarGuru = {
-        'A': { name: 'IMAM TAUFIQ, S.T', color: '#F8CBAD' },
-        'B': { name: 'SUSANTO, S.Pd', color: '#9BC2E6' },
-        'C': { name: 'MUHAMMAD NU\'IN, S.Ag', color: '#B4A7D6' },
-        'D': { name: 'YUSUF, S.Pd', color: '#FFE699' },
-        'E': { name: 'MOH. YASIN, S.Pd', color: '#FF9999' },
-        'F': { name: 'DRA. UMU SYAROFAH', color: '#99CCFF' },
-        'G': { name: 'MUSTAKIM, S.Pd.I', color: '#FF0000' },
-        'H': { name: 'MUNAYYAH, S.Pd', color: '#A9D08E' },
-        'I': { name: 'MUHAMMAD, S.Pd.I', color: '#C6E0B4' },
-        'J': { name: 'INDAYATI, S.Pd', color: '#00B050' },
-        'K': { name: 'RAHMAWATI YENI, SE', color: '#00B0F0' },
-        'P': { name: 'YUSRIFUL ILMY, S.Pd', color: '#FF99CC' },
-        'O': { name: 'CHANDRA NINA K, S.Pd', color: '#00FFFF' }
+        'A': { name: 'IMAM TAUFIQ, ST.', color: '#F8CBAD' },
+        'B': { name: 'SUBIANTO, S.Pd', color: '#9BC2E6' },
+        'C': { name: 'MUHAMMAD NURIL, S.Ag.', color: '#B4A7D6' },
+        'D': { name: 'YUSUF, S.Pd.', color: '#FFE699' },
+        'E': { name: 'MOH. YASIN, S.Pd.', color: '#FF9999' },
+        'F': { name: 'Dra. UMU SYAROFAH', color: '#99CCFF' },
+        'G': { name: 'MUSTIKAH, S.Pd.I', color: '#FF6666' },
+        'H': { name: 'MUNAFI\'AH, S.Pd.', color: '#A9D08E' },
+        'I': { name: 'MUHAIMINAH, S.Pd.I', color: '#C6E0B4' },
+        'J': { name: 'INDARSIH, S.Pd.', color: '#00B050' },
+        'K': { name: 'IMAM HAROMEN, SE.', color: '#00B0F0' },
+        'L': { name: 'ANDY KURNIAWAN, S.Pd.', color: '#8EA9DB' },
+        'M': { name: 'M. ZAINUL ARIFIN, S.Com', color: '#E2EFDA' },
+        'N': { name: 'FITROTIN AZIZAH, S.M', color: '#D9E1F2' },
+        'O': { name: 'CHANDRA ARIES, S.Pd', color: '#00FFFF' },
+        'P': { name: 'YUSHIFUL ILMY, S.Pd', color: '#FF99CC' },
+        'Q': { name: 'LATHIFATU NUR NISA\', S.Pd', color: '#D9D9D9' },
+        'R': { name: 'ANDRYAN BAYU PRATAMA, S.Pd', color: '#F4B084' },
+        'S': { name: 'WIDIA NATALIA, S.Pd', color: '#FFFF99' },
+        'T': { name: 'NI\'MATUZ ZUHROH', color: '#CC99FF' }
     };
+    
     const daftarHari = ['SABTU', 'AHAD', 'SENIN', 'SELASA', 'RABU', 'KAMIS'];
 
     // Local state data cache dari Firebase
@@ -361,7 +387,7 @@
             }
         }
 
-        // 2. Ambil data Kop Surat, jika kosong isi nilai default template
+        // 2. Ambil data Kop Surat
         dbKop = serverData.kop || {
             lembaga: "LEMBAGA PENDIDIKAN MA'ARIF NU",
             sekolah: 'MI "HIDAYATUS SHIBYAN"',
@@ -379,11 +405,8 @@
             imageSrc: ""
         };
 
-        // Matikan loading text dan tampilkan data utama
         document.getElementById('loading-input').style.display = 'none';
         document.getElementById('main-data-table').style.display = 'table';
-
-        // Render ulang semua tampilan UI
         renderSemuaView();
     });
 
@@ -437,18 +460,23 @@
         const j = document.getElementById('inp-jam').value;
         const w = document.getElementById('inp-waktu').value || "07.00 - 07.35";
         const m = document.getElementById('inp-mapel').value;
-        const g = document.getElementById('inp-guru').value;
+        
+        // Memisahkan Kode Guru dari teks datalist yang diketikkan pengguna
+        let rawGuru = document.getElementById('inp-guru').value;
+        let g = rawGuru.split('-')[0].trim().toUpperCase();
 
         if(!m) return alert("Mata Pelajaran wajib diisi!");
+        
+        if(!daftarGuru[g]) {
+            return alert("Kode/Nama Guru tidak valid! Silakan pilih dari daftar pencarian.");
+        }
 
-        // Validasi crash/bentrok jadwal pada data lokal sebelum dikirim ke Firebase
         const isExist = dbJadwal.find(x => x.kelas === k && x.hari === h && x.jam === j);
         if(isExist) {
             alert(`Gagal! Jadwal Kelas ${k} pada hari ${h} jam ke-${j} sudah terisi.`);
             return;
         }
 
-        // Tembak push data ke node 'jadwal' di Firebase
         database.ref('jadwal').push({
             kelas: k, hari: h, jam: j, waktu: w, mapel: m, guru: g
         }, function(error) {
@@ -457,6 +485,7 @@
         });
         
         document.getElementById('inp-mapel').value = '';
+        document.getElementById('inp-guru').value = '';
     }
 
     function hapusJadwalFromFirebase(id) {
@@ -518,7 +547,6 @@
     }
 
     function saveKopToFirebase() {
-        // Tarik data teks input form terbaru
         const newKop = {
             lembaga: document.getElementById('k-lembaga').value,
             sekolah: document.getElementById('k-sekolah').value,
@@ -535,7 +563,6 @@
             imageSrc: dbTtd.imageSrc || ""
         };
 
-        // Set/Update serentak ke child node kop & ttd di Firebase Realtime Database
         database.ref('kop').set(newKop);
         database.ref('ttd').set(newTtd, function(error) {
             if(error) alert("Gagal menyimpan ke Firebase!");
@@ -567,7 +594,7 @@
             logoContainer.style.backgroundColor = '#006600';
         }
 
-        // Render pratinjau Gambar TTD Kepala Madrasah
+        // Render pratinjau Gambar TTD
         const ttdContainer = document.getElementById('print-ttd-container');
         ttdContainer.innerHTML = '';
         if (dbTtd.imageSrc) {
@@ -577,7 +604,6 @@
             ttdContainer.appendChild(imgEl);
         }
 
-        // Render List Kode Guru Sisi Kanan
         const tBodyGuru = document.getElementById('print-teacher-body');
         tBodyGuru.innerHTML = '';
         for (const [code, data] of Object.entries(daftarGuru)) {
@@ -587,14 +613,12 @@
             </tr>`;
         }
 
-        // Bentuk Struktur Matriks Kosong [Kelas][Hari][Jam]
         let matrix = {};
         for(let k=1; k<=6; k++) {
             matrix[k] = {};
             daftarHari.forEach(h => matrix[k][h] = {});
         }
         
-        // Isikan Data dari variabel lokal dbJadwal (yang didapat dari Firebase)
         dbJadwal.forEach(j => {
             if(matrix[j.kelas] && matrix[j.kelas][j.hari]) {
                 matrix[j.kelas][j.hari][j.jam] = { m: j.mapel, g: j.guru };
@@ -622,7 +646,6 @@
                         const color = daftarGuru[cell.g] ? daftarGuru[cell.g].color : '#fff';
                         let displayCode = cell.g;
                         
-                        // Sembunyikan kode guru jika mengajar jam berurutan di kelas & hari yang sama
                         if (prevCode[kls][hari] === cell.g) { displayCode = ""; }
                         prevCode[kls][hari] = cell.g;
 
@@ -644,18 +667,19 @@
         }
     }
 
-    // Fungsi trigger refresh massal UI ketika ada perubahan snapshot data Firebase
     function renderSemuaView() {
         renderInputTable();
         renderJam();
         renderCetak();
     }
 
-    // === 8. BOOTSTRAP FORM SELECT GURU ===
+    // === 8. BOOTSTRAP DATALIST GURU ===
     function initApp() {
-        const selectGuru = document.getElementById('inp-guru');
+        const datalistGuru = document.getElementById('guru-options');
+        datalistGuru.innerHTML = '';
         for (const [code, data] of Object.entries(daftarGuru)) {
-            selectGuru.innerHTML += `<option value="${code}">${code} - ${data.name}</option>`;
+            // Memasukkan format "A - NAMA GURU" ke dalam opsi pencarian
+            datalistGuru.innerHTML += `<option value="${code} - ${data.name}">`;
         }
     }
 
