@@ -18,100 +18,266 @@
         body {
             display: flex;
             height: 100vh;
-            background-color: #f0f7ff; 
+            background-color: #ecf0f5; /* Background abu-abu terang ala AdminLTE */
             overflow: hidden;
         }
 
         /* Sidebar Styling */
         .sidebar {
             width: 250px;
-            background-color: #ffffff;
-            border-right: 1px solid #e0e0e0;
+            background-color: #222d32; /* Warna gelap sidebar */
+            color: #b8c7ce;
             display: flex;
             flex-direction: column;
             z-index: 10;
         }
 
         .logo-container {
-            padding: 30px 20px;
+            padding: 15px 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            border-bottom: 1px solid #f0f0f0;
+            background-color: #367fa9; /* Biru header */
+            color: white;
         }
 
         .logo-box {
-            background-color: #004d40; 
-            color: white;
-            padding: 10px 15px;
-            border-radius: 4px;
             display: flex;
             align-items: center;
             gap: 10px;
             width: 100%;
         }
 
-        .logo-box i { font-size: 20px; color: #4db6ac; }
+        .logo-box i { font-size: 20px; color: #fff; }
         .logo-text { font-weight: bold; font-size: 14px; line-height: 1.2; text-transform: uppercase; }
 
-        .nav-menu { margin-top: 20px; display: flex; flex-direction: column; overflow-y: auto; }
+        .nav-menu { margin-top: 10px; display: flex; flex-direction: column; overflow-y: auto; padding-bottom: 30px; }
+        .nav-menu::-webkit-scrollbar { width: 5px; }
+        .nav-menu::-webkit-scrollbar-thumb { background-color: #1a2226; }
 
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 15px 25px;
+            padding: 12px 20px;
             text-decoration: none;
-            color: #5f6368; 
+            color: #b8c7ce; 
             transition: background 0.3s;
-            font-size: 15px;
+            font-size: 14px;
             cursor: pointer;
+            border-left: 3px solid transparent;
         }
 
         .nav-item:hover, .nav-item.active {
-            background-color: #f8f9fa;
-            color: #1a73e8;
+            background-color: #1e282c;
+            color: #ffffff;
+            border-left-color: #3c8dbc;
         }
 
-        .nav-item i { margin-right: 15px; width: 20px; text-align: center; font-size: 18px; }
+        .nav-item i { margin-right: 15px; width: 20px; text-align: center; font-size: 16px; }
+
+        /* Styling Khusus Dropdown Submenu */
+        .submenu {
+            display: none; 
+            flex-direction: column;
+            background-color: #1a2226;
+        }
+        
+        .submenu.show { display: flex; }
+
+        .submenu .nav-item {
+            padding: 10px 20px 10px 45px; 
+            font-size: 13px;
+            border-left: none;
+        }
+
+        .submenu .nav-item:hover, .submenu .nav-item.active {
+            color: #ffffff;
+            background-color: transparent;
+        }
+
+        .toggle-icon { margin-left: auto; transition: transform 0.3s; font-size: 12px !important; }
+        .nav-item.menu-open .toggle-icon { transform: rotate(180deg); }
 
         /* Area Konten Kanan */
         .main-content {
             flex-grow: 1;
-            background-color: #f4f8fb;
             position: relative;
             height: 100%;
+            overflow-y: auto;
         }
 
         .page {
             display: none; 
             width: 100%;
             height: 100%;
+            padding: 20px;
         }
 
         .page.active-page {
             display: block; 
         }
 
-        #dashboard {
-            padding: 30px;
-            overflow-y: auto;
-        }
-
-        .chart-container {
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border: 1px solid #e0e0e0;
-            margin-top: 15px;
-            max-width: 800px;
-        }
-
         iframe {
             width: 100%;
             height: 100%;
             border: none;
+            background: white;
+            border-radius: 4px;
         }
+
+        /* =========================================
+           STYLING KHUSUS DASHBOARD BARU
+           ========================================= */
+        .dash-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .dash-title h2 { font-size: 24px; color: #333; margin-bottom: 5px; font-weight: normal; }
+        .dash-title h2 i { margin-right: 10px; font-size: 20px; }
+        .dash-title p { font-size: 13px; color: #777; margin: 0; }
+        .dash-breadcrumb { font-size: 12px; color: #777; }
+        .dash-breadcrumb i { margin-right: 5px; }
+        .dash-breadcrumb span { color: #3c8dbc; margin-left: 5px; }
+
+        .info-boxes {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-box {
+            display: flex;
+            background: #fff;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .info-box-icon {
+            width: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 35px;
+            color: #fff;
+        }
+
+        .info-box-content {
+            padding: 10px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .info-box-text { font-size: 13px; color: #333; margin-bottom: 5px; text-transform: uppercase; }
+        .info-box-number { font-size: 20px; font-weight: bold; color: #333; }
+
+        /* Warna Box */
+        .bg-green { background-color: #00a65a; }
+        .bg-teal { background-color: #00c0ef; }
+        .bg-yellow { background-color: #f39c12; }
+        .bg-red { background-color: #dd4b39; }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+        }
+
+        .panel-box {
+            background: #fff;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+            border-radius: 3px;
+        }
+
+        /* Panel Kiri (Form) */
+        .panel-form { border-top: 3px solid #d2d6de; }
+        .panel-tabs {
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid #f4f4f4;
+            padding: 15px 20px 0;
+            background: #fafafa;
+        }
+        .panel-tab {
+            padding: 10px 15px;
+            font-size: 14px;
+            color: #00a65a;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -1px;
+        }
+        .panel-tab.active {
+            border-bottom-color: #00a65a;
+            font-weight: bold;
+            background: #fff;
+            border-top: 1px solid #f4f4f4;
+            border-left: 1px solid #f4f4f4;
+            border-right: 1px solid #f4f4f4;
+        }
+
+        .form-body { padding: 30px 20px; }
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            width: 150px;
+            text-align: right;
+            padding-right: 20px;
+            font-size: 14px;
+            color: #333;
+        }
+        .form-group input, .form-group select {
+            flex-grow: 1;
+            padding: 8px 12px;
+            border: 1px solid #d2d6de;
+            border-radius: 0;
+            font-size: 14px;
+            color: #555;
+            outline: none;
+        }
+        .form-group input:focus { border-color: #3c8dbc; }
+
+        /* Panel Kanan (Logo & Chart) */
+        .panel-logo {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .school-badge {
+            width: 150px;
+            height: 150px;
+            border: 2px solid #00a65a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            color: #00a65a;
+            font-size: 60px;
+        }
+        .action-buttons { display: flex; gap: 5px; }
+        .btn-action {
+            border: none;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .btn-action.green { background: #00a65a; }
+        .btn-action.yellow { background: #f39c12; }
+        .btn-action.red { background: #dd4b39; }
+
+        .panel-chart { padding: 15px; }
     </style>
 </head>
 <body>
@@ -125,76 +291,209 @@
         </div>
 
         <div class="nav-menu">
+            
             <div class="nav-item active" onclick="showPage('dashboard', this)">
-                <i class="fas fa-chart-pie"></i>
-                Dashboard Data Ujian
+                <i class="fas fa-tachometer-alt"></i>
+                Dashboard
+            </div>
+
+            <div class="nav-item" onclick="toggleMenu(this)">
+                <i class="fas fa-laptop"></i>
+                Kelembagaan
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="submenu">
+                <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Profil Lembaga</div>
+            </div>
+
+            <div class="nav-item" onclick="toggleMenu(this)">
+                <i class="fas fa-graduation-cap"></i>
+                Akademik
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="submenu">
+                <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Mutasi Masuk</div>
+                <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Mutasi Keluar</div>
+                <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Kelulusan</div>
+            </div>
+
+            <div class="nav-item" onclick="toggleMenu(this)">
+                <i class="fas fa-cubes"></i>
+                Administrasi
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="submenu">
+                <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Buku Induk</div>
+                <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Cetak Data</div>
             </div>
 
             <div class="nav-item" onclick="showPage('siswa', this)">
                 <i class="fas fa-users"></i>
                 Data Siswa
             </div>
-            
-            <div class="nav-item" onclick="showPage('hadir', this)">
-                <i class="fas fa-clipboard-list"></i>
-                Daftar Hadir
+
+            <div class="nav-item" onclick="toggleMenu(this)">
+                <i class="fas fa-user-circle"></i>
+                Data Alumni
+                <i class="fas fa-chevron-down toggle-icon"></i>
             </div>
-            
-            <div class="nav-item" onclick="showPage('un', this)">
-                <i class="fas fa-address-card"></i>
-                Nomor Ujian Nasional
-            </div>
-            
-            <div class="nav-item" onclick="showPage('sat', this)">
-                <i class="fas fa-user-check"></i>
-                Nomor Ujian SAT
-            </div>
-            
-            <div class="nav-item" onclick="showPage('jadwal', this)">
-                <i class="fas fa-calendar-alt"></i>
-                Jadwal Ujian
+            <div class="submenu">
+                <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Daftar Alumni</div>
             </div>
 
-            <a href="https://appsmadrasah.github.io/umbk.html" target="_blank" class="nav-item">
-                <i class="fas fa-award"></i>
-                Nilai UM
-            </a>
+            <div class="nav-item" onclick="toggleMenu(this)">
+                <i class="fas fa-user-plus"></i>
+                Data PPDB
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="submenu">
+                <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Pendaftar</div>
+            </div>
+            
+            <div class="nav-item" onclick="toggleMenu(this)">
+                <i class="fas fa-folder-open"></i>
+                Data Ujian
+                <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="submenu">
+                <div class="nav-item" onclick="showPage('hadir', this)">
+                    <i class="fas fa-angle-right"></i> Daftar Hadir
+                </div>
+                <div class="nav-item" onclick="showPage('un', this)">
+                    <i class="fas fa-angle-right"></i> Nomor Ujian Nasional
+                </div>
+                <div class="nav-item" onclick="showPage('sat', this)">
+                    <i class="fas fa-angle-right"></i> Nomor Ujian SAT
+                </div>
+                <div class="nav-item" onclick="showPage('jadwal', this)">
+                    <i class="fas fa-angle-right"></i> Jadwal Ujian
+                </div>
+                <a href="https://appsmadrasah.github.io/umbk.html" target="_blank" class="nav-item">
+                    <i class="fas fa-angle-right"></i> Nilai UM
+                </a>
+            </div>
+
         </div>
     </div>
 
     <div class="main-content">
         
         <div id="dashboard" class="page active-page">
-            <h2>Dashboard Data Ujian</h2>
-            <div class="chart-container">
-                <canvas id="grafikSiswa"></canvas>
+            
+            <div class="dash-header">
+                <div class="dash-title">
+                    <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+                    <p>Selamat Datang <b>Admin</b> Di Aplikasi Database</p>
+                </div>
+                <div class="dash-breadcrumb">
+                    <i class="fas fa-home"></i> / <span>Dashboard</span>
+                </div>
+            </div>
+
+            <div class="info-boxes">
+                <div class="info-box">
+                    <div class="info-box-icon bg-green"><i class="fas fa-users"></i></div>
+                    <div class="info-box-content">
+                        <span class="info-box-text">SISWA</span>
+                        <span class="info-box-number" id="count-siswa">0</span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <div class="info-box-icon bg-teal"><i class="fas fa-user-md"></i></div>
+                    <div class="info-box-content">
+                        <span class="info-box-text">GURU</span>
+                        <span class="info-box-number">0</span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <div class="info-box-icon bg-yellow"><i class="fas fa-graduation-cap"></i></div>
+                    <div class="info-box-content">
+                        <span class="info-box-text">ALUMNI</span>
+                        <span class="info-box-number">4</span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <div class="info-box-icon bg-red"><i class="fas fa-clone"></i></div>
+                    <div class="info-box-content">
+                        <span class="info-box-text">KELAS</span>
+                        <span class="info-box-number" id="count-kelas">3</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                
+                <div class="panel-box panel-form">
+                    <div class="panel-tabs">
+                        <div class="panel-tab active"><i class="fas fa-home"></i> Profile</div>
+                        <div class="panel-tab"><i class="fas fa-map-marker-alt"></i> Alamat Lembaga</div>
+                        <div class="panel-tab"><i class="fas fa-phone"></i> Contact</div>
+                        <div class="panel-tab"><i class="fas fa-user-tie"></i> Data Kepala</div>
+                    </div>
+                    
+                    <div class="form-body">
+                        <div class="form-group">
+                            <label>NSM</label>
+                            <input type="text" value="131265010003" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>NPSN</label>
+                            <input type="text" value="69977331" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Nama Sekolah</label>
+                            <input type="text" value="MA NURUL MUJAHIDAH NW TANJUNG SELOR" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Opsi Pindah Data</label>
+                            <select>
+                                <option>Aksi masuk butir mutasi keluar</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="panel-box panel-logo">
+                        <div class="school-badge">
+                            <i class="fas fa-star-and-crescent"></i>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn-action green"><i class="fas fa-user"></i></button>
+                            <button class="btn-action yellow"><i class="fas fa-cog"></i></button>
+                            <button class="btn-action red"><i class="fas fa-power-off"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="panel-box panel-chart">
+                        <canvas id="grafikSiswa"></canvas>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <div id="siswa" class="page">
-            <iframe src="https://appsmadrasah.github.io/datasiswa.html"></iframe>
-        </div>
-
-        <div id="hadir" class="page">
-            <iframe src="https://appsmadrasah.github.io/daftarhadir.html"></iframe>
-        </div>
-
-        <div id="un" class="page">
-            <iframe src="https://appsmadrasah.github.io/kartu1.html"></iframe>
-        </div>
-
-        <div id="sat" class="page">
-            <iframe src="https://appsmadrasah.github.io/kartu2.html"></iframe>
-        </div>
-
-        <div id="jadwal" class="page">
-            <iframe src="https://appsmadrasah.github.io/jadwal.html"></iframe>
+        <div id="siswa" class="page"><iframe src="https://appsmadrasah.github.io/datasiswa.html"></iframe></div>
+        <div id="hadir" class="page"><iframe src="https://appsmadrasah.github.io/daftarhadir.html"></iframe></div>
+        <div id="un" class="page"><iframe src="https://appsmadrasah.github.io/kartu1.html"></iframe></div>
+        <div id="sat" class="page"><iframe src="https://appsmadrasah.github.io/kartu2.html"></iframe></div>
+        <div id="jadwal" class="page"><iframe src="https://appsmadrasah.github.io/jadwal.html"></iframe></div>
+        
+        <div id="blank" class="page">
+            <h3 style="color: #666; margin-top: 20px;">Halaman ini masih dalam tahap pengembangan...</h3>
         </div>
 
     </div>
 
     <script>
         let myChart = null; 
+
+        // FUNGSI UNTUK MEMBUKA/MENUTUP MENU DROPDOWN
+        function toggleMenu(element) {
+            element.classList.toggle('menu-open');
+            const submenu = element.nextElementSibling;
+            submenu.classList.toggle('show');
+        }
 
         // FUNGSI NAVIGASI DAN AUTO-RELOAD
         function showPage(pageId, element) {
@@ -207,12 +506,14 @@
             });
 
             const selectedPage = document.getElementById(pageId);
-            selectedPage.classList.add('active-page');
+            if(selectedPage) {
+                selectedPage.classList.add('active-page');
+            }
             element.classList.add('active');
 
             if (pageId === 'dashboard') {
                 loadDashboardData(); 
-            } else {
+            } else if (selectedPage) {
                 const iframe = selectedPage.querySelector('iframe');
                 if (iframe) {
                     const currentSrc = iframe.src;
@@ -232,10 +533,13 @@
                     if (!data) return;
 
                     const jumlahPerKelas = {};
+                    let totalSiswaData = 0;
+                    
                     const dataArray = Array.isArray(data) ? data : Object.values(data);
 
                     dataArray.forEach(siswa => {
                         if (siswa && typeof siswa === 'object') {
+                            totalSiswaData++; // Hitung total seluruh siswa
                             const namaKelas = siswa.kelas || siswa.Kelas || siswa.KELAS || "Tanpa Kelas";
                             if (jumlahPerKelas[namaKelas]) {
                                 jumlahPerKelas[namaKelas]++;
@@ -248,6 +552,11 @@
                     const labelKelas = Object.keys(jumlahPerKelas);
                     const angkaSiswa = Object.values(jumlahPerKelas);
 
+                    // UPDATE WIDGET KARTU DI ATAS SECARA DINAMIS
+                    document.getElementById('count-siswa').innerText = totalSiswaData;
+                    document.getElementById('count-kelas').innerText = labelKelas.length;
+
+                    // GAMBAR GRAFIK
                     const ctx = document.getElementById('grafikSiswa').getContext('2d');
                     
                     if (myChart) {
@@ -261,8 +570,8 @@
                             datasets: [{
                                 label: 'Jumlah Siswa per Kelas',
                                 data: angkaSiswa,
-                                backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                                borderColor: 'rgba(54, 162, 235, 1)',
+                                backgroundColor: 'rgba(0, 166, 90, 0.7)', // Menggunakan warna hijau AdminLTE
+                                borderColor: 'rgba(0, 166, 90, 1)',
                                 borderWidth: 1
                             }]
                         },
@@ -273,6 +582,9 @@
                                     beginAtZero: true, 
                                     ticks: { stepSize: 1 } 
                                 } 
+                            },
+                            plugins: {
+                                legend: { display: false } // Menyembunyikan legend agar tidak sempit
                             }
                         }
                     });
