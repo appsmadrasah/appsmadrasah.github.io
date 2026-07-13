@@ -97,14 +97,37 @@
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         .form-group input[type="file"] { padding: 5px; background-color: #fff; }
 
-        /* === NOTIFIKASI TOAST === */
-        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast-box { background: #fff; color: #333; padding: 14px 20px; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 12px; border-left: 4px solid #333; min-width: 320px; animation: toastIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards, toastOut 0.3s 3.7s ease forwards; }
-        .toast-success { border-left-color: #2ecc71; background-color: #f6fff8; }
-        .toast-warning { border-left-color: #f1c40f; background-color: #fffdf1; }
-        .toast-error { border-left-color: #e74c3c; background-color: #fff9f9; }
-        @keyframes toastIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes toastOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+        /* === NOTIFIKASI TOAST MINIMALIS & ELEGAN === */
+        .toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
+        .toast-box { 
+            background: #ffffff; 
+            color: #2c3e50; 
+            padding: 14px 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.12), 0 4px 10px -4px rgba(0,0,0,0.08); 
+            border: 1px solid #f0f0f0; 
+            font-size: 13px; 
+            font-weight: 500; 
+            display: flex; 
+            align-items: center; 
+            gap: 14px; 
+            min-width: 280px; 
+            max-width: 380px;
+            animation: toastEnter 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.1) forwards, toastExit 0.4s 3.5s ease forwards; 
+        }
+        .toast-icon { font-size: 18px; display: flex; align-items: center; justify-content: center; }
+        .toast-success .toast-icon { color: #2ecc71; } /* Hijau Lembut */
+        .toast-warning .toast-icon { color: #f39c12; } /* Kuning/Emas Elegan */
+        .toast-error .toast-icon { color: #e74c3c; }   /* Merah Cerah */
+        
+        @keyframes toastEnter { 
+            from { transform: translateX(120%); opacity: 0; } 
+            to { transform: translateX(0); opacity: 1; } 
+        }
+        @keyframes toastExit { 
+            from { transform: translateX(0); opacity: 1; } 
+            to { transform: translateX(120%); opacity: 0; } 
+        }
 
         /* === LAYOUT CETAK F4 === */
         .cetak-wrapper { background: #555; padding: 30px 15px; border: 1px solid #ddd; overflow-x: auto; display: flex; justify-content: center; }
@@ -427,17 +450,24 @@
         return roman[num] || num;
     }
 
-    // === 2. TOAST NOTIFICATION ===
+    // === 2. TOAST NOTIFICATION ELEGAN ===
     function showToast(message, type = "success") {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
         toast.className = `toast-box toast-${type}`;
-        let icon = '<i class="fas fa-check-circle" style="color:#2ecc71;"></i>';
-        if (type === 'warning') icon = '<i class="fas fa-exclamation-triangle" style="color:#f1c40f;"></i>';
-        if (type === 'error') icon = '<i class="fas fa-times-circle" style="color:#e74c3c;"></i>';
-        toast.innerHTML = `${icon} <span style="line-height:1.4;">${message}</span>`;
+        
+        let iconClass = 'fa-check-circle';
+        if (type === 'warning') iconClass = 'fa-exclamation-triangle';
+        if (type === 'error') iconClass = 'fa-times-circle';
+
+        toast.innerHTML = `
+            <i class="fas ${iconClass} toast-icon"></i>
+            <span style="line-height:1.4;">${message}</span>
+        `;
+        
         container.appendChild(toast);
-        setTimeout(() => { toast.remove(); }, 3500);
+        // Menghapus elemen setelah animasi exit selesai (4000ms secara total)
+        setTimeout(() => { toast.remove(); }, 4000); 
     }
 
     // === 3. SINKRONISASI REALTIME FIREBASE ===
@@ -617,7 +647,6 @@
         renderInputGrid();
     }
 
-    // PENYESUAIAN LOGIKA MAPEL: Guru Kelas vs Guru Mapel
     function renderInputGrid() {
         const tbody = document.getElementById('input-grid-body');
         tbody.innerHTML = '';
@@ -744,7 +773,6 @@
         }
     }
 
-    // PENYESUAIAN REFRESH HAPUS & RESET
     function resetSlot(jam, id) {
         document.getElementById(`mapel-${jam}`).value = "-";
         document.getElementById(`guru-${jam}`).value = "-";
@@ -770,7 +798,6 @@
 
             if(rowCounts[key] > 8) rowCounts[key]--;
             
-            // Perbaikan logic manual render saat tidak ada id (slot kosong) yang dikirim ke database
             if (Object.keys(updates).length > 0) {
                 database.ref().update(updates).then(() => showToast("Jam dihapus & dirapikan.", "success"));
             } else {
@@ -781,7 +808,6 @@
     }
 
     // === 6. TAB JUMLAH JAM ===
-    // PERUBAHAN ISI BARIS AGAR RATA TENGAH & LEBIH RAPI
     function renderJam() {
         const tbody = document.getElementById('table-jam-body');
         tbody.innerHTML = '';
