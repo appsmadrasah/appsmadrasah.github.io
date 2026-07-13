@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Penyusunan Jadwal Madrasah</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
         /* === GLOBAL STYLES === */
         * { box-sizing: border-box; font-family: Arial, sans-serif; }
@@ -29,13 +33,13 @@
         .btn-add:hover { background-color: #1976D2; }
         .btn-save { background-color: #4CAF50; color: white; margin-top: 15px; width: 100%; }
         .btn-print { background-color: #f39c12; color: white; margin-bottom: 15px; }
+        .loading-text { text-align: center; font-weight: bold; color: #888; padding: 20px; }
 
         /* Tabel Data Input */
         .data-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px; }
         .data-table th, .data-table td { border: 1px solid #ddd; padding: 12px; text-align: center; }
         .data-table th { background-color: #4CAF50; color: white; font-weight: bold; }
         .data-table tr:nth-child(even) { background-color: #fdfdfd; }
-        /* Mapel dan Nama Guru rata kiri */
         .data-table td:nth-child(4), .data-table td:nth-child(6) { text-align: left; }
 
         /* Toolbar / Filter */
@@ -45,8 +49,6 @@
         /* Tombol Aksi */
         .action-buttons { display: flex; justify-content: center; gap: 8px; }
         .btn-action { border: none; border-radius: 4px; padding: 8px 12px; color: white; cursor: pointer; font-size: 14px; }
-        .btn-edit { background-color: #ffc107; }
-        .btn-edit:hover { background-color: #e0a800; }
         .btn-delete { background-color: #e74c3c; }
         .btn-delete:hover { background-color: #c0392b; }
 
@@ -132,7 +134,8 @@
             </select>
         </div>
         
-        <table class="data-table">
+        <div id="loading-input" class="loading-text">Menghubungkan ke Firebase database...</div>
+        <table class="data-table" id="main-data-table" style="display:none;">
             <thead>
                 <tr>
                     <th width="5%">No.</th>
@@ -182,13 +185,11 @@
                 <h3>Pengaturan Tanda Tangan</h3>
                 <div class="form-group"><label>Kotak Berlaku (Teks)</label><textarea id="k-berlaku" rows="4"></textarea></div>
                 <div class="form-group"><label>Nama Kepala Madrasah</label><input type="text" id="k-kepala"></div>
-                
                 <div class="form-group">
                     <label>Upload File TTD (.jpg, .png)</label>
                     <input type="file" id="k-upload-ttd" accept=".jpg, .jpeg, .png" onchange="previewImageTTD(this)">
                 </div>
-                
-                <button class="btn btn-save" onclick="saveKop()">Simpan Pengaturan</button>
+                <button class="btn btn-save" onclick="saveKopToFirebase()">Simpan Seluruh Pengaturan</button>
             </div>
         </div>
     </div>
@@ -251,9 +252,7 @@
                         <div class="c-signature">
                             <p>Kepala Madrasah</p>
                             <p>"Hidayatus Shibyan"</p>
-                            
                             <div class="c-signature-space" id="print-ttd-container"></div>
-                            
                             <p style="text-decoration: underline; font-weight: bold;" id="print-kepala"></p>
                         </div>
                     </div>
@@ -309,19 +308,29 @@
 
         <div class="modal-actions">
             <button class="btn btn-cancel" onclick="closeModal()">Batal</button>
-            <button class="btn btn-add" onclick="saveJadwal()">Simpan Data</button>
+            <button class="btn btn-add" onclick="saveJadwalToFirebase()">Simpan Data</button>
         </div>
     </div>
 </div>
 
 <script>
-    // === 1. STATE & DATA GLOBAL ===
+    // === 1. KONFIGURASI DAN INITIALISASI FIREBASE ===
+    const firebaseConfig = {
+        databaseURL: "https://jadwalsemester-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // === DATA DAFTAR GURU PETA UTAMA ===
     const daftarGuru = {
         'A': { name: 'IMAM TAUFIQ, S.T', color: '#F8CBAD' },
         'B': { name: 'SUSANTO, S.Pd', color: '#9BC2E6' },
         'C': { name: 'MUHAMMAD NU\'IN, S.Ag', color: '#B4A7D6' },
+        'D': { name: 'YUSUF, S.Pd', color: '#FFE699' },
+        'E': { name: 'MOH. YASIN, S.Pd', color: '#FF9999' },
         'F': { name: 'DRA. UMU SYAROFAH', color: '#99CCFF' },
         'G': { name: 'MUSTAKIM, S.Pd.I', color: '#FF0000' },
+        'H': { name: 'MUNAYYAH, S.Pd', color: '#A9D08E' },
         'I': { name: 'MUHAMMAD, S.Pd.I', color: '#C6E0B4' },
         'J': { name: 'INDAYATI, S.Pd', color: '#00B050' },
         'K': { name: 'RAHMAWATI YENI, SE', color: '#00B0F0' },
@@ -330,46 +339,64 @@
     };
     const daftarHari = ['SABTU', 'AHAD', 'SENIN', 'SELASA', 'RABU', 'KAMIS'];
 
-    let dbJadwal = [
-        { id: 1, kelas: "1", hari: "SELASA", jam: "1", waktu: "07.00 - 07.35", mapel: "Pancasila", guru: "F" },
-        { id: 2, kelas: "1", hari: "SELASA", jam: "2", waktu: "07.35 - 08.10", mapel: "B. Arab", guru: "I" },
-        { id: 3, kelas: "1", hari: "RABU", jam: "1", waktu: "07.00 - 07.35", mapel: "Akidah A", guru: "J" },
-        { id: 4, kelas: "1", hari: "RABU", jam: "2", waktu: "07.35 - 08.10", mapel: "B. Jawa", guru: "A" }
-    ];
-
-    let dbKop = {
-        lembaga: "LEMBAGA PENDIDIKAN MA'ARIF NU",
-        sekolah: 'MI "HIDAYATUS SHIBYAN"',
-        wilayah: 'KENDAL KEMLAGI KARANGGENENG LAMONGAN',
-        akreditasi: 'TERAKREDITASI : A | NSM : 112.23.24.18.358 | NPSN : 11 35 58',
-        alamat: 'Jl. Sindang Gede Kendal Kemlagi Karanggeneng Lamongan 62254',
-        tahun: 'JADWAL PELAJARAN TAHUN 2026/2027 (GANJIL)',
-        logoSrc: "" // Menampung data Base64 gambar Logo
-    };
-
-    let dbTtd = {
-        berlaku: 'BERLAKU\n\nHARI SABTU\n\n18 JANUARI 2026',
-        kepala: 'IMAM TAUFIQ, S.T',
-        imageSrc: "" // Menampung data Base64 gambar TTD
-    };
+    // Local state data cache dari Firebase
+    let dbJadwal = [];
+    let dbKop = {};
+    let dbTtd = {};
 
     function toRoman(num) {
         const roman = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI' };
         return roman[num] || num;
     }
 
-    // === 2. SISTEM TAB ===
+    // === 2. REALTIME LISTENER DARI FIREBASE ===
+    database.ref().on('value', function(snapshot) {
+        const serverData = snapshot.val() || {};
+        
+        // 1. Ambil array Jadwal Pelajaran
+        dbJadwal = [];
+        if (serverData.jadwal) {
+            for (let id in serverData.jadwal) {
+                dbJadwal.push({ id: id, ...serverData.jadwal[id] });
+            }
+        }
+
+        // 2. Ambil data Kop Surat, jika kosong isi nilai default template
+        dbKop = serverData.kop || {
+            lembaga: "LEMBAGA PENDIDIKAN MA'ARIF NU",
+            sekolah: 'MI "HIDAYATUS SHIBYAN"',
+            wilayah: 'KENDAL KEMLAGI KARANGGENENG LAMONGAN',
+            akreditasi: 'TERAKREDITASI : A | NSM : 112.23.24.18.358 | NPSN : 11 35 58',
+            alamat: 'Jl. Sindang Gede Kendal Kemlagi Karanggeneng Lamongan 62254',
+            tahun: 'JADWAL PELAJARAN TAHUN 2026/2027 (GANJIL)',
+            logoSrc: ""
+        };
+
+        // 3. Ambil data Tanda Tangan
+        dbTtd = serverData.ttd || {
+            berlaku: 'BERLAKU\n\nHARI SABTU\n\n18 JANUARI 2026',
+            kepala: 'IMAM TAUFIQ, S.T',
+            imageSrc: ""
+        };
+
+        // Matikan loading text dan tampilkan data utama
+        document.getElementById('loading-input').style.display = 'none';
+        document.getElementById('main-data-table').style.display = 'table';
+
+        // Render ulang semua tampilan UI
+        renderSemuaView();
+    });
+
+    // === 3. SISTEM PERPINDAHAN TAB ===
     function switchTab(tabId, el) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.step-tab').forEach(t => t.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
         el.classList.add('active');
-
-        if (tabId === 'tab-jam') renderJam();
-        if (tabId === 'tab-cetak') renderCetak();
+        if (tabId === 'tab-kop') loadKopFormFields();
     }
 
-    // === 3. TAB 1: INPUT JADWAL ===
+    // === 4. LOGIKA INTEGRASI TAB 1: CRUD FIREBASE ===
     function renderInputTable() {
         const filterKelas = document.getElementById('filter-kelas').value;
         const tbody = document.getElementById('table-input-body');
@@ -382,7 +409,6 @@
 
         filteredData.forEach((d, index) => {
             const tr = document.createElement('tr');
-            // Menampilkan data nama guru dari variabel daftarGuru menggunakan d.guru
             const namaGuru = daftarGuru[d.guru] ? daftarGuru[d.guru].name : "-";
             
             tr.innerHTML = `
@@ -395,11 +421,8 @@
                 <td><b>${d.guru}</b></td>
                 <td>
                     <div class="action-buttons">
-                        <button class="btn-action btn-edit" onclick="editJadwal(${d.id})" title="Edit">
-                            <i class="fas fa-pencil-alt"></i>
-                        </button>
-                        <button class="btn-action btn-delete" onclick="hapusJadwal(${d.id})" title="Hapus">
-                            <i class="fas fa-trash"></i>
+                        <button class="btn-action btn-delete" onclick="hapusJadwalFromFirebase('${d.id}')" title="Hapus">
+                            <i class="fas fa-trash"></i> Hapus
                         </button>
                     </div>
                 </td>
@@ -408,40 +431,44 @@
         });
     }
 
-    function hapusJadwal(id) {
-        if(confirm("Apakah Anda yakin ingin menghapus jadwal ini?")) {
-            dbJadwal = dbJadwal.filter(d => d.id !== id);
-            renderSemua();
-        }
-    }
-    
-    function editJadwal(id) { alert("Simulasi form edit untuk ID: " + id); }
-    function openModal() { document.getElementById('modal-form').style.display = 'flex'; }
-    function closeModal() { document.getElementById('modal-form').style.display = 'none'; }
-    
-    function saveJadwal() {
+    function saveJadwalToFirebase() {
         const k = document.getElementById('inp-kelas').value;
         const h = document.getElementById('inp-hari').value;
         const j = document.getElementById('inp-jam').value;
-        const w = document.getElementById('inp-waktu').value;
+        const w = document.getElementById('inp-waktu').value || "07.00 - 07.35";
         const m = document.getElementById('inp-mapel').value;
         const g = document.getElementById('inp-guru').value;
 
-        if(!m) return alert("Mata Pelajaran harus diisi!");
+        if(!m) return alert("Mata Pelajaran wajib diisi!");
 
+        // Validasi crash/bentrok jadwal pada data lokal sebelum dikirim ke Firebase
         const isExist = dbJadwal.find(x => x.kelas === k && x.hari === h && x.jam === j);
         if(isExist) {
-            alert(`Jadwal Kelas ${k} pada hari ${h} jam ke-${j} sudah terisi!`);
+            alert(`Gagal! Jadwal Kelas ${k} pada hari ${h} jam ke-${j} sudah terisi.`);
             return;
         }
 
-        dbJadwal.push({ id: Date.now(), kelas: k, hari: h, jam: j, waktu: w, mapel: m, guru: g });
-        closeModal();
+        // Tembak push data ke node 'jadwal' di Firebase
+        database.ref('jadwal').push({
+            kelas: k, hari: h, jam: j, waktu: w, mapel: m, guru: g
+        }, function(error) {
+            if (error) alert("Gagal menyimpan data ke Firebase!");
+            else closeModal();
+        });
+        
         document.getElementById('inp-mapel').value = '';
-        renderSemua();
     }
 
-    // === 4. TAB 2: JUMLAH JAM ===
+    function hapusJadwalFromFirebase(id) {
+        if(confirm("Apakah Anda yakin ingin menghapus data jadwal ini secara permanen dari database?")) {
+            database.ref('jadwal/' + id).remove();
+        }
+    }
+
+    function openModal() { document.getElementById('modal-form').style.display = 'flex'; }
+    function closeModal() { document.getElementById('modal-form').style.display = 'none'; }
+
+    // === 5. LOGIKA TAB 2: REKAP JAM MENGAJAR ===
     function renderJam() {
         const tbody = document.getElementById('table-jam-body');
         tbody.innerHTML = '';
@@ -454,62 +481,69 @@
             tr.innerHTML = `
                 <td style="background:${daftarGuru[key].color}; font-weight:bold;">${key}</td>
                 <td style="text-align:left;">${daftarGuru[key].name}</td>
-                <td><b>${jamGuru[key]} Jam</b></td>
+                <td><b>${jamGuru[key]} Jam Mengajar</b></td>
             `;
             tbody.appendChild(tr);
         }
     }
 
-    // === 5. TAB 3: PENGATURAN KOP & LOGIKA FILES UPLOAD ===
-    function loadKopForm() {
-        document.getElementById('k-lembaga').value = dbKop.lembaga;
-        document.getElementById('k-sekolah').value = dbKop.sekolah;
-        document.getElementById('k-wilayah').value = dbKop.wilayah;
-        document.getElementById('k-akreditasi').value = dbKop.akreditasi;
-        document.getElementById('k-alamat').value = dbKop.alamat;
-        document.getElementById('k-tahun').value = dbKop.tahun;
-        document.getElementById('k-berlaku').value = dbTtd.berlaku;
-        document.getElementById('k-kepala').value = dbTtd.kepala;
+    // === 6. LOGIKA TAB 3: PENGATURAN KOP & KONTROL FILE BASE64 ===
+    function loadKopFormFields() {
+        document.getElementById('k-lembaga').value = dbKop.lembaga || "";
+        document.getElementById('k-sekolah').value = dbKop.sekolah || "";
+        document.getElementById('k-wilayah').value = dbKop.wilayah || "";
+        document.getElementById('k-akreditasi').value = dbKop.akreditasi || "";
+        document.getElementById('k-alamat').value = dbKop.alamat || "";
+        document.getElementById('k-tahun').value = dbKop.tahun || "";
+        document.getElementById('k-berlaku').value = dbTtd.berlaku || "";
+        document.getElementById('k-kepala').value = dbTtd.kepala || "";
     }
 
-    // Fungsi Pembaca File Gambar Logo
     function previewLogo(input) {
         const file = input.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                dbKop.logoSrc = e.target.result;
-            }
+            reader.onload = function(e) { dbKop.logoSrc = e.target.result; };
             reader.readAsDataURL(file);
         }
     }
 
-    // Fungsi Pembaca File Gambar TTD
     function previewImageTTD(input) {
         const file = input.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                dbTtd.imageSrc = e.target.result;
-            }
+            reader.onload = function(e) { dbTtd.imageSrc = e.target.result; };
             reader.readAsDataURL(file);
         }
     }
 
-    function saveKop() {
-        dbKop.lembaga = document.getElementById('k-lembaga').value;
-        dbKop.sekolah = document.getElementById('k-sekolah').value;
-        dbKop.wilayah = document.getElementById('k-wilayah').value;
-        dbKop.akreditasi = document.getElementById('k-akreditasi').value;
-        dbKop.alamat = document.getElementById('k-alamat').value;
-        dbKop.tahun = document.getElementById('k-tahun').value;
-        dbTtd.berlaku = document.getElementById('k-berlaku').value;
-        dbTtd.kepala = document.getElementById('k-kepala').value;
-        alert("Pengaturan, File Logo, dan TTD Berhasil Diperbarui!");
-        renderCetak();
+    function saveKopToFirebase() {
+        // Tarik data teks input form terbaru
+        const newKop = {
+            lembaga: document.getElementById('k-lembaga').value,
+            sekolah: document.getElementById('k-sekolah').value,
+            wilayah: document.getElementById('k-wilayah').value,
+            akreditasi: document.getElementById('k-akreditasi').value,
+            alamat: document.getElementById('k-alamat').value,
+            tahun: document.getElementById('k-tahun').value,
+            logoSrc: dbKop.logoSrc || ""
+        };
+
+        const newTtd = {
+            berlaku: document.getElementById('k-berlaku').value,
+            kepala: document.getElementById('k-kepala').value,
+            imageSrc: dbTtd.imageSrc || ""
+        };
+
+        // Set/Update serentak ke child node kop & ttd di Firebase Realtime Database
+        database.ref('kop').set(newKop);
+        database.ref('ttd').set(newTtd, function(error) {
+            if(error) alert("Gagal menyimpan ke Firebase!");
+            else alert("Seluruh pengaturan teks dan file media berhasil disimpan ke Firebase!");
+        });
     }
 
-    // === 6. TAB 4: CETAK JADWAL ===
+    // === 7. LOGIKA TAB 4: PRATINJAU MATRIX JADWAL SIAP CETAK F4 ===
     function renderCetak() {
         document.getElementById('print-lembaga').textContent = dbKop.lembaga;
         document.getElementById('print-sekolah').textContent = dbKop.sekolah;
@@ -520,20 +554,20 @@
         document.getElementById('print-berlaku').textContent = dbTtd.berlaku;
         document.getElementById('print-kepala').textContent = dbTtd.kepala;
 
-        // Render Gambar Logo ke Kop Surat
+        // Render pratinjau Logo
         const logoContainer = document.getElementById('print-logo-container');
         logoContainer.innerHTML = '';
         if (dbKop.logoSrc) {
             const imgEl = document.createElement('img');
             imgEl.src = dbKop.logoSrc;
             logoContainer.appendChild(imgEl);
-            logoContainer.style.backgroundColor = 'transparent'; // Menghapus latar hijau jika gambar ada
+            logoContainer.style.backgroundColor = 'transparent';
         } else {
             logoContainer.textContent = 'LOGO';
             logoContainer.style.backgroundColor = '#006600';
         }
 
-        // Render Gambar TTD ke Halaman Bawah
+        // Render pratinjau Gambar TTD Kepala Madrasah
         const ttdContainer = document.getElementById('print-ttd-container');
         ttdContainer.innerHTML = '';
         if (dbTtd.imageSrc) {
@@ -543,6 +577,7 @@
             ttdContainer.appendChild(imgEl);
         }
 
+        // Render List Kode Guru Sisi Kanan
         const tBodyGuru = document.getElementById('print-teacher-body');
         tBodyGuru.innerHTML = '';
         for (const [code, data] of Object.entries(daftarGuru)) {
@@ -552,13 +587,18 @@
             </tr>`;
         }
 
+        // Bentuk Struktur Matriks Kosong [Kelas][Hari][Jam]
         let matrix = {};
         for(let k=1; k<=6; k++) {
             matrix[k] = {};
             daftarHari.forEach(h => matrix[k][h] = {});
         }
+        
+        // Isikan Data dari variabel lokal dbJadwal (yang didapat dari Firebase)
         dbJadwal.forEach(j => {
-            matrix[j.kelas][j.hari][j.jam] = { m: j.mapel, g: j.guru };
+            if(matrix[j.kelas] && matrix[j.kelas][j.hari]) {
+                matrix[j.kelas][j.hari][j.jam] = { m: j.mapel, g: j.guru };
+            }
         });
 
         let prevCode = {}; 
@@ -581,6 +621,8 @@
                     if (cell) {
                         const color = daftarGuru[cell.g] ? daftarGuru[cell.g].color : '#fff';
                         let displayCode = cell.g;
+                        
+                        // Sembunyikan kode guru jika mengajar jam berurutan di kelas & hari yang sama
                         if (prevCode[kls][hari] === cell.g) { displayCode = ""; }
                         prevCode[kls][hari] = cell.g;
 
@@ -602,23 +644,22 @@
         }
     }
 
-    // === INISIALISASI PERTAMA KALI ===
-    function init() {
-        const selectGuru = document.getElementById('inp-guru');
-        for (const [code, data] of Object.entries(daftarGuru)) {
-            selectGuru.innerHTML += `<option value="${code}">${code} - ${data.name}</option>`;
-        }
-        loadKopForm();
-        renderSemua();
-    }
-
-    function renderSemua() {
+    // Fungsi trigger refresh massal UI ketika ada perubahan snapshot data Firebase
+    function renderSemuaView() {
         renderInputTable();
         renderJam();
         renderCetak();
     }
 
-    window.onload = init;
+    // === 8. BOOTSTRAP FORM SELECT GURU ===
+    function initApp() {
+        const selectGuru = document.getElementById('inp-guru');
+        for (const [code, data] of Object.entries(daftarGuru)) {
+            selectGuru.innerHTML += `<option value="${code}">${code} - ${data.name}</option>`;
+        }
+    }
+
+    window.onload = initApp;
 </script>
 </body>
 </html>
