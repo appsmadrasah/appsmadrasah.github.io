@@ -191,7 +191,6 @@
                 <button class="day-tab" id="tab-SELASA" onclick="onHariChange('SELASA')">SELASA</button>
                 <button class="day-tab" id="tab-RABU" onclick="onHariChange('RABU')">RABU</button>
                 <button class="day-tab" id="tab-KAMIS" onclick="onHariChange('KAMIS')">KAMIS</button>
-                <button class="day-tab" id="tab-JUMAT" onclick="onHariChange('JUMAT')">JUMAT</button>
                 <button class="day-tab" id="tab-SABTU" onclick="onHariChange('SABTU')">SABTU</button>
                 <button class="day-tab" id="tab-MINGGU" onclick="onHariChange('MINGGU')">MINGGU</button>
             </div>
@@ -399,8 +398,9 @@
         'S': { name: 'WIDIA NATALIA, S.Pd', color: '#FFFF99' }, 'T': { name: 'NI\'MATUZ ZUHROH', color: '#CC99FF' }
     };
     
+    // PENYESUAIAN HARI: Menghilangkan JUMAT
     const defaultMapel = ["Pendidikan Jasmani, Olah Raga, dan Kesehatan", "Seni dan Budaya", "Pancasila", "IPAS", "Matematika", "B. Arab", "B. Indonesia", "B. Inggris", "B. Jawa", "Qurdis", "Akidah A", "Fikih", "SKI", "ASWAJA"];
-    const daftarHari = ['SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU', 'MINGGU'];
+    const daftarHari = ['SENIN', 'SELASA', 'RABU', 'KAMIS', 'SABTU', 'MINGGU'];
     const waktuDefault = { 1: "07.00 - 07.35", 2: "07.35 - 08.10", 3: "08.10 - 08.45", 4: "08.45 - 09.20", 5: "09.55 - 10.30", 6: "10.30 - 11.05", 7: "11.05 - 11.40", 8: "11.40 - 12.15", 9: "12.15 - 12.50", 10: "12.50 - 13.25", 11: "13.25 - 14.00" };
 
     // === STATE APLIKASI ===
@@ -461,10 +461,13 @@
         if (serverData.jadwal) {
             for (let id in serverData.jadwal) { 
                 let j = serverData.jadwal[id];
-                dbJadwal.push({ id: id, ...j }); 
-                let key = `${j.kelas}_${j.hari}`;
-                let jamNum = parseInt(j.jam);
-                if(jamNum > rowCounts[key]) rowCounts[key] = jamNum;
+                // Pastikan yang termuat bukan hari Jumat apabila datanya terlanjur ada di database lama
+                if (j.hari !== "JUMAT") {
+                    dbJadwal.push({ id: id, ...j }); 
+                    let key = `${j.kelas}_${j.hari}`;
+                    let jamNum = parseInt(j.jam);
+                    if(jamNum > (rowCounts[key] || 0)) rowCounts[key] = jamNum;
+                }
             }
         }
 
@@ -607,32 +610,18 @@
         renderInputGrid();
     }
 
+    // PENYESUAIAN LOGIKA MAPEL: Guru Kelas vs Guru Mapel
     function renderInputGrid() {
         const tbody = document.getElementById('input-grid-body');
         tbody.innerHTML = '';
         
         let maxJam = rowCounts[`${currentKelas}_${currentHari}`] || 8;
         const guruKelasFiltered = dbGuruKelas.filter(g => String(g.kelas) === String(currentKelas));
-
-        let mapelOptsBase = '<option value="">-</option>';
-        let guruOptsBase = '<option value="">-</option>';
         
-        let mapelSet = new Set();
-        let guruSet = new Set();
-        
-        // Default system
-        mapelSet.add("Upacara");
-        mapelSet.add("Istirahat");
-        mapelSet.add("-");
-        guruSet.add("-");
-        
-        guruKelasFiltered.forEach(g => { mapelSet.add(g.mapel); guruSet.add(g.guru); });
-        
-        mapelSet.forEach(m => mapelOptsBase += `<option value="${m}">${m}</option>`);
-        guruSet.forEach(g => { 
-            const n = daftarGuru[g] ? daftarGuru[g].name : g;
-            guruOptsBase += `<option value="${g}">${n}</option>`; 
-        });
+        // Ambil daftar Mapel yang sudah dipesan khusus untuk Guru Mapel di kelas ini
+        const mapelDigunakanGuruLain = guruKelasFiltered
+            .filter(g => g.jenis === 'Guru Mapel')
+            .map(g => g.mapel);
 
         for(let i=1; i<=maxJam; i++) {
             let record = dbJadwal.find(x => x.kelas === currentKelas && x.hari === currentHari && String(x.jam) === String(i));
@@ -640,14 +629,60 @@
             let guruVal = record ? record.guru : '';
             let id = record ? record.id : '';
 
-            let localMapelOpts = mapelOptsBase;
-            if(mapelVal && !mapelSet.has(mapelVal)) localMapelOpts += `<option value="${mapelVal}">${mapelVal}</option>`;
-            
-            let localGuruOpts = guruOptsBase;
-            if(guruVal && !guruSet.has(guruVal)) {
-                const n = daftarGuru[guruVal] ? daftarGuru[guruVal].name : guruVal;
-                localGuruOpts += `<option value="${guruVal}">${n}</option>`;
+            // Menyesuaikan opsi Mapel berdasarkan guru yang dipilih
+            let isGuruKelas = false;
+            let isGuruMapel = false;
+            let mapelSpesifikMapel = "";
+
+            if (guruVal) {
+                const gInfo = guruKelasFiltered.find(g => g.guru === guruVal);
+                if (gInfo) {
+                    if (gInfo.jenis === 'Guru Kelas') isGuruKelas = true;
+                    if (gInfo.jenis === 'Guru Mapel') {
+                        isGuruMapel = true;
+                        mapelSpesifikMapel = gInfo.mapel;
+                    }
+                }
             }
+
+            let rowMapelSet = new Set();
+            rowMapelSet.add("-");
+            rowMapelSet.add("Upacara");
+            rowMapelSet.add("Istirahat");
+
+            if (isGuruKelas) {
+                // Tampilkan semua KECUALI mapel yang dipegang Guru Mapel (agar tidak tumpang tindih)
+                daftarMapel.forEach(m => {
+                    if (!mapelDigunakanGuruLain.includes(m)) rowMapelSet.add(m);
+                });
+            } else if (isGuruMapel) {
+                // Tampilkan Mapel spesifik milik dia saja
+                rowMapelSet.add(mapelSpesifikMapel);
+            } else {
+                // Jika belum ada guru yang dipilih, tampilkan seluruh opsi agar bebas pilih mapel dahulu
+                daftarMapel.forEach(m => rowMapelSet.add(m));
+                guruKelasFiltered.forEach(g => rowMapelSet.add(g.mapel));
+            }
+
+            if(mapelVal && !rowMapelSet.has(mapelVal)) rowMapelSet.add(mapelVal);
+
+            let localMapelOpts = '';
+            rowMapelSet.forEach(m => {
+                localMapelOpts += `<option value="${m}">${m}</option>`;
+            });
+            
+            // Build opsi Guru 
+            let rowGuruSet = new Set();
+            rowGuruSet.add("-");
+            guruKelasFiltered.forEach(g => rowGuruSet.add(g.guru));
+            
+            if(guruVal && !rowGuruSet.has(guruVal)) rowGuruSet.add(guruVal);
+
+            let localGuruOpts = '';
+            rowGuruSet.forEach(g => {
+                const n = daftarGuru[g] ? daftarGuru[g].name : g;
+                localGuruOpts += `<option value="${g}">${n}</option>`;
+            });
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -661,9 +696,10 @@
             `;
             tbody.appendChild(tr);
 
+            // Timeout diterapkan karena elemen HTML baru saja dibangun
             setTimeout(() => {
-                document.getElementById(`mapel-${i}`).value = mapelVal;
-                document.getElementById(`guru-${i}`).value = guruVal;
+                document.getElementById(`mapel-${i}`).value = mapelVal || "-";
+                document.getElementById(`guru-${i}`).value = guruVal || "-";
             }, 0);
         }
     }
@@ -678,7 +714,7 @@
         let mapel = document.getElementById(`mapel-${jam}`).value;
         let guru = document.getElementById(`guru-${jam}`).value;
 
-        if (!mapel && !guru) {
+        if ((!mapel || mapel === "-") && (!guru || guru === "-")) {
             if(id) database.ref('jadwal/'+id).remove();
             return;
         }
@@ -701,10 +737,15 @@
         }
     }
 
+    // PENYESUAIAN REFRESH HAPUS & RESET
     function resetSlot(jam, id) {
-        document.getElementById(`mapel-${jam}`).value = "";
-        document.getElementById(`guru-${jam}`).value = "";
-        if(id) database.ref(`jadwal/${id}`).remove().then(() => showToast("Slot dikosongkan.", "success"));
+        document.getElementById(`mapel-${jam}`).value = "-";
+        document.getElementById(`guru-${jam}`).value = "-";
+        if(id) {
+            database.ref(`jadwal/${id}`).remove().then(() => showToast("Slot dikosongkan.", "success"));
+        } else {
+            showToast("Slot dikosongkan.", "success");
+        }
     }
 
     function hapusSlot(jamToDelete, id) {
@@ -721,7 +762,14 @@
             }
 
             if(rowCounts[key] > 8) rowCounts[key]--;
-            database.ref().update(updates).then(() => showToast("Jam dihapus & dirapikan.", "success"));
+            
+            // Perbaikan logic manual render saat tidak ada id (slot kosong) yang dikirim ke database
+            if (Object.keys(updates).length > 0) {
+                database.ref().update(updates).then(() => showToast("Jam dihapus & dirapikan.", "success"));
+            } else {
+                renderInputGrid();
+                showToast("Jam kosong berhasil dihapus.", "success");
+            }
         }
     }
 
