@@ -404,15 +404,7 @@
                         <table class="c-table">
                             <thead><tr><th colspan="2">JAM</th></tr></thead>
                             <tbody id="print-waktu-body">
-                                <tr><td>1</td><td>07.00 - 07.35</td></tr>
-                                <tr><td>2</td><td>07.35 - 08.10</td></tr>
-                                <tr><td>3</td><td>08.10 - 08.45</td></tr>
-                                <tr><td>4</td><td>08.45 - 09.20</td></tr>
-                                <tr><td colspan="2" style="text-align: left; background:#f0f0f0 !important;">09.20 - 09.55<br>S. Dhuha / Istirahat</td></tr>
-                                <tr><td>5</td><td>09.55 - 10.30</td></tr>
-                                <tr><td>6</td><td>10.30 - 11.05</td></tr>
-                                <tr><td>7</td><td>11.05 - 11.40</td></tr>
-                                <tr><td>8</td><td>11.40 - 12.15</td></tr>
+                                
                             </tbody>
                         </table>
                         <div class="c-berlaku" id="print-berlaku"></div>
@@ -544,7 +536,6 @@
         return roman[num] || num;
     }
 
-    // Mengambil kode guru tersusun (Digunakan secara umum kecuali Tab Jumlah Jam)
     function getSortedGuruCodes() {
         return Object.keys(daftarGuru).sort((a, b) => {
             let orderA = daftarGuru[a].order || 9999999999999;
@@ -621,11 +612,17 @@
             }
         }
 
-        dbJadwal = [];
+        // Sinkronisasi Baris Jam ke Database Firebase agar permanen
+        let dbRowCounts = serverData.rowCounts || {};
+        
         for(let k=1; k<=6; k++) {
-            daftarHari.forEach(h => { rowCounts[`${k}_${h}`] = 8; });
+            daftarHari.forEach(h => { 
+                let key = `${k}_${h}`;
+                rowCounts[key] = dbRowCounts[key] || 8; // Default jika kosong
+            });
         }
 
+        dbJadwal = [];
         if (serverData.jadwal) {
             for (let id in serverData.jadwal) { 
                 let j = serverData.jadwal[id];
@@ -633,7 +630,9 @@
                     dbJadwal.push({ id: id, ...j }); 
                     let key = `${j.kelas}_${j.hari}`;
                     let jamNum = parseInt(j.jam);
-                    if(jamNum > (rowCounts[key] || 0)) rowCounts[key] = jamNum;
+                    if(jamNum > (rowCounts[key] || 0)) {
+                        rowCounts[key] = jamNum; 
+                    }
                 }
             }
         }
@@ -874,6 +873,7 @@
     function tambahJam() {
         let key = `${currentKelas}_${currentHari}`;
         rowCounts[key]++;
+        database.ref(`rowCounts/${key}`).set(rowCounts[key]); // Simpan baris ke DB
         renderInputGrid();
     }
 
@@ -914,6 +914,7 @@
         }
     }
 
+    // MEMPERBAIKI FUNGSI HAPUS AGAR BENAR BENAR MENGHILANGKAN BARIS
     async function hapusSlot(jamToDelete, id) {
         const confirmed = await showCustomConfirm(
             "Hapus Jam Pelajaran?", 
@@ -932,8 +933,12 @@
                 if(record) { updates[`jadwal/${record.id}/jam`] = String(i - 1); }
             }
 
-            if(rowCounts[key] > 8) rowCounts[key]--;
-            
+            // Batas minimum baris yang diperbolehkan
+            if(rowCounts[key] > 1) { 
+                rowCounts[key]--;
+                updates[`rowCounts/${key}`] = rowCounts[key]; // Simpan pengurangan baris ke DB
+            }
+
             if (Object.keys(updates).length > 0) {
                 database.ref().update(updates).then(() => showToast("Jam dihapus & dirapikan.", "success"));
             } else {
@@ -1232,7 +1237,7 @@
         });
     }
 
-    // === 8. MATRIX LAYOUT CETAK F4 ===
+    // === 8. MATRIX LAYOUT CETAK F4 (SUDAH DINAMIS MENGKUTI JUMLAH BARIS JAM KELAS) ===
     function renderCetak() {
         document.getElementById('print-lembaga').textContent = dbKop.lembaga;
         document.getElementById('print-sekolah').textContent = dbKop.sekolah;
@@ -1265,8 +1270,13 @@
             </tr>`;
         });
 
-        let highestJamOverall = 8;
-        dbJadwal.forEach(j => { if(parseInt(j.jam) > highestJamOverall) highestJamOverall = parseInt(j.jam); });
+        // MENCARI JUMLAH JAM TERTINGGI DARI SELURUH KELAS YANG DIMASUKAN USER
+        let highestJamOverall = 0;
+        for(let key in rowCounts) {
+            if(rowCounts[key] > highestJamOverall) highestJamOverall = rowCounts[key];
+        }
+        // Safety Fallback (Jika tidak ada kelas / jadwal / reset maka minimal 6 jam yang akan tampil di kertas cetak)
+        if (highestJamOverall === 0) highestJamOverall = 6; 
 
         const tBodyWaktu = document.getElementById('print-waktu-body');
         tBodyWaktu.innerHTML = '';
