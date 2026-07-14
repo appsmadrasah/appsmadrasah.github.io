@@ -1245,4 +1245,85 @@
 
         const logoC = document.getElementById('print-logo-container');
         logoC.innerHTML = '';
-        if (dbKop.logoSrc) { const imgEl = document
+        if (dbKop.logoSrc) { const imgEl = document.createElement('img'); imgEl.src = dbKop.logoSrc; logoC.appendChild(imgEl); logoC.style.backgroundColor = 'transparent'; } 
+        else { logoC.textContent = 'LOGO'; logoC.style.backgroundColor = '#006600'; }
+
+        const ttdC = document.getElementById('print-ttd-container');
+        ttdC.innerHTML = '';
+        if (dbTtd.imageSrc) { const imgEl = document.createElement('img'); imgEl.src = dbTtd.imageSrc; imgEl.className = 'c-signature-img'; ttdC.appendChild(imgEl); }
+
+        const tBodyGuru = document.getElementById('print-teacher-body');
+        tBodyGuru.innerHTML = '';
+        
+        let sortedCodes = getSortedGuruCodes();
+        sortedCodes.forEach(code => {
+            if(code === "-") return;
+            let data = daftarGuru[code];
+            tBodyGuru.innerHTML += `<tr>
+                <td width="12%" style="background-color: ${data.color} !important; font-weight: bold;">${code}</td>
+                <td style="text-align: left; background-color: ${data.color} !important; font-size: 8.5px; font-weight: 500;">${data.name}</td>
+            </tr>`;
+        });
+
+        let highestJamOverall = 8;
+        dbJadwal.forEach(j => { if(parseInt(j.jam) > highestJamOverall) highestJamOverall = parseInt(j.jam); });
+
+        const tBodyWaktu = document.getElementById('print-waktu-body');
+        tBodyWaktu.innerHTML = '';
+        for(let i=1; i<=highestJamOverall; i++) {
+            let w = waktuDefault[i] || "-";
+            if(i === 5) tBodyWaktu.innerHTML += `<tr><td colspan="2" style="text-align:left; background:#f0f0f0 !important;">09.20 - 09.55<br>S. Dhuha / Istirahat</td></tr>`;
+            tBodyWaktu.innerHTML += `<tr><td>${i}</td><td>${w}</td></tr>`;
+        }
+
+        let matrix = {};
+        for(let k=1; k<=6; k++) { matrix[k] = {}; ['SABTU', 'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(h => matrix[k][h] = {}); }
+        dbJadwal.forEach(j => { if(matrix[j.kelas] && matrix[j.kelas][j.hari]) { matrix[j.kelas][j.hari][j.jam] = { m: j.mapel, g: j.guru }; } });
+
+        let prevCode = {}; 
+        for(let k=1; k<=6; k++) prevCode[k] = {};
+
+        const tbody = document.getElementById('print-schedule-body');
+        tbody.innerHTML = '';
+        
+        for (let kls = 1; kls <= 6; kls++) {
+            for (let jam = 1; jam <= highestJamOverall; jam++) {
+                const tr = document.createElement('tr');
+                if (jam === 1) { tr.innerHTML += `<td rowspan="${highestJamOverall}" style="background-color: #ffffff !important;"><div class="c-row-class">${kls}</div></td>`; }
+                tr.innerHTML += `<td style="background-color: #ffffff !important; font-weight: bold;">${jam}</td>`;
+
+                ['SABTU', 'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(hari => {
+                    const cell = matrix[kls][hari][jam];
+                    if (cell) {
+                        const color = daftarGuru[cell.g] ? daftarGuru[cell.g].color : '#fff';
+                        let displayCode = cell.g === "-" ? "" : cell.g;
+                        if (prevCode[kls][hari] === cell.g && cell.g !== "-") { displayCode = ""; }
+                        prevCode[kls][hari] = cell.g;
+
+                        tr.innerHTML += `
+                            <td style="background-color: ${color} !important; width: 3.5%; font-weight: bold; border-right: 0.5px solid rgba(0,0,0,0.5);">
+                                ${displayCode}
+                            </td>
+                            <td style="background-color: ${color} !important; width: 12.5%; text-align: left; padding-left: 3px; font-weight: 500;">
+                                ${cell.m || ''}
+                            </td>
+                        `;
+                    } else {
+                        prevCode[kls][hari] = null;
+                        tr.innerHTML += `<td colspan="2" style="background-color: #ffffff !important;">&nbsp;</td>`;
+                    }
+                });
+                tbody.appendChild(tr);
+            }
+        }
+    }
+
+    function renderSemuaView() {
+        renderTabelGuruKelas();
+        renderInputGrid();
+        renderJam();
+        renderCetak();
+    }
+</script>
+</body>
+</html>
