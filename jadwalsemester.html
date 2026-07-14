@@ -64,11 +64,12 @@
         .btn-add-jam { background: #fff; color: #2ecc71; border: 1px solid #2ecc71; padding: 8px 15px; font-size: 12px; font-weight:bold; cursor:pointer; border-radius:4px; margin-bottom: 20px; }
         .btn-add-jam:hover { background: #2ecc71; color: white; }
 
-        /* === TABEL REKAP JUMLAH JAM === */
-        .data-table { border-collapse: collapse; margin-top: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .data-table th, .data-table td { border: 1px solid #ddd; padding: 10px; }
-        .data-table th { background-color: #eaf5fa; color: #555; font-size: 12px; text-transform: uppercase; }
-        .data-table tr:hover td { background-color: #f9f9f9; }
+        /* === TABEL DISTRIBUSI JUMLAH JAM BARU === */
+        .data-table { border-collapse: collapse; margin-top: 10px; background-color: #fff; border: 2px solid #555; }
+        .data-table th, .data-table td { border: 1px solid #888; padding: 8px 6px; font-size: 12px; color: #333; }
+        .data-table th { background-color: #f2f6fa; font-weight: bold; text-transform: uppercase; text-align: center; }
+        .data-table tr:hover td { background-color: #f9fcfd; }
+        .data-table tfoot th, .data-table tfoot td { background-color: #eaf5fa; font-weight: bold; text-align: center; }
 
         /* === MODAL TAMBAH GURU BARU === */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center; }
@@ -270,17 +271,36 @@
     </div>
 
     <div id="tab-jam" class="tab-content">
-        <h3 style="color:#2c3e50;">Rekapitulasi Jam Mengajar Guru</h3>
-        <table class="data-table" style="width: 75%; font-size:13px;">
-            <thead>
-                <tr>
-                    <th width="15%" style="text-align:center;">Kode</th>
-                    <th width="55%" style="text-align:left;">Nama Guru</th>
-                    <th width="30%" style="text-align:center;">Total Jam Mengajar</th>
-                </tr>
-            </thead>
-            <tbody id="table-jam-body"></tbody>
-        </table>
+        <h3 style="color:#2c3e50; text-align:center; margin-bottom: 5px; text-transform: uppercase;">DISTRIBUSI JAM MENGAJAR</h3>
+        <h4 id="distribusi-sekolah-tahun" style="color:#2c3e50; text-align:center; margin-top: 0; margin-bottom: 20px; text-transform: uppercase;"></h4>
+        
+        <div style="overflow-x: auto;">
+            <table class="data-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th rowspan="2" width="3%">NO</th>
+                        <th rowspan="2" width="18%">Nama Guru</th>
+                        <th rowspan="2" width="5%">KODE</th>
+                        <th rowspan="2" width="12%">Jabatan</th>
+                        <th rowspan="2" width="20%">Mata Pelajaran</th>
+                        <th colspan="6">Alokasi Waktu</th>
+                        <th colspan="2">Jumlah Jam</th>
+                    </tr>
+                    <tr>
+                        <th width="4%">1</th>
+                        <th width="4%">2</th>
+                        <th width="4%">3</th>
+                        <th width="4%">4</th>
+                        <th width="4%">5</th>
+                        <th width="4%">6</th>
+                        <th width="7%">Tatap Muka</th>
+                        <th width="8%">Tambahan Jabatan</th>
+                    </tr>
+                </thead>
+                <tbody id="table-jam-body"></tbody>
+                <tfoot id="table-jam-foot"></tfoot>
+            </table>
+        </div>
     </div>
 
     <div id="tab-kop" class="tab-content">
@@ -457,7 +477,6 @@
     
     const defaultMapel = ["Pendidikan Jasmani, Olah Raga, dan Kesehatan", "Seni dan Budaya", "Pancasila", "IPAS", "Matematika", "B. Arab", "B. Indonesia", "B. Inggris", "B. Jawa", "Qurdis", "Akidah A", "Fikih", "SKI", "ASWAJA"];
     
-    // PERUBAHAN URUTAN HARI DEFAULT DI SISTEM
     const daftarHari = ['SABTU', 'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS'];
     const waktuDefault = { 1: "07.00 - 07.35", 2: "07.35 - 08.10", 3: "08.10 - 08.45", 4: "08.45 - 09.20", 5: "09.55 - 10.30", 6: "10.30 - 11.05", 7: "11.05 - 11.40", 8: "11.40 - 12.15", 9: "12.15 - 12.50", 10: "12.50 - 13.25", 11: "13.25 - 14.00" };
 
@@ -470,7 +489,7 @@
     let dbTtd = {};
     
     let currentKelas = "1";
-    let currentHari = "SABTU"; // PERUBAHAN HARI DEFAULT AWAL
+    let currentHari = "SABTU"; 
     let rowCounts = {}; 
 
     function toRoman(num) {
@@ -870,24 +889,136 @@
         }
     }
 
-    // === 6. TAB JUMLAH JAM ===
+    // === 6. TAB DISTRIBUSI JUMLAH JAM BARU ===
     function renderJam() {
-        const tbody = document.getElementById('table-jam-body');
-        tbody.innerHTML = '';
-        let jamGuru = {};
-        for(let key in daftarGuru) jamGuru[key] = 0;
-        dbJadwal.forEach(j => { if(jamGuru[j.guru] !== undefined && j.guru !== "-") jamGuru[j.guru]++; });
+        // Tampilkan judul dinamis sesuai kop
+        document.getElementById('distribusi-sekolah-tahun').textContent = 
+            (dbKop.sekolah || "") + " - " + (dbKop.tahun || "");
 
-        for(let key in daftarGuru) {
-            if(key === "-") continue;
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td style="background:${daftarGuru[key].color}; font-weight:bold; text-align:center;">${key}</td>
-                <td style="text-align:left;">${daftarGuru[key].name}</td>
-                <td style="text-align:center; font-size:14px;"><b>${jamGuru[key]}</b> Jam</td>
-            `;
-            tbody.appendChild(tr);
+        const tbody = document.getElementById('table-jam-body');
+        const tfoot = document.getElementById('table-jam-foot');
+        tbody.innerHTML = '';
+        tfoot.innerHTML = '';
+
+        let totalKolom = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+        let totalTatapMukaSemua = 0;
+        let totalTambahanSemua = 0;
+        let nomor = 1;
+
+        // Mendapatkan Nama Kepala Sekolah dari tab Kop & TTD
+        const kepalaName = (dbTtd.kepala || "").trim().toUpperCase();
+
+        for (let code in daftarGuru) {
+            if (code === "-") continue;
+            
+            let teacherName = daftarGuru[code].name;
+            let teacherNameUpper = teacherName.toUpperCase();
+
+            // 1. Menentukan Jabatan & Tambahan Jam
+            let jabatanArr = [];
+            let tambahanJam = 0;
+
+            // Logika Kepala Sekolah (24 Jam)
+            if (kepalaName !== "" && (teacherNameUpper.includes(kepalaName) || kepalaName.includes(teacherNameUpper))) {
+                jabatanArr.push("Kepala Sekolah");
+                tambahanJam += 24; 
+            }
+
+            // Logika Wali Kelas (6 Jam) - Dicek dari database Guru Kelas di input jadwal
+            let walasRecord = dbGuruKelas.filter(g => g.guru === code && g.jenis === 'Guru Kelas');
+            walasRecord.forEach(wk => {
+                jabatanArr.push("WALAS " + toRoman(wk.kelas));
+                tambahanJam += 6;
+            });
+            
+            let jabatanStr = jabatanArr.length > 0 ? jabatanArr.join(", ") : "";
+
+            // 2. Menentukan Mata Pelajaran Unik & Menghitung Jam
+            let mapelSet = new Set();
+            dbJadwal.forEach(j => {
+                if (j.guru === code && j.mapel !== "-" && j.mapel !== "Istirahat" && j.mapel !== "Upacara") {
+                    mapelSet.add(j.mapel);
+                }
+            });
+            
+            let mapelList = Array.from(mapelSet);
+            // Jika guru tidak mengajar mata pelajaran apapun tapi ada jabatan, tetap render 1 baris
+            if (mapelList.length === 0) {
+                mapelList = [""];
+            }
+
+            let rowSpan = mapelList.length;
+
+            // Render baris untuk masing-masing Mata Pelajaran
+            mapelList.forEach((mapel, index) => {
+                let tr = document.createElement('tr');
+                
+                // Kalkulasi Alokasi Waktu per Kelas untuk Mapel tersebut
+                let jamPerKelas = { 1: "", 2: "", 3: "", 4: "", 5: "", 6: "" };
+                let totalTatapMuka = 0;
+                
+                if (mapel !== "") {
+                    for (let k = 1; k <= 6; k++) {
+                        let count = dbJadwal.filter(j => j.guru === code && j.mapel === mapel && String(j.kelas) === String(k)).length;
+                        if (count > 0) {
+                            jamPerKelas[k] = count;
+                            totalTatapMuka += count;
+                            totalKolom[k] += count;
+                        }
+                    }
+                    totalTatapMukaSemua += totalTatapMuka;
+                }
+
+                // Baris pertama mencakup Nama, Kode, Jabatan, Tambahan dengan Rowspan
+                if (index === 0) {
+                    totalTambahanSemua += tambahanJam;
+                    
+                    tr.innerHTML = `
+                        <td rowspan="${rowSpan}" style="text-align:center;">${nomor++}</td>
+                        <td rowspan="${rowSpan}" style="text-align:left;">${teacherName}</td>
+                        <td rowspan="${rowSpan}" style="text-align:center; font-weight:bold;">${code}</td>
+                        <td rowspan="${rowSpan}" style="text-align:center; font-size:11px;">${jabatanStr}</td>
+                        <td>${mapel}</td>
+                        <td style="text-align:center;">${jamPerKelas[1]}</td>
+                        <td style="text-align:center;">${jamPerKelas[2]}</td>
+                        <td style="text-align:center;">${jamPerKelas[3]}</td>
+                        <td style="text-align:center;">${jamPerKelas[4]}</td>
+                        <td style="text-align:center;">${jamPerKelas[5]}</td>
+                        <td style="text-align:center;">${jamPerKelas[6]}</td>
+                        <td style="text-align:center; font-weight:bold;">${totalTatapMuka > 0 ? totalTatapMuka : ""}</td>
+                        <td rowspan="${rowSpan}" style="text-align:center; font-weight:bold;">${tambahanJam > 0 ? tambahanJam : ""}</td>
+                    `;
+                } else {
+                    // Baris Mapel berikutnya tanpa info guru (karena sudah di-rowspan di atas)
+                    tr.innerHTML = `
+                        <td>${mapel}</td>
+                        <td style="text-align:center;">${jamPerKelas[1]}</td>
+                        <td style="text-align:center;">${jamPerKelas[2]}</td>
+                        <td style="text-align:center;">${jamPerKelas[3]}</td>
+                        <td style="text-align:center;">${jamPerKelas[4]}</td>
+                        <td style="text-align:center;">${jamPerKelas[5]}</td>
+                        <td style="text-align:center;">${jamPerKelas[6]}</td>
+                        <td style="text-align:center; font-weight:bold;">${totalTatapMuka > 0 ? totalTatapMuka : ""}</td>
+                    `;
+                }
+                tbody.appendChild(tr);
+            });
         }
+
+        // Row Total Keseluruhan (Tfoot)
+        let trFoot = document.createElement('tr');
+        trFoot.innerHTML = `
+            <th colspan="5">JUMLAH</th>
+            <th>${totalKolom[1] > 0 ? totalKolom[1] : ""}</th>
+            <th>${totalKolom[2] > 0 ? totalKolom[2] : ""}</th>
+            <th>${totalKolom[3] > 0 ? totalKolom[3] : ""}</th>
+            <th>${totalKolom[4] > 0 ? totalKolom[4] : ""}</th>
+            <th>${totalKolom[5] > 0 ? totalKolom[5] : ""}</th>
+            <th>${totalKolom[6] > 0 ? totalKolom[6] : ""}</th>
+            <th>${totalTatapMukaSemua > 0 ? totalTatapMukaSemua : ""}</th>
+            <th>${totalTambahanSemua > 0 ? totalTambahanSemua : ""}</th>
+        `;
+        tfoot.appendChild(trFoot);
     }
 
     // === 7. KOP & TTD ===
@@ -911,7 +1042,10 @@
         database.ref('kop').set(newKop);
         database.ref('ttd').set(newTtd, function(err) {
             if(err) showToast("Gagal menyimpan!", "error");
-            else showToast("Pengaturan disimpan.", "success");
+            else { 
+                showToast("Pengaturan disimpan.", "success");
+                renderJam(); // Refresh tabel jumlah jam agar nama kepala & tahun terbaru ter-render
+            }
         });
     }
 
@@ -957,7 +1091,6 @@
         }
 
         let matrix = {};
-        // PERUBAHAN BUG TERSEMBUNYI: Memastikan pemetaan database MINGGU sinkron dengan kertas cetak AHAD
         for(let k=1; k<=6; k++) { matrix[k] = {}; ['SABTU', 'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(h => matrix[k][h] = {}); }
         dbJadwal.forEach(j => { if(matrix[j.kelas] && matrix[j.kelas][j.hari]) { matrix[j.kelas][j.hari][j.jam] = { m: j.mapel, g: j.guru }; } });
 
