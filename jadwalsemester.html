@@ -99,7 +99,7 @@
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         .form-group input[type="file"] { padding: 5px; background-color: #fff; }
 
-        /* === NOTIFIKASI TOAST === */
+        /* === NOTIFIKASI TOAST MINIMALIS & ELEGAN === */
         .toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
         .toast-box { 
             background: #ffffff; color: #2c3e50; padding: 14px 20px; border-radius: 8px; 
@@ -145,7 +145,7 @@
         .btn-confirm-ok:hover { background: #c0392b; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3); }
 
         /* === LAYOUT CETAK F4 === */
-        .cetak-wrapper { background: #555; padding: 30px 15px; border: 1px solid #ddd; display: flex; justify-content: center; }
+        .cetak-wrapper { background: #555; padding: 30px 15px; border: 1px solid #ddd; overflow-x: auto; display: flex; justify-content: center; }
         .cetak-container { width: 215mm; min-height: 330mm; background: white; padding: 12mm 10mm; color: black; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
         .c-header { display: flex; align-items: center; border: 2px solid black; padding: 8px; margin-bottom: 10px; }
         .c-header-logo { width: 55px; height: 50px; background-color: #006600; border-radius: 50%; margin-right: 12px; display: flex; justify-content: center; align-items: center; color: white; font-size: 8px; overflow: hidden; }
@@ -608,7 +608,9 @@
             }
         }
 
+        // Sinkronisasi Baris Jam ke Database Firebase agar permanen
         let dbRowCounts = serverData.rowCounts || {};
+        
         for(let k=1; k<=6; k++) {
             daftarHari.forEach(h => { 
                 let key = `${k}_${h}`;
@@ -632,6 +634,7 @@
             }
         }
         
+        // Finalisasi Minimum Default Jam (Jika kosong maka setidaknya 6 Jam)
         for(let k=1; k<=6; k++) {
             daftarHari.forEach(h => { 
                 let key = `${k}_${h}`;
@@ -902,17 +905,25 @@
         renderInputGrid();
     }
 
+    // === LOGIKA BARU UNTUK BLOKIR PENYIMPANAN JIKA BENTROK ===
     function autoSaveSlot(jam, id, mapel, guru) {
         if ((!mapel || mapel === "-") && (!guru || guru === "-")) {
             if(id) database.ref('jadwal/'+id).remove();
             return;
         }
 
+        // Cek Bentrok Guru Antar Kelas
         if(guru && guru !== "-") {
             const bentrokGuru = dbJadwal.find(x => x.id !== id && x.guru === guru && x.hari === currentHari && String(x.jam) === String(jam) && x.guru !== "-");
             if(bentrokGuru) {
                 const namaGuru = daftarGuru[guru] ? daftarGuru[guru].name : guru;
-                showToast(`Bentrok! ${namaGuru} juga mengajar di Kelas ${toRoman(bentrokGuru.kelas)} pd jam ke-${jam}.`, "warning");
+                
+                // TAMPILKAN NOTIFIKASI ERROR DAN BLOKIR PENYIMPANAN
+                showToast(`⛔ BENTROK: ${namaGuru} sudah mengajar di Kelas ${toRoman(bentrokGuru.kelas)} pada Jam ke-${jam}. Penempatan dibatalkan!`, "error");
+                
+                // REVERT TAMPILAN KE STATE DATABASE (MEMBATALKAN PILIHAN USER)
+                renderInputGrid();
+                return; // STOP PROSES DI SINI
             }
         }
 
