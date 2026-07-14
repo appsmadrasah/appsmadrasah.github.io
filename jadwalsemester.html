@@ -99,7 +99,7 @@
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         .form-group input[type="file"] { padding: 5px; background-color: #fff; }
 
-        /* === NOTIFIKASI TOAST MINIMALIS & ELEGAN === */
+        /* === NOTIFIKASI TOAST === */
         .toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
         .toast-box { 
             background: #ffffff; color: #2c3e50; padding: 14px 20px; border-radius: 8px; 
@@ -144,8 +144,8 @@
         }
         .btn-confirm-ok:hover { background: #c0392b; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3); }
 
-        /* === LAYOUT CETAK F4 === */
-        .cetak-wrapper { background: #555; padding: 30px 15px; border: 1px solid #ddd; overflow-x: auto; display: flex; justify-content: center; }
+        /* === LAYOUT CETAK F4 (Diperbarui agar tidak nge-Bug) === */
+        .cetak-wrapper { background: #555; padding: 30px 15px; border: 1px solid #ddd; display: flex; justify-content: center; }
         .cetak-container { width: 215mm; min-height: 330mm; background: white; padding: 12mm 10mm; color: black; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
         .c-header { display: flex; align-items: center; border: 2px solid black; padding: 8px; margin-bottom: 10px; }
         .c-header-logo { width: 55px; height: 50px; background-color: #006600; border-radius: 50%; margin-right: 12px; display: flex; justify-content: center; align-items: center; color: white; font-size: 8px; overflow: hidden; }
@@ -166,18 +166,25 @@
         .c-signature-space { height: 50px; display: flex; justify-content: center; align-items: center; overflow: hidden; margin: 2px 0; }
         .c-signature-img { max-height: 48px; max-width: 120px; object-fit: contain; }
 
+        /* === CONFIGURASI PRINT OUT PERMANEN (F4) === */
         @page { size: 215mm 330mm; margin: 8mm; }
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            body, html { background: white !important; padding: 0 !important; margin: 0 !important; }
-            .container { box-shadow: none !important; padding: 0 !important; margin: 0 !important; border: none !important; max-width: 100% !important; width: 100% !important; }
+            body, html { background: white !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; }
+            .container { box-shadow: none !important; padding: 0 !important; margin: 0 !important; border: none !important; max-width: 100% !important; width: 100% !important; overflow: visible !important; }
+            
+            /* Sembunyikan elemen UI Aplikasi */
             h2.page-title, .step-tabs, .btn, .top-bar-flex, .guru-kelas-table, .day-tabs, .input-grid, .btn-add-jam, h3, h4, .modal-overlay, #loading-input, #tab-input, #tab-jam, #tab-kop, #toolbar-master-guru { display: none !important; }
             .toast-container, .custom-confirm-overlay { display: none !important; }
+            
             #tab-cetak { display: block !important; }
-            .cetak-wrapper { background: transparent !important; padding: 0 !important; border: none !important; display: block !important; margin: 0 !important; }
-            .cetak-container { width: 100% !important; min-height: auto !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; page-break-inside: avoid; }
-            .c-main-layout { display: flex !important; gap: 8px !important; width: 100% !important; }
-            .c-header { display: flex !important; }
+            
+            /* Konfigurasi anti terpotong mode Print */
+            .cetak-wrapper { background: transparent !important; padding: 0 !important; border: none !important; display: block !important; margin: 0 !important; overflow: visible !important; }
+            .cetak-container { width: 100% !important; min-height: auto !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; page-break-inside: avoid; display: block !important; overflow: visible !important; }
+            
+            .c-main-layout { display: flex !important; gap: 8px !important; width: 100% !important; page-break-inside: avoid; }
+            .c-header { display: flex !important; page-break-inside: avoid; }
         }
     </style>
 </head>
@@ -271,12 +278,12 @@
             </table>
 
             <div class="day-tabs">
-                <button class="day-tab active" id="tab-SABTU" onclick="onHariChange('SABTU')">SABTU</button>
-                <button class="day-tab" id="tab-MINGGU" onclick="onHariChange('MINGGU')">MINGGU</button>
+                <button class="day-tab active" id="tab-AHAD" onclick="onHariChange('AHAD')">AHAD</button>
                 <button class="day-tab" id="tab-SENIN" onclick="onHariChange('SENIN')">SENIN</button>
                 <button class="day-tab" id="tab-SELASA" onclick="onHariChange('SELASA')">SELASA</button>
                 <button class="day-tab" id="tab-RABU" onclick="onHariChange('RABU')">RABU</button>
                 <button class="day-tab" id="tab-KAMIS" onclick="onHariChange('KAMIS')">KAMIS</button>
+                <button class="day-tab" id="tab-SABTU" onclick="onHariChange('SABTU')">SABTU</button>
             </div>
 
             <table class="input-grid">
@@ -512,7 +519,7 @@
     };
     
     const defaultMapel = ["Pendidikan Jasmani, Olah Raga, dan Kesehatan", "Seni dan Budaya", "Pancasila", "IPAS", "Matematika", "B. Arab", "B. Indonesia", "B. Inggris", "B. Jawa", "Qurdis", "Akidah A", "Fikih", "SKI", "ASWAJA"];
-    const daftarHari = ['SABTU', 'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS'];
+    const daftarHari = ['SABTU', 'AHAD', 'SENIN', 'SELASA', 'RABU', 'KAMIS'];
     const waktuDefault = { 1: "07.00 - 07.35", 2: "07.35 - 08.10", 3: "08.10 - 08.45", 4: "08.45 - 09.20", 5: "09.55 - 10.30", 6: "10.30 - 11.05", 7: "11.05 - 11.40", 8: "11.40 - 12.15", 9: "12.15 - 12.50", 10: "12.50 - 13.25", 11: "13.25 - 14.00" };
 
     // === STATE APLIKASI ===
@@ -524,10 +531,10 @@
     let dbTtd = {};
     
     let currentKelas = "1";
-    let currentHari = "SABTU"; 
+    let currentHari = "AHAD"; 
     let rowCounts = {}; 
 
-    // State untuk mode edit/hapus di Tab Jam
+    // State untuk mode edit/hapus
     let isMasterEditMode = false;
     let isMasterHapusMode = false;
 
@@ -618,7 +625,7 @@
         for(let k=1; k<=6; k++) {
             daftarHari.forEach(h => { 
                 let key = `${k}_${h}`;
-                rowCounts[key] = dbRowCounts[key] || 8; // Default jika kosong
+                rowCounts[key] = dbRowCounts[key] || 0; // Default dihitung dr data, bukan langsung 8
             });
         }
 
@@ -626,6 +633,8 @@
         if (serverData.jadwal) {
             for (let id in serverData.jadwal) { 
                 let j = serverData.jadwal[id];
+                // PENGKOREKSIAN MINGGU -> AHAD 
+                if (j.hari === "MINGGU") j.hari = "AHAD"; 
                 if (j.hari !== "JUMAT") {
                     dbJadwal.push({ id: id, ...j }); 
                     let key = `${j.kelas}_${j.hari}`;
@@ -635,6 +644,14 @@
                     }
                 }
             }
+        }
+        
+        // Finalisasi Minimum Default Jam (Jika kosong maka setidaknya 6 Jam)
+        for(let k=1; k<=6; k++) {
+            daftarHari.forEach(h => { 
+                let key = `${k}_${h}`;
+                if (rowCounts[key] === 0) rowCounts[key] = 6; 
+            });
         }
 
         dbKop = serverData.kop || { lembaga: "LEMBAGA PENDIDIKAN MA'ARIF NU", sekolah: 'MI "HIDAYATUS SHIBYAN"', wilayah: 'KENDAL KEMLAGI KARANGGENENG LAMONGAN', akreditasi: 'TERAKREDITASI : A | NSM : 112.23.24.18.358 | NPSN : 11 35 58', alamat: 'Jl. Sindang Gede Kendal Kemlagi Karanggeneng Lamongan 62254', tahun: 'JADWAL PELAJARAN TAHUN 2026/2027 (GANJIL)', logoSrc: "" };
@@ -788,7 +805,7 @@
         const tbody = document.getElementById('input-grid-body');
         tbody.innerHTML = '';
         
-        let maxJam = rowCounts[`${currentKelas}_${currentHari}`] || 8;
+        let maxJam = rowCounts[`${currentKelas}_${currentHari}`] || 6;
         const guruKelasFiltered = dbGuruKelas.filter(g => String(g.kelas) === String(currentKelas));
         
         const mapelDigunakanGuruLain = guruKelasFiltered
@@ -1267,7 +1284,7 @@
             </tr>`;
         });
 
-        // PERUBAHAN FUNGSI: Mengambil jam tertinggi dari database untuk tabel waktu
+        // Penyesuaian Dinamis Tinggi Row Jadwal
         let highestJamOverall = 0;
         for(let key in rowCounts) {
             if(rowCounts[key] > highestJamOverall) highestJamOverall = rowCounts[key];
@@ -1283,7 +1300,7 @@
         }
 
         let matrix = {};
-        for(let k=1; k<=6; k++) { matrix[k] = {}; ['SABTU', 'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(h => matrix[k][h] = {}); }
+        for(let k=1; k<=6; k++) { matrix[k] = {}; ['SABTU', 'AHAD', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(h => matrix[k][h] = {}); }
         dbJadwal.forEach(j => { if(matrix[j.kelas] && matrix[j.kelas][j.hari]) { matrix[j.kelas][j.hari][j.jam] = { m: j.mapel, g: j.guru }; } });
 
         let prevCode = {}; 
@@ -1293,15 +1310,15 @@
         tbody.innerHTML = '';
         
         for (let kls = 1; kls <= 6; kls++) {
-            // PERUBAHAN FUNGSI: Mengambil jumlah baris SPESIFIK untuk KELAS tersebut
+            
             let highestJamKelas = 0;
-            ['SABTU', 'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(hari => {
+            ['SABTU', 'AHAD', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(hari => {
                 let key = `${kls}_${hari}`;
                 if(rowCounts[key] && rowCounts[key] > highestJamKelas) {
                     highestJamKelas = rowCounts[key];
                 }
             });
-            if(highestJamKelas === 0) highestJamKelas = 6; // default minimum kelas
+            if(highestJamKelas === 0) highestJamKelas = 6;
 
             for (let jam = 1; jam <= highestJamKelas; jam++) {
                 const tr = document.createElement('tr');
@@ -1310,7 +1327,7 @@
                 }
                 tr.innerHTML += `<td style="background-color: #ffffff !important; font-weight: bold;">${jam}</td>`;
 
-                ['SABTU', 'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(hari => {
+                ['SABTU', 'AHAD', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(hari => {
                     const cell = matrix[kls][hari][jam];
                     if (cell) {
                         const color = daftarGuru[cell.g] ? daftarGuru[cell.g].color : '#fff';
