@@ -873,7 +873,7 @@
     function tambahJam() {
         let key = `${currentKelas}_${currentHari}`;
         rowCounts[key]++;
-        database.ref(`rowCounts/${key}`).set(rowCounts[key]); // Simpan baris ke DB
+        database.ref(`rowCounts/${key}`).set(rowCounts[key]); 
         renderInputGrid();
     }
 
@@ -914,7 +914,6 @@
         }
     }
 
-    // MEMPERBAIKI FUNGSI HAPUS AGAR BENAR BENAR MENGHILANGKAN BARIS
     async function hapusSlot(jamToDelete, id) {
         const confirmed = await showCustomConfirm(
             "Hapus Jam Pelajaran?", 
@@ -933,10 +932,9 @@
                 if(record) { updates[`jadwal/${record.id}/jam`] = String(i - 1); }
             }
 
-            // Batas minimum baris yang diperbolehkan
             if(rowCounts[key] > 1) { 
                 rowCounts[key]--;
-                updates[`rowCounts/${key}`] = rowCounts[key]; // Simpan pengurangan baris ke DB
+                updates[`rowCounts/${key}`] = rowCounts[key]; 
             }
 
             if (Object.keys(updates).length > 0) {
@@ -1089,7 +1087,6 @@
 
         const kepalaName = (dbTtd.kepala || "").trim().toUpperCase();
 
-        // MENGURUTKAN NAMA SESUAI KODE GURU (ALFABET)
         let sortedCodes = Object.keys(daftarGuru).filter(k => k !== "-").sort((a, b) => a.localeCompare(b));
 
         sortedCodes.forEach(code => {
@@ -1237,7 +1234,7 @@
         });
     }
 
-    // === 8. MATRIX LAYOUT CETAK F4 (SUDAH DINAMIS MENGKUTI JUMLAH BARIS JAM KELAS) ===
+    // === 8. MATRIX LAYOUT CETAK F4 ===
     function renderCetak() {
         document.getElementById('print-lembaga').textContent = dbKop.lembaga;
         document.getElementById('print-sekolah').textContent = dbKop.sekolah;
@@ -1270,12 +1267,11 @@
             </tr>`;
         });
 
-        // MENCARI JUMLAH JAM TERTINGGI DARI SELURUH KELAS YANG DIMASUKAN USER
+        // PERUBAHAN FUNGSI: Mengambil jam tertinggi dari database untuk tabel waktu
         let highestJamOverall = 0;
         for(let key in rowCounts) {
             if(rowCounts[key] > highestJamOverall) highestJamOverall = rowCounts[key];
         }
-        // Safety Fallback (Jika tidak ada kelas / jadwal / reset maka minimal 6 jam yang akan tampil di kertas cetak)
         if (highestJamOverall === 0) highestJamOverall = 6; 
 
         const tBodyWaktu = document.getElementById('print-waktu-body');
@@ -1297,9 +1293,21 @@
         tbody.innerHTML = '';
         
         for (let kls = 1; kls <= 6; kls++) {
-            for (let jam = 1; jam <= highestJamOverall; jam++) {
+            // PERUBAHAN FUNGSI: Mengambil jumlah baris SPESIFIK untuk KELAS tersebut
+            let highestJamKelas = 0;
+            ['SABTU', 'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(hari => {
+                let key = `${kls}_${hari}`;
+                if(rowCounts[key] && rowCounts[key] > highestJamKelas) {
+                    highestJamKelas = rowCounts[key];
+                }
+            });
+            if(highestJamKelas === 0) highestJamKelas = 6; // default minimum kelas
+
+            for (let jam = 1; jam <= highestJamKelas; jam++) {
                 const tr = document.createElement('tr');
-                if (jam === 1) { tr.innerHTML += `<td rowspan="${highestJamOverall}" style="background-color: #ffffff !important;"><div class="c-row-class">${kls}</div></td>`; }
+                if (jam === 1) { 
+                    tr.innerHTML += `<td rowspan="${highestJamKelas}" style="background-color: #ffffff !important;"><div class="c-row-class">${kls}</div></td>`; 
+                }
                 tr.innerHTML += `<td style="background-color: #ffffff !important; font-weight: bold;">${jam}</td>`;
 
                 ['SABTU', 'MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS'].forEach(hari => {
