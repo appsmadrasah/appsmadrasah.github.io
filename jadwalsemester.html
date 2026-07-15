@@ -61,9 +61,9 @@
         .btn-hapus { background: #ff6b6b; color: white; border: 1px solid #ff6b6b; margin-left: 5px; }
         .btn-hapus:hover { background: #fa5252; }
 
-        .btn-add-jam { background: #fff; color: #2ecc71; border: 1px solid #2ecc71; padding: 8px 15px; font-size: 12px; font-weight:bold; cursor:pointer; border-radius:4px; }
+        .btn-add-jam { background: #fff; color: #2ecc71; border: 1px solid #2ecc71; padding: 8px 15px; font-size: 12px; font-weight:bold; cursor:pointer; border-radius:4px; margin-bottom: 20px; }
         .btn-add-jam:hover { background: #2ecc71; color: white; }
-        .btn-remove-jam { background: #fff; color: #e74c3c; border: 1px solid #e74c3c; padding: 8px 15px; font-size: 12px; font-weight:bold; cursor:pointer; border-radius:4px; }
+        .btn-remove-jam { background: #fff; color: #e74c3c; border: 1px solid #e74c3c; padding: 8px 15px; font-size: 12px; font-weight:bold; cursor:pointer; border-radius:4px; margin-bottom: 20px; }
         .btn-remove-jam:hover { background: #e74c3c; color: white; }
 
         /* === TABEL DISTRIBUSI JUMLAH JAM === */
@@ -101,7 +101,7 @@
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         .form-group input[type="file"] { padding: 5px; background-color: #fff; }
 
-        /* === NOTIFIKASI TOAST === */
+        /* === NOTIFIKASI TOAST MINIMALIS & ELEGAN === */
         .toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
         .toast-box { 
             background: #ffffff; color: #2c3e50; padding: 14px 20px; border-radius: 8px; 
@@ -236,6 +236,7 @@
         <div class="step-tab" onclick="switchTab('tab-cetak', this)">Cetak Jadwal (F4)</div>
     </div>
 
+    <!-- TAB 1: INPUT DATA JADWAL -->
     <div id="tab-input" class="tab-content active">
         
         <div class="top-bar-flex">
@@ -301,6 +302,7 @@
         </div>
     </div>
 
+    <!-- TAB 2: DISTRIBUSI JUMLAH JAM -->
     <div id="tab-jam" class="tab-content">
         
         <div id="toolbar-master-guru" style="display:flex; justify-content:flex-start; gap:10px; margin-bottom:15px;">
@@ -342,6 +344,7 @@
         </div>
     </div>
 
+    <!-- TAB 3: PENGATURAN KOP & TTD -->
     <div id="tab-kop" class="tab-content">
         <div style="display: flex; gap: 20px;">
             <div style="flex: 1;">
@@ -370,6 +373,7 @@
         </div>
     </div>
 
+    <!-- TAB 4: CETAK JADWAL F4 -->
     <div id="tab-cetak" class="tab-content">
         <button class="btn btn-print" onclick="window.print()"><i class="fas fa-print"></i> Cetak Jadwal Sekarang (F4)</button>
         <div class="cetak-wrapper">
@@ -493,30 +497,35 @@
 
     // === DATA MASTER DEFAULT ===
     const defaultGuru = {
-        'A': { name: 'IMAM TAUFIQ, ST.', color: '#F8CBAD' }, 
-        'B': { name: 'SUBIANTO, S.Pd', color: '#9BC2E6' },
-        'C': { name: 'MUHAMMAD NURIL, S.Ag.', color: '#B4A7D6' }, 
-        'D': { name: 'YUSUF, S.Pd.', color: '#FFE699' },
-        'E': { name: 'MOH. YASIN, S.Pd.', color: '#FF9999' }, 
-        'F': { name: 'Dra. UMU SYAROFAH', color: '#99CCFF' },
-        'G': { name: 'MUSTIKAH, S.Pd.I', color: '#FF6666' }, 
-        'H': { name: 'MUNAFI\'AH, S.Pd.', color: '#A9D08E' },
-        'I': { name: 'MUHAIMINAH, S.Pd.I', color: '#C6E0B4' }, 
-        'J': { name: 'INDARSIH, S.Pd.', color: '#00B050' },
-        'K': { name: 'IMAM HAROMEN, SE.', color: '#00B0F0' }, 
-        'L': { name: 'ANDY KURNIAWAN, S.Pd.', color: '#8EA9DB' },
-        'M': { name: 'M. ZAINUL ARIFIN, S.Com', color: '#E2EFDA' }, 
-        'N': { name: 'FITROTIN AZIZAH, S.M', color: '#D9E1F2' },
-        'O': { name: 'CHANDRA ARIES, S.Pd', color: '#00FFFF' }, 
-        'P': { name: 'YUSHIFUL ILMY, S.Pd', color: '#FF99CC' },
-        'Q': { name: 'LATHIFATU NUR NISA\', S.Pd', color: '#D9D9D9' }, 
-        'R': { name: 'ANDRYAN BAYU PRATAMA, S.Pd', color: '#F4B084' },
-        'S': { name: 'WIDIA NATALIA, S.Pd', color: '#FFFF99' }, 
-        'T': { name: 'NI\'MATUZ ZUHROH', color: '#CC99FF' }
+        'A': { name: 'IMAM TAUFIQ, ST.', color: '#F8CBAD', order: 1 }, 
+        'B': { name: 'SUBIANTO, S.Pd', color: '#9BC2E6', order: 2 },
+        'C': { name: 'MUHAMMAD NURIL, S.Ag.', color: '#B4A7D6', order: 3 }, 
+        'D': { name: 'YUSUF, S.Pd.', color: '#FFE699', order: 4 },
+        'E': { name: 'MOH. YASIN, S.Pd.', color: '#FF9999', order: 5 }, 
+        'F': { name: 'Dra. UMU SYAROFAH', color: '#99CCFF', order: 6 },
+        'G': { name: 'MUSTIKAH, S.Pd.I', color: '#FF6666', order: 7 }, 
+        'H': { name: 'MUNAFI\'AH, S.Pd.', color: '#A9D08E', order: 8 },
+        'I': { name: 'MUHAIMINAH, S.Pd.I', color: '#C6E0B4', order: 9 }, 
+        'J': { name: 'INDARSIH, S.Pd.', color: '#00B050', order: 10 },
+        'K': { name: 'IMAM HAROMEN, SE.', color: '#00B0F0', order: 11 }, 
+        'L': { name: 'ANDY KURNIAWAN, S.Pd.', color: '#8EA9DB', order: 12 },
+        'M': { name: 'M. ZAINUL ARIFIN, S.Com', color: '#E2EFDA', order: 13 }, 
+        'N': { name: 'FITROTIN AZIZAH, S.M', color: '#D9E1F2', order: 14 },
+        'O': { name: 'CHANDRA ARIES, S.Pd', color: '#00FFFF', order: 15 }, 
+        'P': { name: 'YUSHIFUL ILMY, S.Pd', color: '#FF99CC', order: 16 },
+        'Q': { name: 'LATHIFATU NUR NISA\', S.Pd', color: '#D9D9D9', order: 17 }, 
+        'R': { name: 'ANDRYAN BAYU PRATAMA, S.Pd', color: '#F4B084', order: 18 },
+        'S': { name: 'WIDIA NATALIA, S.Pd', color: '#FFFF99', order: 19 }, 
+        'T': { name: 'NI\'MATUZ ZUHROH', color: '#CC99FF', order: 20 }
     };
     
+    // LIST MAPEL DEFAULT
     const defaultMapel = ["Pendidikan Jasmani, Olah Raga, dan Kesehatan", "Seni dan Budaya", "Pancasila", "IPAS", "Matematika", "B. Arab", "B. Indonesia", "B. Inggris", "B. Jawa", "Qurdis", "Akidah A", "Fikih", "SKI", "ASWAJA"];
     
+    // LIST MAPEL SPESIAL YG TAMPIL DI PALING ATAS
+    const specialMapelsList = ["Istirahat", "Upacara", "S. Dzuhur", "-"];
+    const specialMapelsOrder = { "Istirahat": 1, "Upacara": 2, "S. Dzuhur": 3, "-": 4 };
+
     const daftarHari = ['SABTU', 'AHAD', 'SENIN', 'SELASA', 'RABU', 'KAMIS'];
     const waktuDefault = { 1: "07.00 - 07.35", 2: "07.35 - 08.10", 3: "08.10 - 08.45", 4: "08.45 - 09.20", 5: "09.55 - 10.30", 6: "10.30 - 11.05", 7: "11.05 - 11.40", 8: "11.40 - 12.15", 9: "12.15 - 12.50", 10: "12.50 - 13.25", 11: "13.25 - 14.00" };
 
@@ -539,9 +548,12 @@
         return roman[num] || num;
     }
 
-    // ==== FUNGSI PENGURUTAN MURNI ALFABETIS ====
     function getSortedGuruCodes() {
-        return Object.keys(daftarGuru).sort((a, b) => a.localeCompare(b));
+        return Object.keys(daftarGuru).sort((a, b) => {
+            let orderA = daftarGuru[a].order || 9999999999999;
+            let orderB = daftarGuru[b].order || 9999999999999;
+            return orderA - orderB;
+        });
     }
 
     // === 2. FUNGSI UI & TOAST ===
@@ -811,7 +823,7 @@
         const guruSelect = document.getElementById(`guru-${jam}`);
         const guruKelasFiltered = dbGuruKelas.filter(g => String(g.kelas) === String(currentKelas));
 
-        let allMapels = new Set(["-", "Upacara", "Istirahat"]);
+        let allMapels = new Set(specialMapelsList);
         let allGurus = new Set(["-"]);
         const mapelDigunakanGuruLain = guruKelasFiltered.filter(g => g.jenis === 'Guru Mapel').map(g => g.mapel);
 
@@ -823,7 +835,7 @@
         let allowedGurus = new Set(allGurus);
 
         if (guruVal && guruVal !== "-") {
-            allowedMapels = new Set(["-", "Upacara", "Istirahat"]);
+            allowedMapels = new Set(specialMapelsList);
             if (guruKelasFiltered.some(g => g.guru === guruVal && g.jenis === 'Guru Kelas')) {
                 daftarMapel.forEach(m => { if (!mapelDigunakanGuruLain.includes(m)) allowedMapels.add(m); });
             }
@@ -832,7 +844,7 @@
             });
         }
 
-        if (mapelVal && mapelVal !== "-" && mapelVal !== "Upacara" && mapelVal !== "Istirahat") {
+        if (mapelVal && !specialMapelsList.includes(mapelVal)) {
             allowedGurus = new Set(["-"]);
             let foundSpecific = false;
             guruKelasFiltered.forEach(g => {
@@ -845,14 +857,16 @@
 
         mapelSelect.innerHTML = '';
         let sortedMapels = Array.from(allowedMapels).sort((a, b) => {
-            if(a === "-" || a === "Upacara" || a === "Istirahat") return -1;
-            if(b === "-" || b === "Upacara" || b === "Istirahat") return 1;
+            let isSpecialA = specialMapelsOrder.hasOwnProperty(a);
+            let isSpecialB = specialMapelsOrder.hasOwnProperty(b);
+            if (isSpecialA && isSpecialB) return specialMapelsOrder[a] - specialMapelsOrder[b];
+            if (isSpecialA) return -1;
+            if (isSpecialB) return 1;
             return a.localeCompare(b);
         });
         sortedMapels.forEach(m => mapelSelect.add(new Option(m, m)));
 
         guruSelect.innerHTML = '';
-        // Urutkan dropdown guru secara alfabet murni dari kodenya
         let sortedGurus = Array.from(allowedGurus).sort((a, b) => {
             if(a === "-") return -1;
             if(b === "-") return 1;
@@ -866,14 +880,14 @@
 
         if (allowedMapels.has(mapelVal)) { mapelSelect.value = mapelVal; } 
         else {
-            let validM = Array.from(allowedMapels).filter(x => x!=="-" && x!=="Upacara" && x!=="Istirahat");
+            let validM = Array.from(allowedMapels).filter(x => !specialMapelsList.includes(x));
             mapelSelect.value = (validM.length === 1 && guruVal && guruVal !== "-") ? validM[0] : "-";
         }
 
         if (allowedGurus.has(guruVal)) { guruSelect.value = guruVal; } 
         else {
             let validG = Array.from(allowedGurus).filter(x => x!=="-");
-            guruSelect.value = (validG.length === 1 && mapelVal && mapelVal !== "-" && mapelVal !== "Upacara" && mapelVal !== "Istirahat") ? validG[0] : "-";
+            guruSelect.value = (validG.length === 1 && mapelVal && !specialMapelsList.includes(mapelVal)) ? validG[0] : "-";
         }
 
         if (isUserTriggered) {
@@ -1038,7 +1052,6 @@
 
         if (oldKode) {
             if (kode !== oldKode && daftarGuru[kode]) return showToast("Kode guru sudah terpakai!", "error");
-            
             let color = daftarGuru[oldKode].color;
             let order = daftarGuru[oldKode].order || Date.now();
             
@@ -1054,8 +1067,7 @@
         } else {
             if (daftarGuru[kode]) return showToast("Kode guru tersebut sudah terpakai!", "error");
             const colors = ['#F8CBAD', '#9BC2E6', '#B4A7D6', '#FFE699', '#FF9999', '#99CCFF', '#FF6666', '#A9D08E', '#C6E0B4', '#00B050', '#00B0F0', '#8EA9DB', '#E2EFDA', '#D9E1F2', '#00FFFF', '#FF99CC', '#D9D9D9', '#F4B084', '#FFFF99', '#CC99FF'];
-            let randomColor = colors[Math.floor(Math.random() * colors.length)];
-            database.ref(`master/guru/${kode}`).set({ name: nama, color: randomColor, order: Date.now() });
+            database.ref(`master/guru/${kode}`).set({ name: nama, color: colors[Math.floor(Math.random() * colors.length)], order: Date.now() });
             showToast("Guru baru ditambahkan.", "success");
         }
 
@@ -1099,7 +1111,7 @@
             
             let jabatanStr = jabatanArr.length > 0 ? jabatanArr.join(", ") : "";
             let mapelSet = new Set();
-            dbJadwal.forEach(j => { if (j.guru === code && j.mapel !== "-" && j.mapel !== "Istirahat" && j.mapel !== "Upacara") mapelSet.add(j.mapel); });
+            dbJadwal.forEach(j => { if (j.guru === code && !specialMapelsList.includes(j.mapel)) mapelSet.add(j.mapel); });
             
             let mapelList = Array.from(mapelSet).sort((a,b) => a.localeCompare(b));
             if (mapelList.length === 0) mapelList = [""];
