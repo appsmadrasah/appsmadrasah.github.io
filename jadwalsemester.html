@@ -497,26 +497,26 @@
 
     // === DATA MASTER DEFAULT ===
     const defaultGuru = {
-        'A': { name: 'IMAM TAUFIQ, ST.', color: '#F8CBAD', order: 1 }, 
-        'B': { name: 'SUBIANTO, S.Pd', color: '#9BC2E6', order: 2 },
-        'C': { name: 'MUHAMMAD NURIL, S.Ag.', color: '#B4A7D6', order: 3 }, 
-        'D': { name: 'YUSUF, S.Pd.', color: '#FFE699', order: 4 },
-        'E': { name: 'MOH. YASIN, S.Pd.', color: '#FF9999', order: 5 }, 
-        'F': { name: 'Dra. UMU SYAROFAH', color: '#99CCFF', order: 6 },
-        'G': { name: 'MUSTIKAH, S.Pd.I', color: '#FF6666', order: 7 }, 
-        'H': { name: 'MUNAFI\'AH, S.Pd.', color: '#A9D08E', order: 8 },
-        'I': { name: 'MUHAIMINAH, S.Pd.I', color: '#C6E0B4', order: 9 }, 
-        'J': { name: 'INDARSIH, S.Pd.', color: '#00B050', order: 10 },
-        'K': { name: 'IMAM HAROMEN, SE.', color: '#00B0F0', order: 11 }, 
-        'L': { name: 'ANDY KURNIAWAN, S.Pd.', color: '#8EA9DB', order: 12 },
-        'M': { name: 'M. ZAINUL ARIFIN, S.Com', color: '#E2EFDA', order: 13 }, 
-        'N': { name: 'FITROTIN AZIZAH, S.M', color: '#D9E1F2', order: 14 },
-        'O': { name: 'CHANDRA ARIES, S.Pd', color: '#00FFFF', order: 15 }, 
-        'P': { name: 'YUSHIFUL ILMY, S.Pd', color: '#FF99CC', order: 16 },
-        'Q': { name: 'LATHIFATU NUR NISA\', S.Pd', color: '#D9D9D9', order: 17 }, 
-        'R': { name: 'ANDRYAN BAYU PRATAMA, S.Pd', color: '#F4B084', order: 18 },
-        'S': { name: 'WIDIA NATALIA, S.Pd', color: '#FFFF99', order: 19 }, 
-        'T': { name: 'NI\'MATUZ ZUHROH', color: '#CC99FF', order: 20 }
+        'A': { name: 'IMAM TAUFIQ, ST.', color: '#F8CBAD' }, 
+        'B': { name: 'SUBIANTO, S.Pd', color: '#9BC2E6' },
+        'C': { name: 'MUHAMMAD NURIL, S.Ag.', color: '#B4A7D6' }, 
+        'D': { name: 'YUSUF, S.Pd.', color: '#FFE699' },
+        'E': { name: 'MOH. YASIN, S.Pd.', color: '#FF9999' }, 
+        'F': { name: 'Dra. UMU SYAROFAH', color: '#99CCFF' },
+        'G': { name: 'MUSTIKAH, S.Pd.I', color: '#FF6666' }, 
+        'H': { name: 'MUNAFI\'AH, S.Pd.', color: '#A9D08E' },
+        'I': { name: 'MUHAIMINAH, S.Pd.I', color: '#C6E0B4' }, 
+        'J': { name: 'INDARSIH, S.Pd.', color: '#00B050' },
+        'K': { name: 'IMAM HAROMEN, SE.', color: '#00B0F0' }, 
+        'L': { name: 'ANDY KURNIAWAN, S.Pd.', color: '#8EA9DB' },
+        'M': { name: 'M. ZAINUL ARIFIN, S.Com', color: '#E2EFDA' }, 
+        'N': { name: 'FITROTIN AZIZAH, S.M', color: '#D9E1F2' },
+        'O': { name: 'CHANDRA ARIES, S.Pd', color: '#00FFFF' }, 
+        'P': { name: 'YUSHIFUL ILMY, S.Pd', color: '#FF99CC' },
+        'Q': { name: 'LATHIFATU NUR NISA\', S.Pd', color: '#D9D9D9' }, 
+        'R': { name: 'ANDRYAN BAYU PRATAMA, S.Pd', color: '#F4B084' },
+        'S': { name: 'WIDIA NATALIA, S.Pd', color: '#FFFF99' }, 
+        'T': { name: 'NI\'MATUZ ZUHROH', color: '#CC99FF' }
     };
     
     // LIST MAPEL DEFAULT
@@ -548,12 +548,9 @@
         return roman[num] || num;
     }
 
+    // ==== FUNGSI PENGURUTAN MURNI ALFABETIS ====
     function getSortedGuruCodes() {
-        return Object.keys(daftarGuru).sort((a, b) => {
-            let orderA = daftarGuru[a].order || 9999999999999;
-            let orderB = daftarGuru[b].order || 9999999999999;
-            return orderA - orderB;
-        });
+        return Object.keys(daftarGuru).sort((a, b) => a.localeCompare(b));
     }
 
     // === 2. FUNGSI UI & TOAST ===
@@ -667,15 +664,7 @@
     function renderTabelGuruKelas() {
         const tbody = document.getElementById('table-guru-kelas-body');
         tbody.innerHTML = '';
-        
-        // Sorting guru kelas by their order in master guru
-        const filtered = dbGuruKelas
-            .filter(g => String(g.kelas) === String(currentKelas))
-            .sort((a, b) => {
-                let orderA = daftarGuru[a.guru]?.order || 999999;
-                let orderB = daftarGuru[b.guru]?.order || 999999;
-                return orderA - orderB;
-            });
+        const filtered = dbGuruKelas.filter(g => String(g.kelas) === String(currentKelas));
         
         if(filtered.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#888;">Belum ada guru yang ditugaskan. Silakan klik + TAMBAH GURU</td></tr>';
@@ -684,7 +673,8 @@
 
         let totalJTM = 0;
 
-        filtered.forEach((g, idx) => {
+        // Mengurutkan guru kelas berdasarkan abjad kodenya murni
+        filtered.sort((a, b) => a.guru.localeCompare(b.guru)).forEach((g, idx) => {
             const namaGuru = daftarGuru[g.guru] ? daftarGuru[g.guru].name : g.guru;
             let jtm = 0;
             
@@ -1078,6 +1068,7 @@
 
         if (oldKode) {
             if (kode !== oldKode && daftarGuru[kode]) return showToast("Kode guru sudah terpakai!", "error");
+            
             let color = daftarGuru[oldKode].color;
             let order = daftarGuru[oldKode].order || Date.now();
             
@@ -1093,7 +1084,8 @@
         } else {
             if (daftarGuru[kode]) return showToast("Kode guru tersebut sudah terpakai!", "error");
             const colors = ['#F8CBAD', '#9BC2E6', '#B4A7D6', '#FFE699', '#FF9999', '#99CCFF', '#FF6666', '#A9D08E', '#C6E0B4', '#00B050', '#00B0F0', '#8EA9DB', '#E2EFDA', '#D9E1F2', '#00FFFF', '#FF99CC', '#D9D9D9', '#F4B084', '#FFFF99', '#CC99FF'];
-            database.ref(`master/guru/${kode}`).set({ name: nama, color: colors[Math.floor(Math.random() * colors.length)], order: Date.now() });
+            let randomColor = colors[Math.floor(Math.random() * colors.length)];
+            database.ref(`master/guru/${kode}`).set({ name: nama, color: randomColor, order: Date.now() });
             showToast("Guru baru ditambahkan.", "success");
         }
 
