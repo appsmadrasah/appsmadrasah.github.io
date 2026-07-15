@@ -61,9 +61,9 @@
         .btn-hapus { background: #ff6b6b; color: white; border: 1px solid #ff6b6b; margin-left: 5px; }
         .btn-hapus:hover { background: #fa5252; }
 
-        .btn-add-jam { background: #fff; color: #2ecc71; border: 1px solid #2ecc71; padding: 8px 15px; font-size: 12px; font-weight:bold; cursor:pointer; border-radius:4px; }
+        .btn-add-jam { background: #fff; color: #2ecc71; border: 1px solid #2ecc71; padding: 8px 15px; font-size: 12px; font-weight:bold; cursor:pointer; border-radius:4px; margin-bottom: 20px; }
         .btn-add-jam:hover { background: #2ecc71; color: white; }
-        .btn-remove-jam { background: #fff; color: #e74c3c; border: 1px solid #e74c3c; padding: 8px 15px; font-size: 12px; font-weight:bold; cursor:pointer; border-radius:4px; }
+        .btn-remove-jam { background: #fff; color: #e74c3c; border: 1px solid #e74c3c; padding: 8px 15px; font-size: 12px; font-weight:bold; cursor:pointer; border-radius:4px; margin-bottom: 20px; }
         .btn-remove-jam:hover { background: #e74c3c; color: white; }
 
         /* === TABEL DISTRIBUSI JUMLAH JAM === */
@@ -168,24 +168,20 @@
         .c-signature-space { height: 50px; display: flex; justify-content: center; align-items: center; overflow: hidden; margin: 2px 0; }
         .c-signature-img { max-height: 48px; max-width: 120px; object-fit: contain; }
 
-        /* === CONFIGURASI PRINT OUT PERMANEN === */
         @page { size: 215mm 330mm; margin: 8mm; }
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
             html, body { background: white !important; margin: 0 !important; padding: 0 !important; width: 100% !important; height: auto !important; }
             
-            /* Sembunyikan elemen UI Aplikasi */
             .container { box-shadow: none !important; padding: 0 !important; margin: 0 !important; border: none !important; max-width: 100% !important; width: 100% !important; }
             h2.page-title, .step-tabs, .btn, .top-bar-flex, .guru-kelas-table, .day-tabs, .input-grid, .btn-add-jam, .btn-remove-jam, h3, h4, .modal-overlay, #loading-input, #tab-input, #tab-jam, #tab-kop, #toolbar-master-guru { display: none !important; }
             .toast-container, .custom-confirm-overlay { display: none !important; }
             
-            /* Konfigurasi Area Cetak */
             #tab-cetak { display: block !important; }
             .cetak-wrapper { background: transparent !important; padding: 0 !important; border: none !important; display: block !important; margin: 0 !important; overflow: visible !important; }
-            .cetak-container { width: 100% !important; min-height: auto !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; display: block !important; overflow: visible !important; }
-            .c-main-layout { display: flex !important; gap: 8px !important; width: 100% !important; }
-            .c-header { display: flex !important; }
-            .c-table tr { page-break-inside: avoid; }
+            .cetak-container { width: 100% !important; min-height: auto !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; page-break-inside: avoid; display: block !important; overflow: visible !important; }
+            .c-main-layout { display: flex !important; gap: 8px !important; width: 100% !important; page-break-inside: avoid; }
+            .c-header { display: flex !important; page-break-inside: avoid; }
         }
     </style>
 </head>
@@ -242,7 +238,6 @@
         <div class="step-tab" onclick="switchTab('tab-cetak', this)">Cetak Jadwal (F4)</div>
     </div>
 
-    <!-- TAB 1: INPUT DATA JADWAL -->
     <div id="tab-input" class="tab-content active">
         
         <div class="top-bar-flex">
@@ -308,7 +303,6 @@
         </div>
     </div>
 
-    <!-- TAB 2: DISTRIBUSI JUMLAH JAM -->
     <div id="tab-jam" class="tab-content">
         
         <div id="toolbar-master-guru" style="display:flex; justify-content:flex-start; gap:10px; margin-bottom:15px;">
@@ -350,7 +344,6 @@
         </div>
     </div>
 
-    <!-- TAB 3: PENGATURAN KOP & TTD -->
     <div id="tab-kop" class="tab-content">
         <div style="display: flex; gap: 20px;">
             <div style="flex: 1;">
@@ -379,7 +372,6 @@
         </div>
     </div>
 
-    <!-- TAB 4: CETAK JADWAL F4 -->
     <div id="tab-cetak" class="tab-content">
         <button class="btn btn-print" onclick="window.print()"><i class="fas fa-print"></i> Cetak Jadwal Sekarang (F4)</button>
         <div class="cetak-wrapper">
@@ -540,7 +532,6 @@
     let currentKelas = "1";
     let currentHari = "SABTU"; 
     
-    // Perubahan Manajemen Jumlah Jam Berbasis Kelas 
     let rowCounts = {}; 
 
     let isMasterEditMode = false;
@@ -625,7 +616,6 @@
             }
         }
 
-        // Sinkronisasi Baris Jam Berbasis Kelas dari Firebase
         let dbRowCounts = serverData.rowCounts || {};
         for(let k=1; k<=6; k++) {
             rowCounts[k] = dbRowCounts[k] || 0; 
@@ -646,7 +636,6 @@
             }
         }
         
-        // Memastikan Jumlah Jam Minimum adalah 6
         for(let k=1; k<=6; k++) {
             if (rowCounts[k] === 0) rowCounts[k] = 6; 
         }
@@ -672,7 +661,15 @@
     function renderTabelGuruKelas() {
         const tbody = document.getElementById('table-guru-kelas-body');
         tbody.innerHTML = '';
-        const filtered = dbGuruKelas.filter(g => String(g.kelas) === String(currentKelas));
+        
+        // Sorting guru kelas by their order in master guru
+        const filtered = dbGuruKelas
+            .filter(g => String(g.kelas) === String(currentKelas))
+            .sort((a, b) => {
+                let orderA = daftarGuru[a.guru]?.order || 999999;
+                let orderB = daftarGuru[b.guru]?.order || 999999;
+                return orderA - orderB;
+            });
         
         if(filtered.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#888;">Belum ada guru yang ditugaskan. Silakan klik + TAMBAH GURU</td></tr>';
@@ -709,7 +706,8 @@
         
         const selMapel = document.getElementById('modal-select-mapel');
         selMapel.innerHTML = '<option value="">- Pilih Mata Pelajaran -</option>';
-        daftarMapel.forEach(m => selMapel.innerHTML += `<option value="${m}">${m}</option>`);
+        // Sort mapel alphabetically
+        [...daftarMapel].sort((a, b) => a.localeCompare(b)).forEach(m => selMapel.innerHTML += `<option value="${m}">${m}</option>`);
 
         const selGuru = document.getElementById('modal-select-guru');
         selGuru.innerHTML = '<option value="">- Pilih Guru -</option>';
@@ -861,9 +859,25 @@
         }
 
         mapelSelect.innerHTML = '';
-        allowedMapels.forEach(m => mapelSelect.add(new Option(m, m)));
+        // Sort mapels alphabetically, but keep special items at top
+        let sortedMapels = Array.from(allowedMapels).sort((a, b) => {
+            if(a === "-" || a === "Upacara" || a === "Istirahat") return -1;
+            if(b === "-" || b === "Upacara" || b === "Istirahat") return 1;
+            return a.localeCompare(b);
+        });
+        sortedMapels.forEach(m => mapelSelect.add(new Option(m, m)));
+
         guruSelect.innerHTML = '';
-        allowedGurus.forEach(g => {
+        // Sort gurus based on master guru order
+        let sortedGurus = Array.from(allowedGurus).sort((a, b) => {
+            if(a === "-") return -1;
+            if(b === "-") return 1;
+            let orderA = daftarGuru[a]?.order || 999999;
+            let orderB = daftarGuru[b]?.order || 999999;
+            return orderA - orderB;
+        });
+        
+        sortedGurus.forEach(g => {
             let name = g === "-" ? "-" : (daftarGuru[g] ? daftarGuru[g].name : g);
             guruSelect.add(new Option(name, g));
         });
@@ -960,6 +974,21 @@
             for(let i = jamToDelete + 1; i <= maxJam; i++) {
                 let record = dbJadwal.find(x => x.kelas === currentKelas && x.hari === currentHari && String(x.jam) === String(i));
                 if(record) { updates[`jadwal/${record.id}/jam`] = String(i - 1); }
+            }
+
+            if(rowCounts[currentKelas] > 1) { 
+                // Only reduce max jam if no other days have data at the max jam
+                let lastRowHasData = false;
+                daftarHari.forEach(h => {
+                    if (h !== currentHari) {
+                        if (dbJadwal.some(x => x.kelas === currentKelas && x.hari === h && String(x.jam) === String(maxJam))) lastRowHasData = true;
+                    }
+                });
+
+                if (!lastRowHasData) {
+                    rowCounts[currentKelas]--;
+                    updates[`rowCounts/${currentKelas}`] = rowCounts[currentKelas]; 
+                }
             }
 
             if (Object.keys(updates).length > 0) {
@@ -1070,7 +1099,8 @@
         let totalKolom = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
         let totalTatapMukaSemua = 0, totalTambahanSemua = 0, totalKeseluruhanSemua = 0, nomor = 1;
         const kepalaName = (dbTtd.kepala || "").trim().toUpperCase();
-        let sortedCodes = Object.keys(daftarGuru).filter(k => k !== "-").sort((a, b) => a.localeCompare(b));
+
+        let sortedCodes = getSortedGuruCodes();
 
         sortedCodes.forEach(code => {
             let teacherName = daftarGuru[code].name;
@@ -1088,7 +1118,7 @@
             let mapelSet = new Set();
             dbJadwal.forEach(j => { if (j.guru === code && j.mapel !== "-" && j.mapel !== "Istirahat" && j.mapel !== "Upacara") mapelSet.add(j.mapel); });
             
-            let mapelList = Array.from(mapelSet);
+            let mapelList = Array.from(mapelSet).sort((a,b) => a.localeCompare(b));
             if (mapelList.length === 0) mapelList = [""];
             let rowSpan = mapelList.length;
             let cursorStyle = (isMasterEditMode || isMasterHapusMode) ? 'cursor:pointer; color:#3498db; font-weight:bold; text-decoration:underline;' : '';
@@ -1190,7 +1220,6 @@
         const tbody = document.getElementById('print-schedule-body'); tbody.innerHTML = '';
         
         for (let kls = 1; kls <= 6; kls++) {
-            // Jumlah baris untuk kelas di tabel cetak = Sesuai pengaturan "Tambah Jam" yang terekam
             let highestJamKelas = rowCounts[kls] || 6;
 
             for (let jam = 1; jam <= highestJamKelas; jam++) {
