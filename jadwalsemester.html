@@ -667,16 +667,34 @@
     function renderTabelGuruKelas() {
         const tbody = document.getElementById('table-guru-kelas-body');
         tbody.innerHTML = '';
-        const filtered = dbGuruKelas.filter(g => String(g.kelas) === String(currentKelas));
+        
+        // Sorting guru kelas by their order in master guru
+        const filtered = dbGuruKelas
+            .filter(g => String(g.kelas) === String(currentKelas))
+            .sort((a, b) => {
+                let orderA = daftarGuru[a.guru]?.order || 999999;
+                let orderB = daftarGuru[b.guru]?.order || 999999;
+                return orderA - orderB;
+            });
         
         if(filtered.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#888;">Belum ada guru yang ditugaskan. Silakan klik + TAMBAH GURU</td></tr>';
             return;
         }
 
+        let totalJTM = 0;
+
         filtered.forEach((g, idx) => {
             const namaGuru = daftarGuru[g.guru] ? daftarGuru[g.guru].name : g.guru;
-            let jtm = dbJadwal.filter(x => x.kelas === currentKelas && x.guru === g.guru && x.mapel === g.mapel).length;
+            let jtm = 0;
+            
+            if (g.jenis === 'Guru Kelas') {
+                jtm = dbJadwal.filter(x => x.kelas === currentKelas && x.guru === g.guru && !specialMapelsList.includes(x.mapel)).length;
+            } else {
+                jtm = dbJadwal.filter(x => x.kelas === currentKelas && x.guru === g.guru && x.mapel === g.mapel).length;
+            }
+            
+            totalJTM += jtm;
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -686,7 +704,7 @@
                 <td>${g.jenis}</td>
                 <td>${g.asal}</td>
                 <td>${g.tipe}</td>
-                <td style="text-align:center; font-weight:bold;">${jtm}</td>
+                <td style="text-align:center; font-weight:bold; color:#2c3e50;">${jtm}</td>
                 <td style="text-align:center;">
                     <button onclick="hapusGuruKelas('${g.id}')" style="color:#e74c3c; border:none; background:none; cursor:pointer; font-size:14px;">
                         <i class="far fa-trash-alt"></i>
@@ -695,6 +713,14 @@
             `;
             tbody.appendChild(tr);
         });
+
+        const trTotal = document.createElement('tr');
+        trTotal.innerHTML = `
+            <td colspan="6" style="text-align:right; font-weight:bold; padding-right:15px; background-color:#eaf5fa; color:#2c3e50;">JUMLAH TOTAL JTM ROMBEL :</td>
+            <td style="text-align:center; font-weight:bold; background-color:#eaf5fa; font-size:14px; color:#2c3e50;">${totalJTM}</td>
+            <td style="background-color:#eaf5fa;"></td>
+        `;
+        tbody.appendChild(trTotal);
     }
 
     function openModalTambahGuru() {
