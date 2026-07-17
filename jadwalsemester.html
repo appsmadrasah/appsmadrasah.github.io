@@ -12,33 +12,63 @@
     <style>
         /* === GLOBAL STYLES === */
         * { box-sizing: border-box; font-family: Arial, sans-serif; }
-        body { margin: 0; padding: 20px; background-color: #f4f6f9; color: #333; }
-        .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h2.page-title { text-align: center; margin-bottom: 25px; font-size: 24px; color: #2c3e50; }
+        
+        /* Layout Scroll Fix */
+        body { 
+            margin: 0; padding: 2vh 20px; background-color: #f4f6f9; color: #333; 
+            height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .container { 
+            max-width: 1200px; width: 100%; height: 96vh; margin: 0 auto; background: #fff; 
+            border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            display: flex; flex-direction: column; overflow: hidden; 
+        }
 
-        /* === TAB NAVIGATION UTAMA === */
-        .step-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 15px; flex-wrap: wrap; }
-        .step-tab { padding: 10px 20px; font-weight: bold; font-size: 14px; border-radius: 5px; cursor: pointer; text-align: center; border: 1px solid #ddd; background-color: #f1f1f1; transition: 0.3s; }
+        /* === STATIC HEADER (JUDUL & TAB TIDAK IKUT KEGESER) === */
+        .header-section {
+            padding: 20px 20px 0; background: #fff; z-index: 1000;
+        }
+        h2.page-title { 
+            text-align: center; margin-bottom: 20px; font-size: 24px; color: #2c3e50; text-transform: uppercase;
+        }
+        .step-tabs { 
+            display: flex; gap: 10px; border-bottom: 2px solid #ddd; padding-bottom: 15px; flex-wrap: wrap; margin-bottom: 0;
+        }
+        .step-tab { 
+            padding: 10px 20px; font-weight: bold; font-size: 14px; border-radius: 5px; cursor: pointer; text-align: center; border: 1px solid #ddd; background-color: #f1f1f1; transition: 0.3s; text-transform: uppercase;
+        }
         .step-tab.active { background-color: #4CAF50; color: white; border: 2px solid #333; }
         .step-tab:hover:not(.active) { background-color: #e2e2e2; }
 
-        /* === TAB SECTIONS === */
-        .tab-content { display: none; }
+        /* === TAB SECTIONS (SCROLLABLE) === */
+        .tab-content { 
+            display: none; flex: 1; overflow-y: auto; padding: 20px; position: relative;
+        }
         .tab-content.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* === STICKY TOOLBARS (TOMBOL TIDAK IKUT KEGESER) === */
+        .sticky-toolbar {
+            position: sticky; top: -20px; background-color: #fff; z-index: 998;
+            padding: 20px 0 15px; margin: -20px 0 15px 0; border-bottom: 2px solid #eee;
+        }
+        .top-bar-flex { display: flex; justify-content: space-between; align-items: center; }
+
         /* === UI ELEMENTS === */
-        .btn { padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; font-size: 14px; transition: 0.2s; }
-        .btn-save { background-color: #4CAF50; color: white; margin-top: 15px; width: 100%; }
-        .btn-print { background-color: #f39c12; color: white; margin-bottom: 15px; padding: 12px 25px; font-size: 15px; }
+        .btn { padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; font-size: 14px; transition: 0.2s; text-transform: uppercase;}
+        .btn-save { background-color: #4CAF50; color: white; width: 100%; }
+        .btn-print { background-color: #f39c12; color: white; padding: 12px 25px; font-size: 15px; }
         .loading-text { text-align: center; font-weight: bold; color: #888; padding: 20px; }
 
-        /* === TABEL & GRID JADWAL BARU === */
-        .top-bar-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .filter-select { padding: 8px 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; min-width: 200px; outline: none; color: #333; background: #fff;}
-        .btn-tambah-guru { background-color: #2ecc71; color: white; border-radius: 4px; padding: 8px 15px; font-size: 12px; }
+        .btn-tambah-guru { background-color: #2ecc71; color: white; border-radius: 4px; padding: 8px 15px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; text-transform: uppercase;}
         .btn-tambah-guru:hover { background-color: #27ae60; }
+        .btn-add-jam { background: #fff; color: #2ecc71; border: 1px solid #2ecc71; padding: 8px 15px; font-size: 12px; font-weight:bold; cursor:pointer; border-radius:4px; text-transform: uppercase;}
+        .btn-add-jam:hover { background: #2ecc71; color: white; }
+        .btn-remove-jam { background: #fff; color: #e74c3c; border: 1px solid #e74c3c; padding: 8px 15px; font-size: 12px; font-weight:bold; cursor:pointer; border-radius:4px; text-transform: uppercase;}
+        .btn-remove-jam:hover { background: #e74c3c; color: white; }
 
+        /* === TABEL & GRID JADWAL === */
         .guru-kelas-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
         .guru-kelas-table th { background-color: #eaf5fa; color: #555; padding: 10px; border: 1px solid #eee; font-size: 10px; text-transform: uppercase; text-align: left; }
         .guru-kelas-table td { padding: 10px; border: 1px solid #eee; text-align: left; background: #fff; }
@@ -55,16 +85,11 @@
         .grid-select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; color: #333; outline: none; background: #fff; }
         .grid-select:focus { border-color: #3498db; }
         
-        .btn-grid { padding: 6px 12px; font-size: 11px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-grid { padding: 6px 12px; font-size: 11px; border-radius: 4px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
         .btn-reset { background: transparent; color: #ff6b6b; border: 1px solid #ff6b6b; }
         .btn-reset:hover { background: #ffeeee; }
         .btn-hapus { background: #ff6b6b; color: white; border: 1px solid #ff6b6b; margin-left: 5px; }
         .btn-hapus:hover { background: #fa5252; }
-
-        .btn-add-jam { background: #fff; color: #2ecc71; border: 1px solid #2ecc71; padding: 8px 15px; font-size: 12px; font-weight:bold; cursor:pointer; border-radius:4px; margin-bottom: 20px; }
-        .btn-add-jam:hover { background: #2ecc71; color: white; }
-        .btn-remove-jam { background: #fff; color: #e74c3c; border: 1px solid #e74c3c; padding: 8px 15px; font-size: 12px; font-weight:bold; cursor:pointer; border-radius:4px; margin-bottom: 20px; }
-        .btn-remove-jam:hover { background: #e74c3c; color: white; }
 
         /* === TABEL DISTRIBUSI JUMLAH JAM === */
         .data-table { border-collapse: collapse; margin-top: 10px; background-color: #fff; border: 2px solid #555; }
@@ -75,7 +100,7 @@
         .master-hover-row:hover { background-color: #eef2f5 !important; }
 
         /* === MODAL STYLES === */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 10000; justify-content: center; align-items: center; }
         .modal-box-new { background: white; border-radius: 6px; width: 450px; max-width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; }
         .modal-header-new { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee; }
         .modal-header-new h3 { margin: 0; font-size: 15px; color: #555; }
@@ -101,8 +126,8 @@
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         .form-group input[type="file"] { padding: 5px; background-color: #fff; }
 
-        /* === NOTIFIKASI TOAST MINIMALIS & ELEGAN === */
-        .toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
+        /* === NOTIFIKASI TOAST === */
+        .toast-container { position: fixed; top: 24px; right: 24px; z-index: 10001; display: flex; flex-direction: column; gap: 12px; }
         .toast-box { 
             background: #ffffff; color: #2c3e50; padding: 14px 20px; border-radius: 8px; 
             box-shadow: 0 10px 30px -5px rgba(0,0,0,0.12), 0 4px 10px -4px rgba(0,0,0,0.08); 
@@ -136,13 +161,11 @@
         .custom-confirm-content p { margin: 0 0 25px; font-size: 13.5px; color: #666; line-height: 1.5; }
         .custom-confirm-actions { display: flex; justify-content: center; gap: 12px; }
         .btn-confirm-cancel { 
-            background: #f1f1f1; color: #555; border: none; padding: 10px 24px; border-radius: 6px; 
-            font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; 
+            background: #f1f1f1; color: #555; border: none; padding: 10px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; text-transform: uppercase;
         }
         .btn-confirm-cancel:hover { background: #e4e4e4; color: #333; }
         .btn-confirm-ok { 
-            background: #e74c3c; color: white; border: none; padding: 10px 24px; border-radius: 6px; 
-            font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; 
+            background: #e74c3c; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; text-transform: uppercase;
         }
         .btn-confirm-ok:hover { background: #c0392b; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3); }
 
@@ -171,11 +194,14 @@
         @page { size: 215mm 330mm; margin: 8mm; }
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
-            html, body { background: white !important; margin: 0 !important; padding: 0 !important; width: 100% !important; height: auto !important; }
-            .container { box-shadow: none !important; padding: 0 !important; margin: 0 !important; border: none !important; max-width: 100% !important; width: 100% !important; }
-            h2.page-title, .step-tabs, .btn, .top-bar-flex, .guru-kelas-table, .day-tabs, .input-grid, .btn-add-jam, .btn-remove-jam, h3, h4, .modal-overlay, #loading-input, #tab-input, #tab-jam, #tab-kop, #toolbar-master-guru { display: none !important; }
-            .toast-container, .custom-confirm-overlay { display: none !important; }
-            #tab-cetak { display: block !important; }
+            html, body { background: white !important; margin: 0 !important; padding: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; display: block !important; }
+            .container { box-shadow: none !important; padding: 0 !important; margin: 0 !important; border: none !important; max-width: 100% !important; width: 100% !important; height: auto !important; overflow: visible !important; display: block !important; }
+            
+            /* Sembunyikan semua UI dan navigasi */
+            .header-section, .tab-content, .sticky-toolbar, .toast-container, .custom-confirm-overlay { display: none !important; }
+            
+            /* Tampilkan hanya tab cetak */
+            #tab-cetak { display: block !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; }
             .cetak-wrapper { background: transparent !important; padding: 0 !important; border: none !important; display: block !important; margin: 0 !important; overflow: visible !important; }
             .cetak-container { width: 100% !important; min-height: auto !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; page-break-inside: avoid; display: block !important; overflow: visible !important; }
             .c-main-layout { display: flex !important; gap: 8px !important; width: 100% !important; page-break-inside: avoid; }
@@ -192,12 +218,12 @@
     <div class="custom-confirm-box">
         <div class="custom-confirm-icon"><i class="fas fa-exclamation-circle" id="custom-confirm-icon"></i></div>
         <div class="custom-confirm-content">
-            <h4 id="custom-confirm-title">Konfirmasi</h4>
+            <h4 id="custom-confirm-title">KONFIRMASI</h4>
             <p id="custom-confirm-message">Pesan konfirmasi.</p>
         </div>
         <div class="custom-confirm-actions">
-            <button class="btn-confirm-cancel" id="custom-confirm-btn-cancel">Batal</button>
-            <button class="btn-confirm-ok" id="custom-confirm-btn-ok">Hapus</button>
+            <button class="btn-confirm-cancel" id="custom-confirm-btn-cancel">BATAL</button>
+            <button class="btn-confirm-ok" id="custom-confirm-btn-ok">HAPUS</button>
         </div>
     </div>
 </div>
@@ -206,7 +232,7 @@
 <div class="modal-overlay" id="modal-master-guru">
     <div class="modal-box-new" style="width: 400px;">
         <div class="modal-header-new">
-            <h3 id="modal-master-title">Tambah Guru Baru</h3>
+            <h3 id="modal-master-title" style="text-transform:uppercase;">TAMBAH GURU BARU</h3>
             <button class="modal-close-btn" onclick="closeModalMasterGuru()">&times;</button>
         </div>
         <div class="modal-body-new">
@@ -239,20 +265,23 @@
 </div>
 
 <div class="container" id="app-ui">
-    <h2 class="page-title">Sistem Penyusunan Jadwal Madrasah</h2>
-
-    <div class="step-tabs">
-        <div class="step-tab active" onclick="switchTab('tab-input', this)">Input Data Jadwal</div>
-        <div class="step-tab" onclick="switchTab('tab-jam', this)">Jumlah Jam</div>
-        <div class="step-tab" onclick="switchTab('tab-kop', this)">Pengaturan Kop & TTD</div>
-        <div class="step-tab" onclick="switchTab('tab-cetak', this)">Cetak Jadwal (F4)</div>
+    
+    <!-- HEADER STATIC -->
+    <div class="header-section">
+        <h2 class="page-title">SISTEM PENYUSUNAN JADWAL MADRASAH</h2>
+        <div class="step-tabs">
+            <div class="step-tab active" onclick="switchTab('tab-input', this)">INPUT DATA JADWAL</div>
+            <div class="step-tab" onclick="switchTab('tab-jam', this)">JUMLAH JAM</div>
+            <div class="step-tab" onclick="switchTab('tab-kop', this)">PENGATURAN KOP & TTD</div>
+            <div class="step-tab" onclick="switchTab('tab-cetak', this)">CETAK JADWAL (F4)</div>
+        </div>
     </div>
 
     <!-- TAB 1: INPUT DATA JADWAL -->
     <div id="tab-input" class="tab-content active">
         
-        <div class="top-bar-flex">
-            <div>
+        <div class="top-bar-flex sticky-toolbar">
+            <div style="display: flex; gap: 10px; align-items: center;">
                 <select id="filter-kelas" class="filter-select" onchange="onKelasChange()">
                     <option value="1">Kelas I</option>
                     <option value="2">Kelas II</option>
@@ -261,6 +290,8 @@
                     <option value="5">Kelas V</option>
                     <option value="6">Kelas VI</option>
                 </select>
+                <button class="btn-add-jam" style="margin:0;" onclick="tambahJam()"><i class="fas fa-plus"></i> TAMBAH JAM</button>
+                <button class="btn-remove-jam" style="margin:0;" onclick="kurangiJam()"><i class="fas fa-minus"></i> KURANGI JAM</button>
             </div>
             <button class="btn btn-tambah-guru" onclick="openModalTambahGuru()"><i class="fas fa-plus"></i> TAMBAH GURU</button>
         </div>
@@ -306,21 +337,16 @@
                 <tbody id="input-grid-body">
                 </tbody>
             </table>
-
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <button class="btn-add-jam" onclick="tambahJam()"><i class="fas fa-plus"></i> TAMBAH JAM</button>
-                <button class="btn-remove-jam" onclick="kurangiJam()"><i class="fas fa-minus"></i> KURANGI JAM</button>
-            </div>
         </div>
     </div>
 
     <!-- TAB 2: DISTRIBUSI JUMLAH JAM -->
     <div id="tab-jam" class="tab-content">
         
-        <div id="toolbar-master-guru" style="display:flex; justify-content:flex-start; gap:10px; margin-bottom:15px;">
-            <button class="btn btn-tambah-guru" onclick="openModalMasterGuru('')"><i class="fas fa-user-plus"></i> Tambah Guru</button>
-            <button class="btn btn-print" style="margin:0; background:#3498db;" onclick="toggleMasterEditMode()" id="btn-edit-mode"><i class="fas fa-edit"></i> Edit Guru</button>
-            <button class="btn btn-hapus" style="margin:0; background:#e74c3c; border-radius:5px;" onclick="toggleMasterHapusMode()" id="btn-hapus-mode"><i class="fas fa-trash"></i> Hapus Guru</button>
+        <div id="toolbar-master-guru" class="sticky-toolbar" style="display:flex; justify-content:flex-start; gap:10px;">
+            <button class="btn btn-tambah-guru" style="font-weight:bold;" onclick="openModalMasterGuru('')"><i class="fas fa-user-plus"></i> TAMBAH GURU</button>
+            <button class="btn btn-print" style="margin:0; background:#3498db; font-size:12px; font-weight:bold; border-radius:4px; padding:8px 15px;" onclick="toggleMasterEditMode()" id="btn-edit-mode"><i class="fas fa-edit"></i> EDIT GURU</button>
+            <button class="btn btn-hapus" style="margin:0; background:#e74c3c; font-size:12px; font-weight:bold; border-radius:4px; padding:8px 15px; border:none;" onclick="toggleMasterHapusMode()" id="btn-hapus-mode"><i class="fas fa-trash"></i> HAPUS GURU</button>
         </div>
 
         <h3 style="color:#2c3e50; text-align:center; margin-bottom: 5px; text-transform: uppercase;">DISTRIBUSI JAM MENGAJAR</h3>
@@ -331,12 +357,12 @@
                 <thead>
                     <tr>
                         <th rowspan="2" width="3%">NO</th>
-                        <th rowspan="2" width="18%">Nama Guru</th>
+                        <th rowspan="2" width="18%">NAMA GURU</th>
                         <th rowspan="2" width="5%">KODE</th>
-                        <th rowspan="2" width="12%">Jabatan</th>
-                        <th rowspan="2" width="20%">Mata Pelajaran</th>
-                        <th colspan="6">Alokasi Waktu</th>
-                        <th colspan="4">Jumlah Jam</th>
+                        <th rowspan="2" width="12%">JABATAN</th>
+                        <th rowspan="2" width="20%">MATA PELAJARAN</th>
+                        <th colspan="6">ALOKASI WAKTU</th>
+                        <th colspan="4">JUMLAH JAM</th>
                     </tr>
                     <tr>
                         <th width="3%">1</th>
@@ -345,10 +371,10 @@
                         <th width="3%">4</th>
                         <th width="3%">5</th>
                         <th width="3%">6</th>
-                        <th width="6%">Tatap<br>Muka</th>
-                        <th width="6%">Total Jam<br>Tatap Muka</th>
-                        <th width="8%">Tambahan<br>Jabatan</th>
-                        <th width="8%">Jumlah<br>Total</th>
+                        <th width="6%">TATAP<br>MUKA</th>
+                        <th width="6%">TOTAL JAM<br>TATAP MUKA</th>
+                        <th width="8%">TAMBAHAN<br>JABATAN</th>
+                        <th width="8%">JUMLAH<br>TOTAL</th>
                     </tr>
                 </thead>
                 <tbody id="table-jam-body"></tbody>
@@ -359,36 +385,43 @@
 
     <!-- TAB 3: PENGATURAN KOP & TTD -->
     <div id="tab-kop" class="tab-content">
+        <div class="sticky-toolbar" style="display: flex; justify-content: flex-end; align-items: center;">
+            <span style="font-weight: bold; color: #2c3e50; margin-right: auto; font-size:16px;">PENGATURAN KOP & TANDA TANGAN</span>
+            <button class="btn btn-save" style="margin:0; width:auto; background:#2ecc71;" onclick="saveKopToFirebase()"><i class="fas fa-save"></i> SIMPAN PENGATURAN</button>
+        </div>
+
         <div style="display: flex; gap: 20px;">
             <div style="flex: 1;">
-                <h3 style="color:#2c3e50;">Pengaturan Kop Surat</h3>
+                <h3 style="color:#2c3e50;">PENGATURAN KOP SURAT</h3>
                 <div class="form-group">
-                    <label>Upload Logo Lembaga (.jpg, .png)</label>
+                    <label>UPLOAD LOGO LEMBAGA (.JPG, .PNG)</label>
                     <input type="file" id="k-upload-logo" accept=".jpg, .jpeg, .png" onchange="previewLogo(this)">
                 </div>
-                <div class="form-group"><label>Lembaga Induk</label><input type="text" id="k-lembaga"></div>
-                <div class="form-group"><label>Nama Sekolah</label><input type="text" id="k-sekolah"></div>
-                <div class="form-group"><label>Kecamatan/Kabupaten</label><input type="text" id="k-wilayah"></div>
-                <div class="form-group"><label>Detail Akreditasi & NUPTK</label><input type="text" id="k-akreditasi"></div>
-                <div class="form-group"><label>Alamat Lengkap</label><input type="text" id="k-alamat"></div>
-                <div class="form-group"><label>Judul Jadwal (Tahun)</label><input type="text" id="k-tahun"></div>
+                <div class="form-group"><label>LEMBAGA INDUK</label><input type="text" id="k-lembaga"></div>
+                <div class="form-group"><label>NAMA SEKOLAH</label><input type="text" id="k-sekolah"></div>
+                <div class="form-group"><label>KECAMATAN / KABUPATEN</label><input type="text" id="k-wilayah"></div>
+                <div class="form-group"><label>DETAIL AKREDITASI & NUPTK</label><input type="text" id="k-akreditasi"></div>
+                <div class="form-group"><label>ALAMAT LENGKAP</label><input type="text" id="k-alamat"></div>
+                <div class="form-group"><label>JUDUL JADWAL (TAHUN)</label><input type="text" id="k-tahun"></div>
             </div>
             <div style="flex: 1;">
-                <h3 style="color:#2c3e50;">Pengaturan Tanda Tangan</h3>
-                <div class="form-group"><label>Kotak Berlaku (Teks)</label><textarea id="k-berlaku" rows="4"></textarea></div>
-                <div class="form-group"><label>Nama Kepala Madrasah</label><input type="text" id="k-kepala"></div>
+                <h3 style="color:#2c3e50;">PENGATURAN TANDA TANGAN</h3>
+                <div class="form-group"><label>KOTAK BERLAKU (TEKS)</label><textarea id="k-berlaku" rows="4"></textarea></div>
+                <div class="form-group"><label>NAMA KEPALA MADRASAH</label><input type="text" id="k-kepala"></div>
                 <div class="form-group">
-                    <label>Upload File TTD (.jpg, .png)</label>
+                    <label>UPLOAD FILE TTD (.JPG, .PNG)</label>
                     <input type="file" id="k-upload-ttd" accept=".jpg, .jpeg, .png" onchange="previewImageTTD(this)">
                 </div>
-                <button class="btn btn-save" onclick="saveKopToFirebase()"><i class="fas fa-save"></i> Simpan Seluruh Pengaturan</button>
             </div>
         </div>
     </div>
 
     <!-- TAB 4: CETAK JADWAL F4 -->
     <div id="tab-cetak" class="tab-content">
-        <button class="btn btn-print" onclick="window.print()"><i class="fas fa-print"></i> Cetak Jadwal Sekarang (F4)</button>
+        <div class="sticky-toolbar">
+            <button class="btn btn-print" style="margin:0; width:100%; border-radius:4px;" onclick="window.print()"><i class="fas fa-print"></i> CETAK JADWAL SEKARANG (F4)</button>
+        </div>
+        
         <div class="cetak-wrapper">
             <div class="cetak-container" id="cetak-view">
                 <div class="c-header">
@@ -446,36 +479,36 @@
 <div class="modal-overlay" id="modal-tambah-guru">
     <div class="modal-box-new">
         <div class="modal-header-new">
-            <h3>Pilih Guru & Mapel</h3>
+            <h3 style="text-transform:uppercase;">PILIH GURU & MAPEL</h3>
             <button class="modal-close-btn" onclick="closeModalGuru()">&times;</button>
         </div>
         
         <div class="modal-body-new">
             <table class="static-info-table">
-                <tr><td width="30%">Tahun Ajaran</td><td width="70%">: 2026/2027 Ganjil</td></tr>
+                <tr><td width="30%">TAHUN AJARAN</td><td width="70%">: 2026/2027 GANJIL</td></tr>
                 <tr><td>NPSN</td><td>: 60718526</td></tr>
-                <tr><td>Nama Madrasah</td><td>: MIS HIDAYATUS SHIBYAN</td></tr>
-                <tr><td>Tingkat / Rombel</td><td id="lbl-tingkat-rombel">: Kelas 1 / Kelas 1</td></tr>
+                <tr><td>NAMA MADRASAH</td><td>: MIS HIDAYATUS SHIBYAN</td></tr>
+                <tr><td>TINGKAT / ROMBEL</td><td id="lbl-tingkat-rombel">: KELAS 1 / KELAS 1</td></tr>
             </table>
 
             <div class="radio-group">
-                <div class="title">Pilih Asal Guru</div>
-                <label><input type="radio" name="asal_guru" value="Satminkal" checked> Satminkal</label>
-                <label><input type="radio" name="asal_guru" value="Non Satminkal"> Non Satminkal</label>
+                <div class="title">PILIH ASAL GURU</div>
+                <label><input type="radio" name="asal_guru" value="Satminkal" checked> SATMINKAL</label>
+                <label><input type="radio" name="asal_guru" value="Non Satminkal"> NON SATMINKAL</label>
             </div>
 
             <div class="form-outline">
                 <select id="modal-tipe-tugas">
-                    <option value="utama">Utama</option>
-                    <option value="tambahan">Tambahan</option>
+                    <option value="utama">UTAMA</option>
+                    <option value="tambahan">TAMBAHAN</option>
                 </select>
                 <label>TIPE TUGAS</label>
             </div>
 
             <div class="form-outline">
                 <select id="modal-jenis-guru" onchange="toggleMapelGuru()">
-                    <option value="Guru Kelas">Guru Kelas</option>
-                    <option value="Guru Mapel">Guru Mapel</option>
+                    <option value="Guru Kelas">GURU KELAS</option>
+                    <option value="Guru Mapel">GURU MAPEL</option>
                 </select>
                 <label>JENIS GURU</label>
             </div>
@@ -491,7 +524,7 @@
                     </select>
                 <label>NAMA GURU</label>
             </div>
-            <div id="guru-error" style="color: #e74c3c; font-size: 10px; margin-bottom: 20px; display: none;">Nama Guru tidak boleh kosong!</div>
+            <div id="guru-error" style="color: #e74c3c; font-size: 10px; margin-bottom: 20px; display: none; text-transform:uppercase;">NAMA GURU TIDAK BOLEH KOSONG!</div>
 
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
                 <button onclick="closeModalGuru()" style="background: none; border: none; font-weight: bold; color: #555; cursor: pointer; padding: 8px 15px; font-size: 11px;">BATAL</button>
@@ -581,7 +614,7 @@
             msgEl.innerText = message;
             if (isDanger) {
                 btnOk.style.background = '#e74c3c';
-                btnOk.innerText = 'Hapus';
+                btnOk.innerText = 'HAPUS';
                 iconEl.className = 'fas fa-exclamation-circle';
                 iconEl.style.color = '#e74c3c';
             }
@@ -681,13 +714,12 @@
         const filtered = dbGuruKelas.filter(g => String(g.kelas) === String(currentKelas));
         
         if(filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#888;">Belum ada guru yang ditugaskan. Silakan klik + TAMBAH GURU</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#888;">BELUM ADA GURU YANG DITUGASKAN. SILAKAN KLIK + TAMBAH GURU</td></tr>';
             return;
         }
 
         let totalJTM = 0;
 
-        // Mengurutkan guru kelas berdasarkan abjad kodenya murni
         filtered.sort((a, b) => a.guru.localeCompare(b.guru)).forEach((g, idx) => {
             const namaGuru = daftarGuru[g.guru] ? daftarGuru[g.guru].name : g.guru;
             let jtm = 0;
@@ -728,16 +760,16 @@
     }
 
     function openModalTambahGuru() {
-        document.getElementById('lbl-tingkat-rombel').innerText = `: Kelas ${currentKelas} / Kelas ${currentKelas}`;
+        document.getElementById('lbl-tingkat-rombel').innerText = `: KELAS ${currentKelas} / KELAS ${currentKelas}`;
         document.getElementById('modal-jenis-guru').value = 'Guru Kelas';
         toggleMapelGuru();
         
         const selMapel = document.getElementById('modal-select-mapel');
-        selMapel.innerHTML = '<option value="">- Pilih Mata Pelajaran -</option>';
+        selMapel.innerHTML = '<option value="">- PILIH MATA PELAJARAN -</option>';
         [...daftarMapel].sort((a, b) => a.localeCompare(b)).forEach(m => selMapel.innerHTML += `<option value="${m}">${m}</option>`);
 
         const selGuru = document.getElementById('modal-select-guru');
-        selGuru.innerHTML = '<option value="">- Pilih Guru -</option>';
+        selGuru.innerHTML = '<option value="">- PILIH GURU -</option>';
         
         let sortedCodes = getSortedGuruCodes();
         sortedCodes.forEach(code => {
@@ -780,7 +812,7 @@
         let mapel = "Guru Kelas MI";
         if (jenis === 'Guru Mapel') {
             mapel = document.getElementById('modal-select-mapel').value;
-            if(!mapel) return showToast("Pilih Mata Pelajaran untuk Guru Mapel!", "error");
+            if(!mapel) return showToast("PILIH MATA PELAJARAN UNTUK GURU MAPEL!", "error");
         }
 
         if(!guru) {
@@ -789,19 +821,19 @@
         }
 
         const exist = dbGuruKelas.find(g => g.kelas === currentKelas && g.mapel === mapel && g.guru === guru);
-        if(exist) return showToast("Guru dengan mapel ini sudah terdaftar di kelas ini!", "warning");
+        if(exist) return showToast("GURU DENGAN MAPEL INI SUDAH TERDAFTAR DI KELAS INI!", "warning");
 
         database.ref('guruKelas').push({ 
             kelas: currentKelas, asal: asal, tipe: tipe, jenis: jenis, mapel: mapel, guru: guru 
         }).then(() => {
-            showToast("Berhasil ditambahkan ke daftar guru.", "success");
+            showToast("BERHASIL DITAMBAHKAN KE DAFTAR GURU.", "success");
             closeModalGuru();
         });
     }
 
     async function hapusGuruKelas(id) {
         const confirmed = await showCustomConfirm(
-            "Konfirmasi Hapus Guru", 
+            "KONFIRMASI HAPUS GURU", 
             "Hapus penempatan guru ini dari kelas? Jadwal yang sudah terisi guru ini di kelas ini akan tetap ada di kotak jadwal."
         );
         if (confirmed) database.ref('guruKelas/' + id).remove();
@@ -838,8 +870,8 @@
                 <td><select id="mapel-${i}" data-id="${id}" class="grid-select" onchange="onGridChange(${i}, 'mapel')"></select></td>
                 <td><select id="guru-${i}" data-id="${id}" class="grid-select" onchange="onGridChange(${i}, 'guru')"></select></td>
                 <td style="text-align:center;">
-                    <button class="btn-grid btn-reset" onclick="resetSlot(${i}, '${id}')">Reset</button>
-                    <button class="btn-grid btn-hapus" onclick="hapusSlot(${i}, '${id}')">Hapus</button>
+                    <button class="btn-grid btn-reset" onclick="resetSlot(${i}, '${id}')">RESET</button>
+                    <button class="btn-grid btn-hapus" onclick="hapusSlot(${i}, '${id}')">HAPUS</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -945,13 +977,13 @@
         if (maxJam > 1) { 
             let hasData = dbJadwal.some(j => j.kelas === currentKelas && String(j.jam) === String(maxJam));
             if (hasData) {
-                return showToast(`Gagal! Harap kosongkan atau hapus semua jadwal di jam ke-${maxJam} pada seluruh hari di kelas ini.`, "error");
+                return showToast(`GAGAL! HARAP KOSONGKAN ATAU HAPUS SEMUA JADWAL DI JAM KE-${maxJam} PADA SELURUH HARI DI KELAS INI.`, "error");
             }
             rowCounts[currentKelas]--;
             database.ref(`rowCounts/${currentKelas}`).set(rowCounts[currentKelas]);
             renderInputGrid();
         } else {
-            showToast("Jumlah jam tidak bisa kurang dari 1.", "warning");
+            showToast("JUMLAH JAM TIDAK BISA KURANG DARI 1.", "warning");
         }
     }
 
@@ -965,7 +997,7 @@
             const bentrokGuru = dbJadwal.find(x => x.id !== id && x.guru === guru && x.hari === currentHari && String(x.jam) === String(jam) && x.guru !== "-");
             if(bentrokGuru) {
                 const namaGuru = daftarGuru[guru] ? daftarGuru[guru].name : guru;
-                showToast(`⛔ BENTROK: ${namaGuru} sudah mengajar di Kelas ${toRoman(bentrokGuru.kelas)} pd Jam ke-${jam}. Penempatan dibatalkan!`, "error");
+                showToast(`⛔ BENTROK: ${namaGuru} SUDAH MENGAJAR DI KELAS ${toRoman(bentrokGuru.kelas)} PD JAM KE-${jam}. PENEMPATAN DIBATALKAN!`, "error");
                 renderInputGrid();
                 return;
             }
@@ -983,12 +1015,12 @@
 
     function resetSlot(jam, id) {
         updateRowDropdowns(jam, "-", "-", true);
-        if(!id) showToast("Slot dikosongkan.", "success");
+        if(!id) showToast("SLOT DIKOSONGKAN.", "success");
     }
 
     async function hapusSlot(jamToDelete, id) {
         const confirmed = await showCustomConfirm(
-            "Hapus & Geser Jadwal?", 
+            "HAPUS & GESER JADWAL?", 
             `Hapus jam ke-${jamToDelete}? Jadwal di bawahnya akan otomatis bergeser naik.`
         );
 
@@ -1017,10 +1049,10 @@
             }
 
             if (Object.keys(updates).length > 0) {
-                database.ref().update(updates).then(() => showToast("Jam dihapus & dirapikan.", "success"));
+                database.ref().update(updates).then(() => showToast("JAM DIHAPUS & DIRAPIKAN.", "success"));
             } else {
                 renderInputGrid();
-                showToast("Jam kosong berhasil dihapus.", "success");
+                showToast("JAM KOSONG BERHASIL DIHAPUS.", "success");
             }
         }
     }
@@ -1032,7 +1064,7 @@
         isMasterHapusMode = false;
         document.getElementById('btn-edit-mode').style.border = isMasterEditMode ? '2px solid #2c3e50' : 'none';
         document.getElementById('btn-hapus-mode').style.border = 'none';
-        if(isMasterEditMode) showToast("Mode Edit aktif. Klik nama guru di tabel untuk mengedit.", "warning");
+        if(isMasterEditMode) showToast("MODE EDIT AKTIF. KLIK NAMA GURU DI TABEL UNTUK MENGEDIT.", "warning");
         renderJam();
     }
 
@@ -1041,7 +1073,7 @@
         isMasterEditMode = false;
         document.getElementById('btn-hapus-mode').style.border = isMasterHapusMode ? '2px solid #555' : 'none';
         document.getElementById('btn-edit-mode').style.border = 'none';
-        if(isMasterHapusMode) showToast("Mode Hapus aktif. Klik nama guru di tabel untuk menghapus.", "error");
+        if(isMasterHapusMode) showToast("MODE HAPUS AKTIF. KLIK NAMA GURU DI TABEL UNTUK MENGHAPUS.", "error");
         renderJam();
     }
 
@@ -1060,14 +1092,14 @@
         let oldKode = document.getElementById('master-old-kode');
 
         if (code) { 
-            title.innerText = "Edit Data Guru";
+            title.innerText = "EDIT DATA GURU";
             inputKode.value = code;
             inputNama.value = daftarGuru[code].name;
             inputJabatan.value = daftarGuru[code].jabatan || "";
             inputJamJabatan.value = daftarGuru[code].jamJabatan || "";
             oldKode.value = code;
         } else { 
-            title.innerText = "Tambah Guru Baru";
+            title.innerText = "TAMBAH GURU BARU";
             inputKode.value = "";
             inputNama.value = "";
             inputJabatan.value = "";
@@ -1086,11 +1118,11 @@
         let jamJabatan = document.getElementById('master-jam-jabatan-guru').value.trim();
         let oldKode = document.getElementById('master-old-kode').value;
 
-        if(!kode || !nama) return showToast("Kode dan Nama harus diisi!", "error");
+        if(!kode || !nama) return showToast("KODE DAN NAMA HARUS DIISI!", "error");
         let jamNum = jamJabatan ? parseInt(jamJabatan) : 0;
 
         if (oldKode) {
-            if (kode !== oldKode && daftarGuru[kode]) return showToast("Kode guru sudah terpakai!", "error");
+            if (kode !== oldKode && daftarGuru[kode]) return showToast("KODE GURU SUDAH TERPAKAI!", "error");
             let color = daftarGuru[oldKode].color;
             let order = daftarGuru[oldKode].order || Date.now();
             
@@ -1101,26 +1133,26 @@
                 dbJadwal.forEach(j => { if (j.guru === oldKode) database.ref(`jadwal/${j.id}/guru`).set(kode); });
                 database.ref(`master/guru/${oldKode}`).remove();
             }
-            showToast("Data guru diperbarui.", "success");
+            showToast("DATA GURU DIPERBARUI.", "success");
 
         } else {
-            if (daftarGuru[kode]) return showToast("Kode guru tersebut sudah terpakai!", "error");
+            if (daftarGuru[kode]) return showToast("KODE GURU TERSEBUT SUDAH TERPAKAI!", "error");
             const colors = ['#F8CBAD', '#9BC2E6', '#B4A7D6', '#FFE699', '#FF9999', '#99CCFF', '#FF6666', '#A9D08E', '#C6E0B4', '#00B050', '#00B0F0', '#8EA9DB', '#E2EFDA', '#D9E1F2', '#00FFFF', '#FF99CC', '#D9D9D9', '#F4B084', '#FFFF99', '#CC99FF'];
             let randomColor = colors[Math.floor(Math.random() * colors.length)];
             database.ref(`master/guru/${kode}`).set({ name: nama, color: randomColor, order: Date.now(), jabatan: jabatan, jamJabatan: jamNum });
-            showToast("Guru baru ditambahkan.", "success");
+            showToast("GURU BARU DITAMBAHKAN.", "success");
         }
 
         closeModalMasterGuru(); isMasterEditMode = false; document.getElementById('btn-edit-mode').style.border = 'none'; renderJam();
     }
 
     async function hapusMasterGuru(code) {
-        const confirmed = await showCustomConfirm("Hapus Guru Master?", `Anda yakin menghapus ${daftarGuru[code].name} (${code})?\nSemua riwayat penempatan mengajarnya akan ikut terhapus.`);
+        const confirmed = await showCustomConfirm("HAPUS GURU MASTER?", `Anda yakin menghapus ${daftarGuru[code].name} (${code})?\nSemua riwayat penempatan mengajarnya akan ikut terhapus.`);
         if (confirmed) {
             database.ref(`master/guru/${code}`).remove();
             dbGuruKelas.forEach(g => { if (g.guru === code) database.ref(`guruKelas/${g.id}`).remove(); });
             dbJadwal.forEach(j => { if (j.guru === code) database.ref(`jadwal/${j.id}`).remove(); });
-            showToast("Guru berhasil dihapus.", "success");
+            showToast("GURU BERHASIL DIHAPUS.", "success");
             isMasterHapusMode = false; document.getElementById('btn-hapus-mode').style.border = 'none'; renderJam();
         }
     }
@@ -1229,7 +1261,7 @@
     function previewImageTTD(input) { if (input.files[0]) { const r = new FileReader(); r.onload = function(e) { dbTtd.imageSrc = e.target.result; }; r.readAsDataURL(input.files[0]); } }
     function saveKopToFirebase() {
         database.ref('kop').set({ lembaga: document.getElementById('k-lembaga').value, sekolah: document.getElementById('k-sekolah').value, wilayah: document.getElementById('k-wilayah').value, akreditasi: document.getElementById('k-akreditasi').value, alamat: document.getElementById('k-alamat').value, tahun: document.getElementById('k-tahun').value, logoSrc: dbKop.logoSrc || "" });
-        database.ref('ttd').set({ berlaku: document.getElementById('k-berlaku').value, kepala: document.getElementById('k-kepala').value, imageSrc: dbTtd.imageSrc || "" }, function(err) { if(!err) { showToast("Pengaturan disimpan.", "success"); renderJam(); } });
+        database.ref('ttd').set({ berlaku: document.getElementById('k-berlaku').value, kepala: document.getElementById('k-kepala').value, imageSrc: dbTtd.imageSrc || "" }, function(err) { if(!err) { showToast("PENGATURAN DISIMPAN.", "success"); renderJam(); } });
     }
 
     // === 8. MATRIX LAYOUT CETAK F4 DENGAN SINKRONISASI BARIS JAM KELAS ===
