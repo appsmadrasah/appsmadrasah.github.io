@@ -320,11 +320,11 @@
                     <tr>
                         <th rowspan="2" width="3%">NO</th>
                         <th rowspan="2" width="18%">Nama Guru</th>
-                        <th rowspan="2" width="5%">KODE</th>
+                        <th rowspan="2" width="4%">KODE</th>
                         <th rowspan="2" width="12%">Jabatan</th>
-                        <th rowspan="2" width="20%">Mata Pelajaran</th>
+                        <th rowspan="2" width="17%">Mata Pelajaran</th>
                         <th colspan="6">Alokasi Waktu</th>
-                        <th colspan="3">Jumlah Jam</th>
+                        <th colspan="4">Jumlah Jam</th>
                     </tr>
                     <tr>
                         <th width="3%">1</th>
@@ -333,9 +333,10 @@
                         <th width="3%">4</th>
                         <th width="3%">5</th>
                         <th width="3%">6</th>
-                        <th width="7%">Tatap<br>Muka</th>
+                        <th width="6%">Tatap<br>Muka</th>
+                        <th width="6%">Total Jam<br>Tatap Muka</th>
                         <th width="8%">Tambahan<br>Jabatan</th>
-                        <th width="6%">Jumlah<br>Total</th>
+                        <th width="8%">Jumlah<br>Total</th>
                     </tr>
                 </thead>
                 <tbody id="table-jam-body"></tbody>
@@ -497,26 +498,26 @@
 
     // === DATA MASTER DEFAULT ===
     const defaultGuru = {
-        'A': { name: 'IMAM TAUFIQ, ST.', color: '#F8CBAD' }, 
-        'B': { name: 'SUBIANTO, S.Pd', color: '#9BC2E6' },
-        'C': { name: 'MUHAMMAD NURIL, S.Ag.', color: '#B4A7D6' }, 
-        'D': { name: 'YUSUF, S.Pd.', color: '#FFE699' },
-        'E': { name: 'MOH. YASIN, S.Pd.', color: '#FF9999' }, 
-        'F': { name: 'Dra. UMU SYAROFAH', color: '#99CCFF' },
-        'G': { name: 'MUSTIKAH, S.Pd.I', color: '#FF6666' }, 
-        'H': { name: 'MUNAFI\'AH, S.Pd.', color: '#A9D08E' },
-        'I': { name: 'MUHAIMINAH, S.Pd.I', color: '#C6E0B4' }, 
-        'J': { name: 'INDARSIH, S.Pd.', color: '#00B050' },
-        'K': { name: 'IMAM HAROMEN, SE.', color: '#00B0F0' }, 
-        'L': { name: 'ANDY KURNIAWAN, S.Pd.', color: '#8EA9DB' },
-        'M': { name: 'M. ZAINUL ARIFIN, S.Com', color: '#E2EFDA' }, 
-        'N': { name: 'FITROTIN AZIZAH, S.M', color: '#D9E1F2' },
-        'O': { name: 'CHANDRA ARIES, S.Pd', color: '#00FFFF' }, 
-        'P': { name: 'YUSHIFUL ILMY, S.Pd', color: '#FF99CC' },
-        'Q': { name: 'LATHIFATU NUR NISA\', S.Pd', color: '#D9D9D9' }, 
-        'R': { name: 'ANDRYAN BAYU PRATAMA, S.Pd', color: '#F4B084' },
-        'S': { name: 'WIDIA NATALIA, S.Pd', color: '#FFFF99' }, 
-        'T': { name: 'NI\'MATUZ ZUHROH', color: '#CC99FF' }
+        'A': { name: 'IMAM TAUFIQ, ST.', color: '#F8CBAD', order: 1 }, 
+        'B': { name: 'SUBIANTO, S.Pd', color: '#9BC2E6', order: 2 },
+        'C': { name: 'MUHAMMAD NURIL, S.Ag.', color: '#B4A7D6', order: 3 }, 
+        'D': { name: 'YUSUF, S.Pd.', color: '#FFE699', order: 4 },
+        'E': { name: 'MOH. YASIN, S.Pd.', color: '#FF9999', order: 5 }, 
+        'F': { name: 'Dra. UMU SYAROFAH', color: '#99CCFF', order: 6 },
+        'G': { name: 'MUSTIKAH, S.Pd.I', color: '#FF6666', order: 7 }, 
+        'H': { name: 'MUNAFI\'AH, S.Pd.', color: '#A9D08E', order: 8 },
+        'I': { name: 'MUHAIMINAH, S.Pd.I', color: '#C6E0B4', order: 9 }, 
+        'J': { name: 'INDARSIH, S.Pd.', color: '#00B050', order: 10 },
+        'K': { name: 'IMAM HAROMEN, SE.', color: '#00B0F0', order: 11 }, 
+        'L': { name: 'ANDY KURNIAWAN, S.Pd.', color: '#8EA9DB', order: 12 },
+        'M': { name: 'M. ZAINUL ARIFIN, S.Com', color: '#E2EFDA', order: 13 }, 
+        'N': { name: 'FITROTIN AZIZAH, S.M', color: '#D9E1F2', order: 14 },
+        'O': { name: 'CHANDRA ARIES, S.Pd', color: '#00FFFF', order: 15 }, 
+        'P': { name: 'YUSHIFUL ILMY, S.Pd', color: '#FF99CC', order: 16 },
+        'Q': { name: 'LATHIFATU NUR NISA\', S.Pd', color: '#D9D9D9', order: 17 }, 
+        'R': { name: 'ANDRYAN BAYU PRATAMA, S.Pd', color: '#F4B084', order: 18 },
+        'S': { name: 'WIDIA NATALIA, S.Pd', color: '#FFFF99', order: 19 }, 
+        'T': { name: 'NI\'MATUZ ZUHROH', color: '#CC99FF', order: 20 }
     };
     
     // LIST MAPEL DEFAULT
@@ -548,7 +549,6 @@
         return roman[num] || num;
     }
 
-    // ==== FUNGSI PENGURUTAN MURNI ALFABETIS ====
     function getSortedGuruCodes() {
         return Object.keys(daftarGuru).sort((a, b) => a.localeCompare(b));
     }
@@ -673,7 +673,6 @@
 
         let totalJTM = 0;
 
-        // Mengurutkan guru kelas berdasarkan abjad kodenya murni
         filtered.sort((a, b) => a.guru.localeCompare(b.guru)).forEach((g, idx) => {
             const namaGuru = daftarGuru[g.guru] ? daftarGuru[g.guru].name : g.guru;
             let jtm = 0;
@@ -1068,7 +1067,6 @@
 
         if (oldKode) {
             if (kode !== oldKode && daftarGuru[kode]) return showToast("Kode guru sudah terpakai!", "error");
-            
             let color = daftarGuru[oldKode].color;
             let order = daftarGuru[oldKode].order || Date.now();
             
@@ -1084,8 +1082,7 @@
         } else {
             if (daftarGuru[kode]) return showToast("Kode guru tersebut sudah terpakai!", "error");
             const colors = ['#F8CBAD', '#9BC2E6', '#B4A7D6', '#FFE699', '#FF9999', '#99CCFF', '#FF6666', '#A9D08E', '#C6E0B4', '#00B050', '#00B0F0', '#8EA9DB', '#E2EFDA', '#D9E1F2', '#00FFFF', '#FF99CC', '#D9D9D9', '#F4B084', '#FFFF99', '#CC99FF'];
-            let randomColor = colors[Math.floor(Math.random() * colors.length)];
-            database.ref(`master/guru/${kode}`).set({ name: nama, color: randomColor, order: Date.now() });
+            database.ref(`master/guru/${kode}`).set({ name: nama, color: colors[Math.floor(Math.random() * colors.length)], order: Date.now() });
             showToast("Guru baru ditambahkan.", "success");
         }
 
@@ -1112,7 +1109,6 @@
         let totalKolom = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
         let totalTatapMukaSemua = 0, totalTambahanSemua = 0, totalKeseluruhanSemua = 0, nomor = 1;
         const kepalaName = (dbTtd.kepala || "").trim().toUpperCase();
-        
         let sortedCodes = getSortedGuruCodes();
 
         sortedCodes.forEach(code => {
@@ -1166,6 +1162,7 @@
                         <td>${mapel}</td>
                         <td style="text-align:center;">${jamPerKelas[1]}</td><td style="text-align:center;">${jamPerKelas[2]}</td><td style="text-align:center;">${jamPerKelas[3]}</td><td style="text-align:center;">${jamPerKelas[4]}</td><td style="text-align:center;">${jamPerKelas[5]}</td><td style="text-align:center;">${jamPerKelas[6]}</td>
                         <td style="text-align:center; font-weight:bold;">${totalTatapMuka > 0 ? totalTatapMuka : ""}</td>
+                        <td rowspan="${rowSpan}" style="text-align:center; font-weight:bold; color:#2980b9;">${totalSemuaMapelTatapMuka > 0 ? totalSemuaMapelTatapMuka : ""}</td>
                         <td rowspan="${rowSpan}" style="text-align:center; font-weight:bold;">${tambahanJam > 0 ? tambahanJam : ""}</td>
                         <td rowspan="${rowSpan}" style="text-align:center; font-weight:bold; background:#f5faff; font-size:13px; color:#2c3e50;">${jumlahTotalAkhir > 0 ? jumlahTotalAkhir : ""}</td>
                     `;
@@ -1183,7 +1180,7 @@
         let trFoot = document.createElement('tr');
         trFoot.innerHTML = `
             <th colspan="5">JUMLAH</th><th>${totalKolom[1] || ""}</th><th>${totalKolom[2] || ""}</th><th>${totalKolom[3] || ""}</th><th>${totalKolom[4] || ""}</th><th>${totalKolom[5] || ""}</th><th>${totalKolom[6] || ""}</th>
-            <th>${totalTatapMukaSemua || ""}</th><th>${totalTambahanSemua || ""}</th><th style="font-size:14px; background:#e1f0fa; color:#2c3e50;">${totalKeseluruhanSemua || ""}</th>
+            <th>${totalTatapMukaSemua || ""}</th><th>${totalTatapMukaSemua || ""}</th><th>${totalTambahanSemua || ""}</th><th style="font-size:14px; background:#e1f0fa; color:#2c3e50;">${totalKeseluruhanSemua || ""}</th>
         `;
         tfoot.appendChild(trFoot);
     }
