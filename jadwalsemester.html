@@ -76,11 +76,11 @@
 
         /* === MODAL STYLES === */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-box-new { background: white; border-radius: 6px; width: 450px; max-width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
+        .modal-box-new { background: white; border-radius: 6px; width: 450px; max-width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; }
         .modal-header-new { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee; }
         .modal-header-new h3 { margin: 0; font-size: 15px; color: #555; }
         .modal-close-btn { background: #3498db; color: white; border: none; border-radius: 3px; width: 22px; height: 22px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; font-weight:bold;}
-        .modal-body-new { padding: 20px; }
+        .modal-body-new { padding: 20px; overflow-y: auto; }
         
         .static-info-table { width: 100%; font-size: 11px; margin-bottom: 20px; color: #333; border-collapse: collapse; }
         .static-info-table td { padding: 4px 0; font-weight: 500;}
@@ -180,6 +180,7 @@
             .cetak-container { width: 100% !important; min-height: auto !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; page-break-inside: avoid; display: block !important; overflow: visible !important; }
             .c-main-layout { display: flex !important; gap: 8px !important; width: 100% !important; page-break-inside: avoid; }
             .c-header { display: flex !important; page-break-inside: avoid; }
+            .c-table tr { page-break-inside: avoid; }
         }
     </style>
 </head>
@@ -201,6 +202,7 @@
     </div>
 </div>
 
+<!-- MODAL TAMBAH/EDIT GURU MASTER (TAB JUMLAH JAM) -->
 <div class="modal-overlay" id="modal-master-guru">
     <div class="modal-box-new" style="width: 400px;">
         <div class="modal-header-new">
@@ -216,6 +218,16 @@
                 <input type="text" id="master-nama-guru" placeholder="Contoh: AHMAD, S.Pd">
                 <label>Nama Guru Lengkap</label>
             </div>
+            
+            <div class="form-outline">
+                <input type="text" id="master-jabatan-guru" placeholder="Contoh: Waka Kurikulum (Opsional)">
+                <label>Jabatan Tambahan</label>
+            </div>
+            <div class="form-outline">
+                <input type="number" id="master-jam-jabatan-guru" placeholder="Contoh: 12 (Opsional)" min="0">
+                <label>Jumlah Jam Jabatan</label>
+            </div>
+
             <input type="hidden" id="master-old-kode">
             
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
@@ -320,9 +332,9 @@
                     <tr>
                         <th rowspan="2" width="3%">NO</th>
                         <th rowspan="2" width="18%">Nama Guru</th>
-                        <th rowspan="2" width="4%">KODE</th>
+                        <th rowspan="2" width="5%">KODE</th>
                         <th rowspan="2" width="12%">Jabatan</th>
-                        <th rowspan="2" width="17%">Mata Pelajaran</th>
+                        <th rowspan="2" width="20%">Mata Pelajaran</th>
                         <th colspan="6">Alokasi Waktu</th>
                         <th colspan="4">Jumlah Jam</th>
                     </tr>
@@ -430,6 +442,7 @@
     </div>
 </div>
 
+<!-- MODAL TAMBAH GURU KELAS (TAB JADWAL) -->
 <div class="modal-overlay" id="modal-tambah-guru">
     <div class="modal-box-new">
         <div class="modal-header-new">
@@ -549,6 +562,7 @@
         return roman[num] || num;
     }
 
+    // ==== FUNGSI PENGURUTAN MURNI ALFABETIS ====
     function getSortedGuruCodes() {
         return Object.keys(daftarGuru).sort((a, b) => a.localeCompare(b));
     }
@@ -673,6 +687,7 @@
 
         let totalJTM = 0;
 
+        // Mengurutkan guru kelas berdasarkan abjad kodenya murni
         filtered.sort((a, b) => a.guru.localeCompare(b.guru)).forEach((g, idx) => {
             const namaGuru = daftarGuru[g.guru] ? daftarGuru[g.guru].name : g.guru;
             let jtm = 0;
@@ -1040,17 +1055,23 @@
         let title = document.getElementById('modal-master-title');
         let inputKode = document.getElementById('master-kode-guru');
         let inputNama = document.getElementById('master-nama-guru');
+        let inputJabatan = document.getElementById('master-jabatan-guru');
+        let inputJamJabatan = document.getElementById('master-jam-jabatan-guru');
         let oldKode = document.getElementById('master-old-kode');
 
         if (code) { 
             title.innerText = "Edit Data Guru";
             inputKode.value = code;
             inputNama.value = daftarGuru[code].name;
+            inputJabatan.value = daftarGuru[code].jabatan || "";
+            inputJamJabatan.value = daftarGuru[code].jamJabatan || "";
             oldKode.value = code;
         } else { 
             title.innerText = "Tambah Guru Baru";
             inputKode.value = "";
             inputNama.value = "";
+            inputJabatan.value = "";
+            inputJamJabatan.value = "";
             oldKode.value = "";
         }
         modal.style.display = "flex";
@@ -1061,16 +1082,19 @@
     function saveMasterGuru() {
         let kode = document.getElementById('master-kode-guru').value.trim();
         let nama = document.getElementById('master-nama-guru').value.trim();
+        let jabatan = document.getElementById('master-jabatan-guru').value.trim();
+        let jamJabatan = document.getElementById('master-jam-jabatan-guru').value.trim();
         let oldKode = document.getElementById('master-old-kode').value;
 
         if(!kode || !nama) return showToast("Kode dan Nama harus diisi!", "error");
+        let jamNum = jamJabatan ? parseInt(jamJabatan) : 0;
 
         if (oldKode) {
             if (kode !== oldKode && daftarGuru[kode]) return showToast("Kode guru sudah terpakai!", "error");
             let color = daftarGuru[oldKode].color;
             let order = daftarGuru[oldKode].order || Date.now();
             
-            database.ref(`master/guru/${kode}`).set({ name: nama, color: color, order: order });
+            database.ref(`master/guru/${kode}`).set({ name: nama, color: color, order: order, jabatan: jabatan, jamJabatan: jamNum });
             
             if (kode !== oldKode) {
                 dbGuruKelas.forEach(g => { if (g.guru === oldKode) database.ref(`guruKelas/${g.id}/guru`).set(kode); });
@@ -1082,7 +1106,8 @@
         } else {
             if (daftarGuru[kode]) return showToast("Kode guru tersebut sudah terpakai!", "error");
             const colors = ['#F8CBAD', '#9BC2E6', '#B4A7D6', '#FFE699', '#FF9999', '#99CCFF', '#FF6666', '#A9D08E', '#C6E0B4', '#00B050', '#00B0F0', '#8EA9DB', '#E2EFDA', '#D9E1F2', '#00FFFF', '#FF99CC', '#D9D9D9', '#F4B084', '#FFFF99', '#CC99FF'];
-            database.ref(`master/guru/${kode}`).set({ name: nama, color: colors[Math.floor(Math.random() * colors.length)], order: Date.now() });
+            let randomColor = colors[Math.floor(Math.random() * colors.length)];
+            database.ref(`master/guru/${kode}`).set({ name: nama, color: randomColor, order: Date.now(), jabatan: jabatan, jamJabatan: jamNum });
             showToast("Guru baru ditambahkan.", "success");
         }
 
@@ -1109,6 +1134,7 @@
         let totalKolom = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
         let totalTatapMukaSemua = 0, totalTambahanSemua = 0, totalKeseluruhanSemua = 0, nomor = 1;
         const kepalaName = (dbTtd.kepala || "").trim().toUpperCase();
+        
         let sortedCodes = getSortedGuruCodes();
 
         sortedCodes.forEach(code => {
@@ -1122,6 +1148,16 @@
             dbGuruKelas.filter(g => g.guru === code && g.jenis === 'Guru Kelas').forEach(wk => {
                 jabatanArr.push("WALAS " + toRoman(wk.kelas)); tambahanJam += 6;
             });
+
+            let customJabatan = daftarGuru[code].jabatan || "";
+            let customJamJabatan = parseInt(daftarGuru[code].jamJabatan) || 0;
+
+            if (customJabatan) {
+                jabatanArr.push(customJabatan);
+            }
+            if (customJamJabatan) {
+                tambahanJam += customJamJabatan;
+            }
             
             let jabatanStr = jabatanArr.length > 0 ? jabatanArr.join(", ") : "";
             let mapelSet = new Set();
