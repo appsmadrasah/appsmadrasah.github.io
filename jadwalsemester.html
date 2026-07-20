@@ -13,7 +13,7 @@
         /* === GLOBAL STYLES === */
         * { box-sizing: border-box; font-family: Arial, sans-serif; }
         
-        /* Layout Scroll Fix */
+        /* Layout Scroll Fix (Anti Geser) */
         body { 
             margin: 0; padding: 2vh 20px; background-color: #f4f6f9; color: #333; 
             height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -24,12 +24,12 @@
             display: flex; flex-direction: column; overflow: hidden; 
         }
 
-        /* === STATIC HEADER (JUDUL & TAB TIDAK IKUT KEGESER) === */
+        /* === STATIC HEADER (JUDUL & TAB) === */
         .header-section {
-            padding: 20px 20px 0; background: #fff; z-index: 1000;
+            padding: 20px 20px 0; background: #fff; z-index: 1000; flex-shrink: 0;
         }
         h2.page-title { 
-            text-align: center; margin-bottom: 20px; font-size: 24px; color: #2c3e50; text-transform: uppercase;
+            text-align: center; margin-bottom: 20px; font-size: 24px; color: #2c3e50; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;
         }
         .step-tabs { 
             display: flex; gap: 10px; border-bottom: 2px solid #ddd; padding-bottom: 15px; flex-wrap: wrap; margin-bottom: 0;
@@ -58,7 +58,7 @@
         .btn { padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; font-size: 14px; transition: 0.2s; text-transform: uppercase;}
         .btn-save { background-color: #4CAF50; color: white; width: 100%; }
         .btn-print { background-color: #f39c12; color: white; padding: 12px 25px; font-size: 15px; }
-        .loading-text { text-align: center; font-weight: bold; color: #888; padding: 20px; }
+        .loading-text { text-align: center; font-weight: bold; color: #888; padding: 20px; text-transform: uppercase; }
 
         .filter-select { padding: 8px 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; min-width: 200px; outline: none; color: #333; background: #fff;}
         .btn-tambah-guru { background-color: #2ecc71; color: white; border-radius: 4px; padding: 8px 15px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; text-transform: uppercase;}
@@ -103,14 +103,14 @@
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 10000; justify-content: center; align-items: center; }
         .modal-box-new { background: white; border-radius: 6px; width: 450px; max-width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; }
         .modal-header-new { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee; }
-        .modal-header-new h3 { margin: 0; font-size: 15px; color: #555; }
+        .modal-header-new h3 { margin: 0; font-size: 15px; color: #555; text-transform: uppercase; }
         .modal-close-btn { background: #3498db; color: white; border: none; border-radius: 3px; width: 22px; height: 22px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; font-weight:bold;}
         .modal-body-new { padding: 20px; overflow-y: auto; }
         
-        .static-info-table { width: 100%; font-size: 11px; margin-bottom: 20px; color: #333; border-collapse: collapse; }
+        .static-info-table { width: 100%; font-size: 11px; margin-bottom: 20px; color: #333; border-collapse: collapse; text-transform: uppercase; }
         .static-info-table td { padding: 4px 0; font-weight: 500;}
 
-        .radio-group { font-size: 12px; margin-bottom: 20px; }
+        .radio-group { font-size: 12px; margin-bottom: 20px; text-transform: uppercase;}
         .radio-group .title { margin-bottom: 8px; color: #555; font-size: 11px; }
         .radio-group label { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; cursor: pointer; font-weight: 500;}
 
@@ -122,7 +122,7 @@
 
         /* === FORM KOP & TTD === */
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px;}
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; text-transform: uppercase;}
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         .form-group input[type="file"] { padding: 5px; background-color: #fff; }
 
@@ -133,7 +133,7 @@
             box-shadow: 0 10px 30px -5px rgba(0,0,0,0.12), 0 4px 10px -4px rgba(0,0,0,0.08); 
             border: 1px solid #f0f0f0; font-size: 13px; font-weight: 500; display: flex; 
             align-items: center; gap: 14px; min-width: 280px; max-width: 380px;
-            animation: toastEnter 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.1) forwards, toastExit 0.4s 3.5s ease forwards; 
+            animation: toastEnter 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.1) forwards, toastExit 0.4s 3.5s ease forwards; text-transform: uppercase;
         }
         .toast-icon { font-size: 18px; display: flex; align-items: center; justify-content: center; }
         .toast-success .toast-icon { color: #2ecc71; }
@@ -157,37 +157,40 @@
         }
         .custom-confirm-overlay.show .custom-confirm-box { transform: scale(1); }
         .custom-confirm-icon { font-size: 45px; color: #e74c3c; margin-bottom: 15px; }
-        .custom-confirm-content h4 { margin: 0 0 10px; font-size: 18px; color: #2c3e50; }
+        .custom-confirm-content h4 { margin: 0 0 10px; font-size: 18px; color: #2c3e50; text-transform: uppercase; }
         .custom-confirm-content p { margin: 0 0 25px; font-size: 13.5px; color: #666; line-height: 1.5; }
         .custom-confirm-actions { display: flex; justify-content: center; gap: 12px; }
         .btn-confirm-cancel { 
-            background: #f1f1f1; color: #555; border: none; padding: 10px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; text-transform: uppercase;
+            background: #f1f1f1; color: #555; border: none; padding: 10px 24px; border-radius: 6px; 
+            font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; text-transform: uppercase;
         }
         .btn-confirm-cancel:hover { background: #e4e4e4; color: #333; }
         .btn-confirm-ok { 
-            background: #e74c3c; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; text-transform: uppercase;
+            background: #e74c3c; color: white; border: none; padding: 10px 24px; border-radius: 6px; 
+            font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; text-transform: uppercase;
         }
         .btn-confirm-ok:hover { background: #c0392b; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3); }
 
-        /* === LAYOUT CETAK F4 === */
+        /* === LAYOUT CETAK F4 (JADWAL & SK) === */
         .cetak-wrapper { background: #555; padding: 30px 15px; border: 1px solid #ddd; overflow-x: auto; display: flex; justify-content: center; }
         .cetak-container { width: 215mm; min-height: 330mm; background: white; padding: 12mm 10mm; color: black; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
         .c-header { display: flex; align-items: center; border: 2px solid black; padding: 8px; margin-bottom: 10px; }
         .c-header-logo { width: 55px; height: 50px; background-color: #006600; border-radius: 50%; margin-right: 12px; display: flex; justify-content: center; align-items: center; color: white; font-size: 8px; overflow: hidden; }
         .c-header-logo img { width: 100%; height: 100%; object-fit: contain; }
-        .c-header-text h1 { font-size: 13px; margin: 0; padding: 1px 0; letter-spacing: 0.5px; }
-        .c-header-text h2 { font-size: 14px; font-weight: bold; margin: 0; padding: 1px 0; }
-        .c-header-text p { font-size: 9.5px; margin: 0; padding: 1px 0; line-height: 1.2; }
+        .c-header-text h1 { font-size: 13px; margin: 0; padding: 1px 0; letter-spacing: 0.5px; text-transform: uppercase;}
+        .c-header-text h2 { font-size: 14px; font-weight: bold; margin: 0; padding: 1px 0; text-transform: uppercase;}
+        .c-header-text p { font-size: 9.5px; margin: 0; padding: 1px 0; line-height: 1.2; text-transform: uppercase;}
         .c-title { text-align: center; font-size: 12px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
         .c-main-layout { display: flex; gap: 8px; align-items: flex-start; width: 100%; }
         .c-left-panel { width: 73%; }
         .c-right-panel { width: 27%; display: flex; flex-direction: column; gap: 8px; }
         .c-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 9px; }
         .c-table th, .c-table td { border: 1px solid black; padding: 2.5px 2px; height: 21px; }
-        .c-table th { background-color: #ffffff; font-weight: bold; font-size: 9px; }
+        .c-table th { background-color: #ffffff; font-weight: bold; font-size: 9px; text-transform: uppercase;}
         .c-row-class { font-weight: bold; font-size: 14px; text-align: center; }
-        .c-berlaku { border: 2px solid #008000; border-radius: 10px; padding: 8px; text-align: center; font-weight: bold; margin-top: 5px; white-space: pre-line; font-size: 9px; line-height: 1.3; }
-        .c-signature { margin-top: 10px; text-align: center; font-size: 10px; line-height: 1.3; }
+        .c-berlaku { border: 2px solid #008000; border-radius: 10px; padding: 8px; text-align: center; font-weight: bold; margin-top: 5px; white-space: pre-line; font-size: 9px; line-height: 1.3; text-transform: uppercase;}
+        .c-signature { margin-top: 10px; text-align: center; font-size: 10px; line-height: 1.3; text-transform: uppercase;}
         .c-signature-space { height: 50px; display: flex; justify-content: center; align-items: center; overflow: hidden; margin: 2px 0; }
         .c-signature-img { max-height: 48px; max-width: 120px; object-fit: contain; }
 
@@ -197,10 +200,10 @@
             html, body { background: white !important; margin: 0 !important; padding: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; display: block !important; }
             .container { box-shadow: none !important; padding: 0 !important; margin: 0 !important; border: none !important; max-width: 100% !important; width: 100% !important; height: auto !important; overflow: visible !important; display: block !important; }
             
-            /* Sembunyikan semua UI dan navigasi */
+            /* Sembunyikan elemen UI di print */
             .header-section, .tab-content, .sticky-toolbar, .toast-container, .custom-confirm-overlay { display: none !important; }
             
-            /* Tampilkan hanya tab cetak */
+            /* Tampilkan tab CETAK dengan wrapper bersih */
             #tab-cetak { display: block !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; }
             .cetak-wrapper { background: transparent !important; padding: 0 !important; border: none !important; display: block !important; margin: 0 !important; overflow: visible !important; }
             .cetak-container { width: 100% !important; min-height: auto !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; page-break-inside: avoid; display: block !important; overflow: visible !important; }
@@ -228,7 +231,7 @@
     </div>
 </div>
 
-<!-- MODAL TAMBAH/EDIT GURU MASTER (TAB JUMLAH JAM) -->
+<!-- MODAL TAMBAH/EDIT GURU MASTER -->
 <div class="modal-overlay" id="modal-master-guru">
     <div class="modal-box-new" style="width: 400px;">
         <div class="modal-header-new">
@@ -238,20 +241,20 @@
         <div class="modal-body-new">
             <div class="form-outline">
                 <input type="text" id="master-kode-guru" placeholder="Contoh: U">
-                <label>Kode Guru</label>
+                <label>KODE GURU</label>
             </div>
             <div class="form-outline">
                 <input type="text" id="master-nama-guru" placeholder="Contoh: AHMAD, S.Pd">
-                <label>Nama Guru Lengkap</label>
+                <label>NAMA GURU LENGKAP</label>
             </div>
             
             <div class="form-outline">
                 <input type="text" id="master-jabatan-guru" placeholder="Contoh: Waka Kurikulum (Opsional)">
-                <label>Jabatan Tambahan</label>
+                <label>JABATAN TAMBAHAN</label>
             </div>
             <div class="form-outline">
                 <input type="number" id="master-jam-jabatan-guru" placeholder="Contoh: 12 (Opsional)" min="0">
-                <label>Jumlah Jam Jabatan</label>
+                <label>JUMLAH JAM JABATAN</label>
             </div>
 
             <input type="hidden" id="master-old-kode">
@@ -266,14 +269,14 @@
 
 <div class="container" id="app-ui">
     
-    <!-- HEADER STATIC -->
+    <!-- HEADER STATIC & MENU UTAMA -->
     <div class="header-section">
         <h2 class="page-title">SISTEM PENYUSUNAN JADWAL MADRASAH</h2>
         <div class="step-tabs">
             <div class="step-tab active" onclick="switchTab('tab-input', this)">INPUT DATA JADWAL</div>
             <div class="step-tab" onclick="switchTab('tab-jam', this)">JUMLAH JAM</div>
             <div class="step-tab" onclick="switchTab('tab-kop', this)">PENGATURAN KOP & TTD</div>
-            <div class="step-tab" onclick="switchTab('tab-cetak', this)">CETAK JADWAL (F4)</div>
+            <div class="step-tab" onclick="switchTab('tab-cetak', this)">CETAK</div>
         </div>
     </div>
 
@@ -283,12 +286,12 @@
         <div class="top-bar-flex sticky-toolbar">
             <div style="display: flex; gap: 10px; align-items: center;">
                 <select id="filter-kelas" class="filter-select" onchange="onKelasChange()">
-                    <option value="1">Kelas I</option>
-                    <option value="2">Kelas II</option>
-                    <option value="3">Kelas III</option>
-                    <option value="4">Kelas IV</option>
-                    <option value="5">Kelas V</option>
-                    <option value="6">Kelas VI</option>
+                    <option value="1">KELAS I</option>
+                    <option value="2">KELAS II</option>
+                    <option value="3">KELAS III</option>
+                    <option value="4">KELAS IV</option>
+                    <option value="5">KELAS V</option>
+                    <option value="6">KELAS VI</option>
                 </select>
                 <button class="btn-add-jam" style="margin:0;" onclick="tambahJam()"><i class="fas fa-plus"></i> TAMBAH JAM</button>
                 <button class="btn-remove-jam" style="margin:0;" onclick="kurangiJam()"><i class="fas fa-minus"></i> KURANGI JAM</button>
@@ -365,16 +368,8 @@
                         <th colspan="4">JUMLAH JAM</th>
                     </tr>
                     <tr>
-                        <th width="3%">1</th>
-                        <th width="3%">2</th>
-                        <th width="3%">3</th>
-                        <th width="3%">4</th>
-                        <th width="3%">5</th>
-                        <th width="3%">6</th>
-                        <th width="6%">TATAP<br>MUKA</th>
-                        <th width="6%">TOTAL JAM<br>TATAP MUKA</th>
-                        <th width="8%">TAMBAHAN<br>JABATAN</th>
-                        <th width="8%">JUMLAH<br>TOTAL</th>
+                        <th width="3%">1</th><th width="3%">2</th><th width="3%">3</th><th width="3%">4</th><th width="3%">5</th><th width="3%">6</th>
+                        <th width="6%">TATAP<br>MUKA</th><th width="6%">TOTAL JAM<br>TATAP MUKA</th><th width="8%">TAMBAHAN<br>JABATAN</th><th width="8%">JUMLAH<br>TOTAL</th>
                     </tr>
                 </thead>
                 <tbody id="table-jam-body"></tbody>
@@ -416,62 +411,124 @@
         </div>
     </div>
 
-    <!-- TAB 4: CETAK JADWAL F4 -->
+    <!-- TAB 4: CETAK (JADWAL & SK) -->
     <div id="tab-cetak" class="tab-content">
-        <div class="sticky-toolbar">
-            <button class="btn btn-print" style="margin:0; width:100%; border-radius:4px;" onclick="window.print()"><i class="fas fa-print"></i> CETAK JADWAL SEKARANG (F4)</button>
+        <div class="sticky-toolbar" style="display: flex; gap: 10px;">
+            <button class="btn" id="btn-sub-jadwal" style="flex:1; background-color:#3498db; color:white;" onclick="switchCetak('jadwal')">CETAK JADWAL</button>
+            <button class="btn" id="btn-sub-sk" style="flex:1; background-color:#f1f1f1; color:#333; border: 1px solid #ddd;" onclick="switchCetak('sk')">CETAK SK (DISTRIBUSI JAM)</button>
         </div>
-        
-        <div class="cetak-wrapper">
-            <div class="cetak-container" id="cetak-view">
-                <div class="c-header">
-                    <div class="c-header-logo" id="print-logo-container">LOGO</div>
-                    <div class="c-header-text">
-                        <h1 id="print-lembaga"></h1>
-                        <h2 id="print-sekolah"></h2>
-                        <h2 id="print-wilayah"></h2>
-                        <p id="print-akreditasi"></p>
-                        <p id="print-alamat"></p>
-                    </div>
-                </div>
-                <div class="c-title" id="print-tahun"></div>
 
-                <div class="c-main-layout">
-                    <div class="c-left-panel">
-                        <table class="c-table">
-                            <thead>
-                                <tr>
-                                    <th width="4%">KLS</th>
-                                    <th width="4%">JM</th>
-                                    <th colspan="2" width="15%">SABTU</th>
-                                    <th colspan="2" width="15%">AHAD</th>
-                                    <th colspan="2" width="15%">SENIN</th>
-                                    <th colspan="2" width="15%">SELASA</th>
-                                    <th colspan="2" width="15%">RABU</th>
-                                    <th colspan="2" width="15%">KAMIS</th>
-                                </tr>
-                            </thead>
-                            <tbody id="print-schedule-body"></tbody>
-                        </table>
+        <!-- SECTION: JADWAL -->
+        <div id="cetak-jadwal-section">
+            <div class="sticky-toolbar" style="top: 35px; border:none; padding-bottom: 0;">
+                <button class="btn btn-print" style="margin:0; width:100%; border-radius:4px;" onclick="window.print()"><i class="fas fa-print"></i> CETAK JADWAL SEKARANG (F4)</button>
+            </div>
+            
+            <div class="cetak-wrapper">
+                <div class="cetak-container" id="cetak-view-jadwal">
+                    <div class="c-header">
+                        <div class="c-header-logo" id="print-logo-container">LOGO</div>
+                        <div class="c-header-text">
+                            <h1 id="print-lembaga"></h1>
+                            <h2 id="print-sekolah"></h2>
+                            <h2 id="print-wilayah"></h2>
+                            <p id="print-akreditasi"></p>
+                            <p id="print-alamat"></p>
+                        </div>
                     </div>
-                    <div class="c-right-panel">
-                        <table class="c-table"><thead id="print-teacher-head"><tr><th colspan="2">KODE GURU</th></tr></thead><tbody id="print-teacher-body"></tbody></table>
-                        <table class="c-table">
-                            <thead><tr><th colspan="2">JAM</th></tr></thead>
-                            <tbody id="print-waktu-body">
-                            </tbody>
-                        </table>
-                        <div class="c-berlaku" id="print-berlaku"></div>
-                        <div class="c-signature">
-                            <p>Kepala Madrasah</p>
-                            <p>"Hidayatus Shibyan"</p>
-                            <div class="c-signature-space" id="print-ttd-container"></div>
-                            <p style="text-decoration: underline; font-weight: bold;" id="print-kepala"></p>
+                    <div class="c-title" id="print-tahun"></div>
+
+                    <div class="c-main-layout">
+                        <div class="c-left-panel">
+                            <table class="c-table">
+                                <thead>
+                                    <tr>
+                                        <th width="4%">KLS</th>
+                                        <th width="4%">JM</th>
+                                        <th colspan="2" width="15%">SABTU</th>
+                                        <th colspan="2" width="15%">AHAD</th>
+                                        <th colspan="2" width="15%">SENIN</th>
+                                        <th colspan="2" width="15%">SELASA</th>
+                                        <th colspan="2" width="15%">RABU</th>
+                                        <th colspan="2" width="15%">KAMIS</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="print-schedule-body"></tbody>
+                            </table>
+                        </div>
+                        <div class="c-right-panel">
+                            <table class="c-table"><thead id="print-teacher-head"><tr><th colspan="2">KODE GURU</th></tr></thead><tbody id="print-teacher-body"></tbody></table>
+                            <table class="c-table">
+                                <thead><tr><th colspan="2">JAM</th></tr></thead>
+                                <tbody id="print-waktu-body">
+                                </tbody>
+                            </table>
+                            <div class="c-berlaku" id="print-berlaku"></div>
+                            <div class="c-signature">
+                                <p>KEPALA MADRASAH</p>
+                                <p id="print-kepala-sekolah-nama"></p>
+                                <div class="c-signature-space" id="print-ttd-container"></div>
+                                <p style="text-decoration: underline; font-weight: bold;" id="print-kepala"></p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- SECTION: SK -->
+        <div id="cetak-sk-section" style="display: none;">
+            <div class="sticky-toolbar" style="top: 35px; border:none; padding-bottom: 0;">
+                <button class="btn btn-print" style="margin:0; width:100%; background-color:#8e44ad; border-radius:4px;" onclick="window.print()"><i class="fas fa-print"></i> CETAK SK DISTRIBUSI JAM SEKARANG (F4)</button>
+            </div>
+            
+            <div class="cetak-wrapper">
+                <div class="cetak-container" id="cetak-view-sk">
+                    <div class="c-header">
+                        <div class="c-header-logo" id="sk-print-logo-container">LOGO</div>
+                        <div class="c-header-text">
+                            <h1 id="sk-print-lembaga"></h1>
+                            <h2 id="sk-print-sekolah"></h2>
+                            <h2 id="sk-print-wilayah"></h2>
+                            <p id="sk-print-akreditasi"></p>
+                            <p id="sk-print-alamat"></p>
+                        </div>
+                    </div>
+                    <div class="c-title">LAMPIRAN SURAT KEPUTUSAN (SK) PEMBAGIAN TUGAS MENGAJAR<br><span id="sk-print-tahun"></span></div>
+
+                    <table class="c-table" style="width: 100%; margin-top: 15px;">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" width="3%">NO</th>
+                                <th rowspan="2" width="18%">NAMA GURU</th>
+                                <th rowspan="2" width="5%">KODE</th>
+                                <th rowspan="2" width="12%">JABATAN</th>
+                                <th rowspan="2" width="20%">MATA PELAJARAN</th>
+                                <th colspan="6">ALOKASI WAKTU</th>
+                                <th colspan="4">JUMLAH JAM</th>
+                            </tr>
+                            <tr>
+                                <th width="3%">1</th><th width="3%">2</th><th width="3%">3</th><th width="3%">4</th><th width="3%">5</th><th width="3%">6</th>
+                                <th width="6%">TATAP MUKA</th><th width="6%">TOTAL JAM</th><th width="8%">TAMBAHAN</th><th width="8%">TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="print-sk-body"></tbody>
+                        <tfoot id="print-sk-foot"></tfoot>
+                    </table>
+                    
+                    <div style="display:flex; justify-content: flex-end; margin-top: 20px;">
+                        <div class="c-signature" style="text-align: center; width: 250px;">
+                            <div class="c-berlaku" id="sk-print-berlaku" style="border:none; text-align:center;"></div>
+                            <p>KEPALA MADRASAH</p>
+                            <p id="sk-print-sekolah-nama"></p>
+                            <div class="c-signature-space" id="sk-print-ttd-container"></div>
+                            <p style="text-decoration: underline; font-weight: bold;" id="sk-print-kepala"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -566,10 +623,7 @@
         'T': { name: 'NI\'MATUZ ZUHROH', color: '#CC99FF', order: 20 }
     };
     
-    // LIST MAPEL DEFAULT
     const defaultMapel = ["Pendidikan Jasmani, Olah Raga, dan Kesehatan", "Seni dan Budaya", "Pancasila", "IPAS", "Matematika", "B. Arab", "B. Indonesia", "B. Inggris", "B. Jawa", "Qurdis", "Akidah A", "Fikih", "SKI", "ASWAJA"];
-    
-    // LIST MAPEL SPESIAL YG TAMPIL DI PALING ATAS
     const specialMapelsList = ["Istirahat", "Upacara", "S. Dzuhur", "-"];
     const specialMapelsOrder = { "Istirahat": 1, "Upacara": 2, "S. Dzuhur": 3, "-": 4 };
 
@@ -595,7 +649,6 @@
         return roman[num] || num;
     }
 
-    // ==== FUNGSI PENGURUTAN MURNI ALFABETIS ====
     function getSortedGuruCodes() {
         return Object.keys(daftarGuru).sort((a, b) => a.localeCompare(b));
     }
@@ -705,6 +758,25 @@
         document.getElementById(tabId).classList.add('active');
         el.classList.add('active');
         if (tabId === 'tab-kop') loadKopFormFields();
+    }
+
+    // Toggle Jadwal vs SK di dalam Tab Cetak
+    function switchCetak(tipe) {
+        if (tipe === 'jadwal') {
+            document.getElementById('cetak-jadwal-section').style.display = 'block';
+            document.getElementById('cetak-sk-section').style.display = 'none';
+            document.getElementById('btn-sub-jadwal').style.backgroundColor = '#3498db';
+            document.getElementById('btn-sub-jadwal').style.color = 'white';
+            document.getElementById('btn-sub-sk').style.backgroundColor = '#f1f1f1';
+            document.getElementById('btn-sub-sk').style.color = '#333';
+        } else {
+            document.getElementById('cetak-jadwal-section').style.display = 'none';
+            document.getElementById('cetak-sk-section').style.display = 'block';
+            document.getElementById('btn-sub-sk').style.backgroundColor = '#3498db';
+            document.getElementById('btn-sub-sk').style.color = 'white';
+            document.getElementById('btn-sub-jadwal').style.backgroundColor = '#f1f1f1';
+            document.getElementById('btn-sub-jadwal').style.color = '#333';
+        }
     }
 
     // === 4. LOGIKA MODAL TAMBAH GURU KELAS ===
@@ -1159,9 +1231,14 @@
 
     function renderJam() {
         document.getElementById('distribusi-sekolah-tahun').textContent = (dbKop.sekolah || "") + " - " + (dbKop.tahun || "");
-        const tbody = document.getElementById('table-jam-body');
-        const tfoot = document.getElementById('table-jam-foot');
-        tbody.innerHTML = ''; tfoot.innerHTML = '';
+        const tbodyUI = document.getElementById('table-jam-body');
+        const tfootUI = document.getElementById('table-jam-foot');
+        const tbodySK = document.getElementById('print-sk-body');
+        const tfootSK = document.getElementById('print-sk-foot');
+        
+        tbodyUI.innerHTML = ''; tfootUI.innerHTML = '';
+        if(tbodySK) tbodySK.innerHTML = ''; 
+        if(tfootSK) tfootSK.innerHTML = '';
 
         let totalKolom = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
         let totalTatapMukaSemua = 0, totalTambahanSemua = 0, totalKeseluruhanSemua = 0, nomor = 1;
@@ -1201,9 +1278,14 @@
             let cursorStyle = (isMasterEditMode || isMasterHapusMode) ? 'cursor:pointer; color:#3498db; font-weight:bold; text-decoration:underline;' : '';
             let rowClass = (isMasterEditMode || isMasterHapusMode) ? 'master-hover-row' : '';
 
+            let currentNomor = nomor++;
+
             mapelList.forEach((mapel, index) => {
-                let tr = document.createElement('tr');
-                if(rowClass) tr.className = rowClass;
+                let trUI = document.createElement('tr');
+                if(rowClass) trUI.className = rowClass;
+
+                let trSK = document.createElement('tr');
+                
                 let jamPerKelas = { 1: "", 2: "", 3: "", 4: "", 5: "", 6: "" };
                 let totalTatapMuka = 0;
                 
@@ -1222,8 +1304,8 @@
                     let jumlahTotalAkhir = totalSemuaMapelTatapMuka + tambahanJam;
                     totalKeseluruhanSemua += jumlahTotalAkhir;
                     
-                    tr.innerHTML = `
-                        <td rowspan="${rowSpan}" style="text-align:center;">${nomor++}</td>
+                    trUI.innerHTML = `
+                        <td rowspan="${rowSpan}" style="text-align:center;">${currentNomor}</td>
                         <td rowspan="${rowSpan}" style="text-align:left; ${cursorStyle}" onclick="handleMasterGuruClick('${code}')">${teacherName}</td>
                         <td rowspan="${rowSpan}" style="text-align:center; font-weight:bold;">${code}</td>
                         <td rowspan="${rowSpan}" style="text-align:center; font-size:11px;">${jabatanStr}</td>
@@ -1234,23 +1316,51 @@
                         <td rowspan="${rowSpan}" style="text-align:center; font-weight:bold;">${tambahanJam > 0 ? tambahanJam : ""}</td>
                         <td rowspan="${rowSpan}" style="text-align:center; font-weight:bold; background:#f5faff; font-size:13px; color:#2c3e50;">${jumlahTotalAkhir > 0 ? jumlahTotalAkhir : ""}</td>
                     `;
+                    
+                    trSK.innerHTML = `
+                        <td rowspan="${rowSpan}" style="text-align:center;">${currentNomor}</td>
+                        <td rowspan="${rowSpan}" style="text-align:left; font-weight:bold; padding-left:3px;">${teacherName}</td>
+                        <td rowspan="${rowSpan}" style="text-align:center; font-weight:bold;">${code}</td>
+                        <td rowspan="${rowSpan}" style="text-align:center;">${jabatanStr}</td>
+                        <td style="text-align:left; padding-left:3px;">${mapel}</td>
+                        <td style="text-align:center;">${jamPerKelas[1]}</td><td style="text-align:center;">${jamPerKelas[2]}</td><td style="text-align:center;">${jamPerKelas[3]}</td><td style="text-align:center;">${jamPerKelas[4]}</td><td style="text-align:center;">${jamPerKelas[5]}</td><td style="text-align:center;">${jamPerKelas[6]}</td>
+                        <td style="text-align:center; font-weight:bold;">${totalTatapMuka > 0 ? totalTatapMuka : ""}</td>
+                        <td rowspan="${rowSpan}" style="text-align:center; font-weight:bold;">${totalSemuaMapelTatapMuka > 0 ? totalSemuaMapelTatapMuka : ""}</td>
+                        <td rowspan="${rowSpan}" style="text-align:center; font-weight:bold;">${tambahanJam > 0 ? tambahanJam : ""}</td>
+                        <td rowspan="${rowSpan}" style="text-align:center; font-weight:bold;">${jumlahTotalAkhir > 0 ? jumlahTotalAkhir : ""}</td>
+                    `;
                 } else {
-                    tr.innerHTML = `
+                    trUI.innerHTML = `
                         <td>${mapel}</td>
                         <td style="text-align:center;">${jamPerKelas[1]}</td><td style="text-align:center;">${jamPerKelas[2]}</td><td style="text-align:center;">${jamPerKelas[3]}</td><td style="text-align:center;">${jamPerKelas[4]}</td><td style="text-align:center;">${jamPerKelas[5]}</td><td style="text-align:center;">${jamPerKelas[6]}</td>
                         <td style="text-align:center; font-weight:bold;">${totalTatapMuka > 0 ? totalTatapMuka : ""}</td>
                     `;
+                    trSK.innerHTML = `
+                        <td style="text-align:left; padding-left:3px;">${mapel}</td>
+                        <td style="text-align:center;">${jamPerKelas[1]}</td><td style="text-align:center;">${jamPerKelas[2]}</td><td style="text-align:center;">${jamPerKelas[3]}</td><td style="text-align:center;">${jamPerKelas[4]}</td><td style="text-align:center;">${jamPerKelas[5]}</td><td style="text-align:center;">${jamPerKelas[6]}</td>
+                        <td style="text-align:center; font-weight:bold;">${totalTatapMuka > 0 ? totalTatapMuka : ""}</td>
+                    `;
                 }
-                tbody.appendChild(tr);
+                tbodyUI.appendChild(trUI);
+                if(tbodySK) tbodySK.appendChild(trSK);
             });
         });
 
-        let trFoot = document.createElement('tr');
-        trFoot.innerHTML = `
+        let trFootUI = document.createElement('tr');
+        trFootUI.innerHTML = `
             <th colspan="5">JUMLAH</th><th>${totalKolom[1] || ""}</th><th>${totalKolom[2] || ""}</th><th>${totalKolom[3] || ""}</th><th>${totalKolom[4] || ""}</th><th>${totalKolom[5] || ""}</th><th>${totalKolom[6] || ""}</th>
             <th>${totalTatapMukaSemua || ""}</th><th>${totalTatapMukaSemua || ""}</th><th>${totalTambahanSemua || ""}</th><th style="font-size:14px; background:#e1f0fa; color:#2c3e50;">${totalKeseluruhanSemua || ""}</th>
         `;
-        tfoot.appendChild(trFoot);
+        tfootUI.appendChild(trFootUI);
+
+        if(tfootSK) {
+            let trFootSK = document.createElement('tr');
+            trFootSK.innerHTML = `
+                <th colspan="5">JUMLAH</th><th>${totalKolom[1] || ""}</th><th>${totalKolom[2] || ""}</th><th>${totalKolom[3] || ""}</th><th>${totalKolom[4] || ""}</th><th>${totalKolom[5] || ""}</th><th>${totalKolom[6] || ""}</th>
+                <th>${totalTatapMukaSemua || ""}</th><th>${totalTatapMukaSemua || ""}</th><th>${totalTambahanSemua || ""}</th><th>${totalKeseluruhanSemua || ""}</th>
+            `;
+            tfootSK.appendChild(trFootSK);
+        }
     }
 
     // === 7. FORM KOP & TTD ===
@@ -1264,9 +1374,11 @@
         database.ref('ttd').set({ berlaku: document.getElementById('k-berlaku').value, kepala: document.getElementById('k-kepala').value, imageSrc: dbTtd.imageSrc || "" }, function(err) { if(!err) { showToast("PENGATURAN DISIMPAN.", "success"); renderJam(); } });
     }
 
-    // === 8. MATRIX LAYOUT CETAK F4 DENGAN SINKRONISASI BARIS JAM KELAS ===
+    // === 8. MATRIX LAYOUT CETAK F4 (JADWAL & SK) ===
     function renderCetak() {
+        // --- JADWAL KOP ---
         document.getElementById('print-lembaga').textContent = dbKop.lembaga; document.getElementById('print-sekolah').textContent = dbKop.sekolah; document.getElementById('print-wilayah').textContent = dbKop.wilayah; document.getElementById('print-akreditasi').textContent = dbKop.akreditasi; document.getElementById('print-alamat').textContent = dbKop.alamat; document.getElementById('print-tahun').textContent = dbKop.tahun; document.getElementById('print-berlaku').textContent = dbTtd.berlaku; document.getElementById('print-kepala').textContent = dbTtd.kepala;
+        document.getElementById('print-kepala-sekolah-nama').textContent = `"${dbKop.sekolah || ''}"`;
 
         const logoC = document.getElementById('print-logo-container'); logoC.innerHTML = '';
         if (dbKop.logoSrc) { const img = document.createElement('img'); img.src = dbKop.logoSrc; logoC.appendChild(img); logoC.style.backgroundColor = 'transparent'; } else { logoC.textContent = 'LOGO'; logoC.style.backgroundColor = '#006600'; }
@@ -1274,22 +1386,36 @@
         const ttdC = document.getElementById('print-ttd-container'); ttdC.innerHTML = '';
         if (dbTtd.imageSrc) { const img = document.createElement('img'); img.src = dbTtd.imageSrc; img.className = 'c-signature-img'; ttdC.appendChild(img); }
 
+        // --- SK KOP ---
+        document.getElementById('sk-print-lembaga').textContent = dbKop.lembaga; document.getElementById('sk-print-sekolah').textContent = dbKop.sekolah; document.getElementById('sk-print-wilayah').textContent = dbKop.wilayah; document.getElementById('sk-print-akreditasi').textContent = dbKop.akreditasi; document.getElementById('sk-print-alamat').textContent = dbKop.alamat; document.getElementById('sk-print-tahun').textContent = dbKop.tahun; document.getElementById('sk-print-berlaku').textContent = dbTtd.berlaku; document.getElementById('sk-print-kepala').textContent = dbTtd.kepala;
+        document.getElementById('sk-print-sekolah-nama').textContent = `"${dbKop.sekolah || ''}"`;
+
+        const logoCSK = document.getElementById('sk-print-logo-container'); logoCSK.innerHTML = '';
+        if (dbKop.logoSrc) { const img = document.createElement('img'); img.src = dbKop.logoSrc; logoCSK.appendChild(img); logoCSK.style.backgroundColor = 'transparent'; } else { logoCSK.textContent = 'LOGO'; logoCSK.style.backgroundColor = '#006600'; }
+
+        const ttdCSK = document.getElementById('sk-print-ttd-container'); ttdCSK.innerHTML = '';
+        if (dbTtd.imageSrc) { const img = document.createElement('img'); img.src = dbTtd.imageSrc; img.className = 'c-signature-img'; ttdCSK.appendChild(img); }
+
+
+        // --- JADWAL GURU LIST ---
         const tBodyGuru = document.getElementById('print-teacher-body'); tBodyGuru.innerHTML = '';
         getSortedGuruCodes().forEach(code => {
             if(code === "-") return;
             tBodyGuru.innerHTML += `<tr><td width="12%" style="background-color: ${daftarGuru[code].color} !important; font-weight: bold;">${code}</td><td style="text-align: left; background-color: ${daftarGuru[code].color} !important; font-size: 8.5px; font-weight: 500;">${daftarGuru[code].name}</td></tr>`;
         });
 
+        // --- WAKTU JADWAL ---
         let highestJamOverall = 0;
         for(let key in rowCounts) { if(rowCounts[key] > highestJamOverall) highestJamOverall = rowCounts[key]; }
         if (highestJamOverall === 0) highestJamOverall = 6; 
 
         const tBodyWaktu = document.getElementById('print-waktu-body'); tBodyWaktu.innerHTML = '';
         for(let i=1; i<=highestJamOverall; i++) {
-            if(i === 5) tBodyWaktu.innerHTML += `<tr><td colspan="2" style="text-align:left; background:#f0f0f0 !important;">09.20 - 09.55<br>S. Dhuha / Istirahat</td></tr>`;
+            if(i === 5) tBodyWaktu.innerHTML += `<tr><td colspan="2" style="text-align:left; background:#f0f0f0 !important;">09.20 - 09.55<br>S. DHUHA / ISTIRAHAT</td></tr>`;
             tBodyWaktu.innerHTML += `<tr><td>${i}</td><td>${waktuDefault[i] || "-"}</td></tr>`;
         }
 
+        // --- RENDER MATRIKS JADWAL ---
         let matrix = {};
         for(let k=1; k<=6; k++) { matrix[k] = {}; daftarHari.forEach(h => matrix[k][h] = {}); }
         dbJadwal.forEach(j => { if(matrix[j.kelas] && matrix[j.kelas][j.hari]) matrix[j.kelas][j.hari][j.jam] = { m: j.mapel, g: j.guru }; });
