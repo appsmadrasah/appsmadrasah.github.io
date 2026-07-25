@@ -195,7 +195,7 @@
     window.dataPeserta = [];
     window.dataKeys = [];
 
-    // Listener Real-time Firebase (DENGAN PENGURUTAN A-Z OTOMATIS)
+    // Listener Real-time Firebase
     const siswaRef = ref(db, 'siswa');
     onValue(siswaRef, (snapshot) => {
         const data = snapshot.val();
@@ -203,22 +203,23 @@
         window.dataKeys = [];
         
         if (data) {
-            // Memasukkan data dan key ke dalam array sementara
             let tempArr = [];
             Object.keys(data).forEach(key => {
                 tempArr.push({ id: key, data: data[key] });
             });
 
-            // LOGIKA PENGURUTAN (SORT) BERDASARKAN NAMA SISWA A-Z
+            // LOGIKA PENGURUTAN (SORT) SPESIFIK PADA "NAMA LENGKAP" (A-Z)
             tempArr.sort((a, b) => {
-                let namaA = (a.data.nama || "").toUpperCase();
-                let namaB = (b.data.nama || "").toUpperCase();
+                // String() dan trim() digunakan agar spasi kosong di awal nama yang mungkin terketik dari Excel diabaikan
+                let namaA = String(a.data.nama || "").trim().toUpperCase();
+                let namaB = String(b.data.nama || "").trim().toUpperCase();
+                
                 if (namaA < namaB) return -1;
                 if (namaA > namaB) return 1;
                 return 0;
             });
 
-            // Memasukkan data yang sudah diurutkan kembali ke variabel utama
+            // Kembalikan ke array utama setelah disortir
             tempArr.forEach(item => {
                 window.dataKeys.push(item.id);
                 window.dataPeserta.push(item.data);
@@ -249,7 +250,7 @@
         return str;
     }
 
-    // --- FUNGSI MEMBACA FILE MENJADI BASE64 (Dibatasi 2MB) ---
+    // --- FUNGSI MEMBACA FILE MENJADI BASE64 ---
     window.encodeFile = function(element, hiddenId) {
         const file = element.files[0];
         if (file) {
@@ -414,7 +415,7 @@
 
     window.simpanSiswa = function() {
         const index = document.getElementById('form-index').value;
-        const inputNama = document.getElementById('form-nama').value.toUpperCase();
+        const inputNama = String(document.getElementById('form-nama').value).trim().toUpperCase();
         
         if(inputNama === "") { 
             alert("Nama Lengkap tidak boleh kosong!"); 
@@ -457,9 +458,8 @@
         }
     }
 
-    // --- FUNGSI EXCEL (KOLOM DISINKRONKAN DENGAN TABEL BARU) ---
+    // --- FUNGSI EXCEL DOWNLOAD TEMPLATE ---
     window.downloadTemplateExcel = function() {
-        // Kolom disesuaikan agar cocok urutannya dengan tabel HTML Anda
         const dataTemplate = [
             ["Nama Lengkap", "NISN", "NIK", "Kelas", "Tempat, Tgl Lahir", "L/P", "Agama", "Alamat Lengkap", "No. KK", "Nama Ayah & Ibu", "Pekerjaan Ortu", "No. HP Ortu"],
             ["CONTOH NAMA SISWA", "1234567890", "3524000000", "1", "Lamongan, 17 Agustus 2010", "Laki-laki", "Islam", "Jl. Merdeka No 1", "3524111111", "Budi / Wati", "Petani", "08123456789"]
@@ -472,6 +472,7 @@
         window.XLSX.writeFile(workbook, "Template_Data_Siswa.xlsx");
     }
 
+    // --- FUNGSI IMPOR EXCEL ---
     window.prosesImporExcel = function(event) {
         const file = event.target.files[0];
         if(!file) return;
@@ -496,7 +497,8 @@
                 if(nama) { 
                     const newSiswaRef = push(ref(db, 'siswa'));
                     set(newSiswaRef, {
-                        nama: String(nama).toUpperCase(), 
+                        // Pastikan nama di-trim (hapus spasi kosong) agar rapi saat disortir A-Z
+                        nama: String(nama).trim().toUpperCase(), 
                         nisn: getVal(["nisn"]) || "", 
                         nik: getVal(["nik"]) || "", 
                         kelas: window.formatKelasBaku(getVal(["kelas", "kls"])),
@@ -508,13 +510,13 @@
                         ortu: getVal(["ayah", "ibu", "ortu"]) || "",
                         pekerjaan: getVal(["pekerjaan", "kerja"]) || "",
                         hp: getVal(["hp"]) || "",
-                        foto: "", akta: "", filekk: "" // File di-set kosong dari excel
+                        foto: "", akta: "", filekk: "" 
                     });
                     berhasil++;
                 }
             });
 
-            alert(`Selesai! Berhasil mengirimkan ${berhasil} data siswa dari Excel ke Firebase.`);
+            alert(`Selesai! Berhasil mengirimkan ${berhasil} data siswa dari Excel ke Firebase.\nData otomatis diurutkan sesuai abjad pada kolom Nama Lengkap.`);
             document.getElementById('inputExcel').value = ""; 
         };
         reader.readAsArrayBuffer(file);
