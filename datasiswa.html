@@ -10,20 +10,24 @@
     <style>
         /* === CSS APLIKASI UTAMA === */
         body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
-        .app-container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .app-container { max-width: 1300px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #333; margin-top: 5px; }
 
-        /* Tabel Data & Form - Dibuat Responsive (Bisa digeser horizontal) */
-        .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; }
+        /* Tabel Data & Form - Dibuat Responsive & Freeze Header */
+        /* max-height membuat area tabel bisa di-scroll ke bawah tanpa menggeser toolbar di atasnya */
+        .table-responsive { width: 100%; max-height: 65vh; overflow-y: auto; overflow-x: auto; margin-top: 15px; border-bottom: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
         table, th, td { border: 1px solid #ddd; }
         th, td { padding: 8px; text-align: left; }
-        th { background-color: #4CAF50; color: white; }
+        
+        /* Sticky pada Header Tabel agar tidak ikut tergeser */
+        th { background-color: #4CAF50; color: white; position: sticky; top: 0; z-index: 2; box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);}
         
         /* Tombol Aksi Tabel */
         .btn-edit { padding: 5px; background: #FFC107; color: black; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;}
         .btn-hapus { padding: 5px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;}
-        .btn-file { padding: 4px 8px; background: #2196F3; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; text-decoration: none;}
+        .btn-file { padding: 5px 8px; background: #2196F3; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: bold;}
+        .btn-unduh { background: #ff9800; } /* Warna khusus tombol unduh */
         
         /* Tombol Toolbar Atas */
         .toolbar { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;}
@@ -42,12 +46,16 @@
         
         /* === CSS MODAL (POP-UP FORM) - Dibuat Scrollable === */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
-        .modal-content { background-color: #fff; margin: 2% auto; padding: 20px; border-radius: 8px; width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-        .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; position: sticky; top: 0; background: #fff; padding-bottom: 10px; border-bottom: 1px solid #eee;}
+        .modal-content { background-color: #fff; margin: 2% auto; padding: 20px; border-radius: 8px; width: 550px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; position: sticky; top: 0; background: #fff; padding-bottom: 10px; border-bottom: 1px solid #eee; z-index: 5;}
         .close-btn { cursor: pointer; color: red; font-weight: bold; font-size: 20px;}
-        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; position: sticky; bottom: 0; background: #fff; padding-top: 10px; border-top: 1px solid #eee;}
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; position: sticky; bottom: -20px; background: #fff; padding: 15px 0; border-top: 1px solid #eee; z-index: 5;}
         .btn-batal { background: #ccc; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
         .btn-simpan { padding: 10px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        
+        /* Grid untuk Form agar lebih rapi */
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-group { flex: 1; }
     </style>
 </head>
 <body>
@@ -75,7 +83,7 @@
         <button class="btn-toolbar btn-hapus-massal" onclick="hapusTerpilih()">🗑️ Hapus Terpilih</button>
     </div>
 
-    <!-- Wrapper agar tabel bisa digeser ke samping -->
+    <!-- Wrapper agar tabel bisa digeser ke samping dan bawah tanpa merusak header -->
     <div class="table-responsive">
         <table>
             <thead>
@@ -93,8 +101,10 @@
                     <th>Agama</th>
                     <th>Alamat Lengkap</th>
                     <th>No. KK</th>
-                    <th>Nama Ayah & Ibu</th>
-                    <th>Pekerjaan Ortu</th>
+                    <th>Nama Ayah</th>
+                    <th>Pekerjaan Ayah</th>
+                    <th>Nama Ibu</th>
+                    <th>Pekerjaan Ibu</th>
                     <th>No. HP Ortu</th>
                     <th>Pas Foto</th>
                     <th>Akta</th>
@@ -119,31 +129,44 @@
         
         <input type="hidden" id="form-index" value=""> 
         
-        <!-- Field Teks -->
+        <!-- Data Diri Siswa -->
         <div class="form-group"><label>Nama Lengkap:</label><input type="text" id="form-nama" autocomplete="off"></div>
-        <div class="form-group"><label>NISN:</label><input type="text" id="form-nisn" autocomplete="off"></div>
-        <div class="form-group"><label>NIK:</label><input type="text" id="form-nik" autocomplete="off"></div>
-        <div class="form-group"><label>Kelas:</label><input type="text" id="form-kelas" autocomplete="off" placeholder="Contoh: 1, otomatis jadi 1 (Satu)"></div>
-        <div class="form-group"><label>Tempat, Tanggal Lahir:</label><input type="text" id="form-ttl" autocomplete="off" placeholder="Contoh: Lamongan, 12 Agustus 2010"></div>
-        
-        <div class="form-group">
-            <label>Jenis Kelamin (L/P):</label>
-            <select id="form-jk">
-                <option value="Laki-laki">Laki-laki</option>
-                <option value="Perempuan">Perempuan</option>
-            </select>
+        <div class="form-row">
+            <div class="form-group"><label>NISN:</label><input type="text" id="form-nisn" autocomplete="off"></div>
+            <div class="form-group"><label>NIK:</label><input type="text" id="form-nik" autocomplete="off"></div>
         </div>
-        
+        <div class="form-row">
+            <div class="form-group"><label>Kelas:</label><input type="text" id="form-kelas" autocomplete="off" placeholder="Contoh: 1, otomatis jadi 1 (Satu)"></div>
+            <div class="form-group"><label>Jenis Kelamin (L/P):</label>
+                <select id="form-jk">
+                    <option value="Laki-laki">Laki-laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group"><label>Tempat, Tanggal Lahir:</label><input type="text" id="form-ttl" autocomplete="off" placeholder="Contoh: Lamongan, 12 Agustus 2010"></div>
         <div class="form-group"><label>Agama:</label><input type="text" id="form-agama" autocomplete="off" value="Islam"></div>
         <div class="form-group"><label>Alamat Lengkap:</label><input type="text" id="form-alamat" autocomplete="off"></div>
+        
+        <hr style="margin: 20px 0; border: 0.5px solid #ddd;">
+        <h4 style="margin-top:0; color:#4CAF50;">Data Orang Tua</h4>
+
         <div class="form-group"><label>Nomor KK:</label><input type="text" id="form-kk" autocomplete="off"></div>
-        <div class="form-group"><label>Nama Ayah & Ibu:</label><input type="text" id="form-ortu" autocomplete="off" placeholder="Ayah: ... / Ibu: ..."></div>
-        <div class="form-group"><label>Pekerjaan Orang Tua:</label><input type="text" id="form-pekerjaan" autocomplete="off"></div>
-        <div class="form-group"><label>Nomor HP Orang Tua:</label><input type="text" id="form-hp" autocomplete="off"></div>
+        
+        <div class="form-row">
+            <div class="form-group"><label>Nama Ayah:</label><input type="text" id="form-ayah" autocomplete="off"></div>
+            <div class="form-group"><label>Pekerjaan Ayah:</label><input type="text" id="form-kerja-ayah" autocomplete="off"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Nama Ibu:</label><input type="text" id="form-ibu" autocomplete="off"></div>
+            <div class="form-group"><label>Pekerjaan Ibu:</label><input type="text" id="form-kerja-ibu" autocomplete="off"></div>
+        </div>
+        
+        <div class="form-group"><label>Nomor HP Orang Tua (WA):</label><input type="text" id="form-hp" autocomplete="off"></div>
 
         <hr style="margin: 20px 0; border: 0.5px solid #ddd;">
+        <h4 style="margin-top:0; color:#4CAF50;">Upload Berkas</h4>
         
-        <!-- Field Upload Berkas -->
         <div class="form-group">
             <label>Pas Foto:</label>
             <input type="file" id="form-foto" accept="image/*" onchange="encodeFile(this, 'hidden-foto')">
@@ -171,7 +194,6 @@
 </div>
 
 <script type="module">
-    // Import SDK Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
     import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
@@ -195,7 +217,7 @@
     window.dataPeserta = [];
     window.dataKeys = [];
 
-    // Listener Real-time Firebase
+    // Listener Real-time Firebase (DENGAN PENGURUTAN A-Z OTOMATIS)
     const siswaRef = ref(db, 'siswa');
     onValue(siswaRef, (snapshot) => {
         const data = snapshot.val();
@@ -208,18 +230,15 @@
                 tempArr.push({ id: key, data: data[key] });
             });
 
-            // LOGIKA PENGURUTAN (SORT) SPESIFIK PADA "NAMA LENGKAP" (A-Z)
+            // LOGIKA PENGURUTAN (SORT) NAMA LENGKAP (A-Z)
             tempArr.sort((a, b) => {
-                // String() dan trim() digunakan agar spasi kosong di awal nama yang mungkin terketik dari Excel diabaikan
                 let namaA = String(a.data.nama || "").trim().toUpperCase();
                 let namaB = String(b.data.nama || "").trim().toUpperCase();
-                
                 if (namaA < namaB) return -1;
                 if (namaA > namaB) return 1;
                 return 0;
             });
 
-            // Kembalikan ke array utama setelah disortir
             tempArr.forEach(item => {
                 window.dataKeys.push(item.id);
                 window.dataPeserta.push(item.data);
@@ -228,23 +247,19 @@
         window.renderTabel();
     });
 
-    // --- FUNGSI FORMAT KELAS: 1 -> 1 (Satu) ---
+    // --- FUNGSI FORMAT KELAS ---
     window.formatKelasBaku = function(input) {
         let str = String(input || "").trim();
         str = str.replace(/kelas/i, "").trim();
-        
         const mapKata = {
             "1": "Satu", "2": "Dua", "3": "Tiga",
             "4": "Empat", "5": "Lima", "6": "Enam"
         };
-
         const match = str.match(/\d+/);
         if (match) {
             let num = match[0];
-            if (mapKata[num]) {
-                if (!str.toLowerCase().includes(mapKata[num].toLowerCase())) {
-                    str = str.replace(num, `${num} (${mapKata[num]}) `).trim();
-                }
+            if (mapKata[num] && !str.toLowerCase().includes(mapKata[num].toLowerCase())) {
+                str = str.replace(num, `${num} (${mapKata[num]}) `).trim();
             }
         }
         return str;
@@ -270,7 +285,7 @@
         }
     }
 
-    // --- FUNGSI MEMBUKA FILE DI TAB BARU ---
+    // --- FUNGSI LIHAT FILE (TAB BARU) ---
     window.bukaFile = function(base64String) {
         if(!base64String) return;
         const newWindow = window.open();
@@ -281,6 +296,27 @@
                 newWindow.document.write(`<iframe src="${base64String}" width="100%" height="100%" style="border:none;"></iframe>`);
             }
         }
+    }
+
+    // --- FUNGSI DOWNLOAD BERKAS ---
+    window.downloadBerkas = function(base64String, namaSiswa, jenisBerkas) {
+        if(!base64String) return;
+        
+        // Deteksi format file otomatis dari Data URL
+        let ext = "pdf"; 
+        if(base64String.includes("image/jpeg") || base64String.includes("image/jpg")) ext = "jpg";
+        else if(base64String.includes("image/png")) ext = "png";
+
+        // Membersihkan nama siswa agar aman dijadikan nama file (hilangkan karakter aneh)
+        const safeNama = namaSiswa.replace(/[^a-z0-9]/gi, '_').toUpperCase();
+        const namaFile = `${jenisBerkas}_${safeNama}.${ext}`;
+
+        const a = document.createElement("a");
+        a.href = base64String;
+        a.download = namaFile;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
 
     // Fungsi Render Tabel
@@ -305,14 +341,17 @@
             }
 
             if (tampilkan) {
+                // Konfigurasi Tombol Berkas
                 const btnFoto = p.foto ? `<button class="btn-file" onclick="bukaFile('${p.foto}')">Lihat</button>` : `-`;
-                const btnAkta = p.akta ? `<button class="btn-file" onclick="bukaFile('${p.akta}')">Lihat</button>` : `-`;
-                const btnKK = p.filekk ? `<button class="btn-file" onclick="bukaFile('${p.filekk}')">Lihat</button>` : `-`;
+                const btnAkta = p.akta ? `<button class="btn-file btn-unduh" onclick="downloadBerkas('${p.akta}', '${p.nama || 'Siswa'}', 'AKTA')">⬇ Unduh</button>` : `-`;
+                const btnKK = p.filekk ? `<button class="btn-file btn-unduh" onclick="downloadBerkas('${p.filekk}', '${p.nama || 'Siswa'}', 'KK')">⬇ Unduh</button>` : `-`;
+                
+                // Fallback untuk data lama yang masih pakai kolom 'ortu' dan 'pekerjaan'
+                const fallbackAyah = p.ayah || p.ortu || '';
+                const fallbackKerjaAyah = p.kerjaAyah || p.pekerjaan || '';
 
                 const tr = `<tr>
-                    <td style="text-align: center;">
-                        <input type="checkbox" class="check-item" value="${index}">
-                    </td>
+                    <td style="text-align: center;"><input type="checkbox" class="check-item" value="${index}"></td>
                     <td style="text-align: center;">${nomorUrut}</td>
                     <td>${p.nama || ''}</td>
                     <td>${p.nisn || ''}</td>
@@ -323,8 +362,10 @@
                     <td>${p.agama || ''}</td>
                     <td>${p.alamat || ''}</td>
                     <td>${p.kk || ''}</td>
-                    <td>${p.ortu || ''}</td>
-                    <td>${p.pekerjaan || ''}</td>
+                    <td>${fallbackAyah}</td>
+                    <td>${fallbackKerjaAyah}</td>
+                    <td>${p.ibu || ''}</td>
+                    <td>${p.kerjaIbu || ''}</td>
                     <td>${p.hp || ''}</td>
                     <td style="text-align: center;">${btnFoto}</td>
                     <td style="text-align: center;">${btnAkta}</td>
@@ -382,8 +423,13 @@
             document.getElementById('form-agama').value = p.agama || 'Islam';
             document.getElementById('form-alamat').value = p.alamat || '';
             document.getElementById('form-kk').value = p.kk || '';
-            document.getElementById('form-ortu').value = p.ortu || '';
-            document.getElementById('form-pekerjaan').value = p.pekerjaan || '';
+            
+            // Handle fallback data lama
+            document.getElementById('form-ayah').value = p.ayah || p.ortu || '';
+            document.getElementById('form-kerja-ayah').value = p.kerjaAyah || p.pekerjaan || '';
+            document.getElementById('form-ibu').value = p.ibu || '';
+            document.getElementById('form-kerja-ibu').value = p.kerjaIbu || '';
+            
             document.getElementById('form-hp').value = p.hp || '';
             
             document.getElementById('hidden-foto').value = p.foto || '';
@@ -401,8 +447,12 @@
             document.getElementById('form-agama').value = "Islam";
             document.getElementById('form-alamat').value = "";
             document.getElementById('form-kk').value = "";
-            document.getElementById('form-ortu').value = "";
-            document.getElementById('form-pekerjaan').value = "";
+            
+            document.getElementById('form-ayah').value = "";
+            document.getElementById('form-kerja-ayah').value = "";
+            document.getElementById('form-ibu').value = "";
+            document.getElementById('form-kerja-ibu').value = "";
+            
             document.getElementById('form-hp').value = "";
             
             document.getElementById('hidden-foto').value = "";
@@ -432,8 +482,10 @@
             agama: document.getElementById('form-agama').value,
             alamat: document.getElementById('form-alamat').value,
             kk: document.getElementById('form-kk').value,
-            ortu: document.getElementById('form-ortu').value,
-            pekerjaan: document.getElementById('form-pekerjaan').value,
+            ayah: document.getElementById('form-ayah').value,
+            kerjaAyah: document.getElementById('form-kerja-ayah').value,
+            ibu: document.getElementById('form-ibu').value,
+            kerjaIbu: document.getElementById('form-kerja-ibu').value,
             hp: document.getElementById('form-hp').value,
             foto: document.getElementById('hidden-foto').value,
             akta: document.getElementById('hidden-akta').value,
@@ -461,12 +513,12 @@
     // --- FUNGSI EXCEL DOWNLOAD TEMPLATE ---
     window.downloadTemplateExcel = function() {
         const dataTemplate = [
-            ["Nama Lengkap", "NISN", "NIK", "Kelas", "Tempat, Tgl Lahir", "L/P", "Agama", "Alamat Lengkap", "No. KK", "Nama Ayah & Ibu", "Pekerjaan Ortu", "No. HP Ortu"],
-            ["CONTOH NAMA SISWA", "1234567890", "3524000000", "1", "Lamongan, 17 Agustus 2010", "Laki-laki", "Islam", "Jl. Merdeka No 1", "3524111111", "Budi / Wati", "Petani", "08123456789"]
+            ["Nama Lengkap", "NISN", "NIK", "Kelas", "Tempat, Tgl Lahir", "L/P", "Agama", "Alamat Lengkap", "No. KK", "Nama Ayah", "Pekerjaan Ayah", "Nama Ibu", "Pekerjaan Ibu", "No. HP Ortu"],
+            ["CONTOH NAMA SISWA", "1234567890", "3524000000", "1", "Lamongan, 17 Agustus 2010", "Laki-laki", "Islam", "Jl. Merdeka No 1", "3524111111", "Budi", "Petani", "Wati", "Ibu Rumah Tangga", "08123456789"]
         ];
         const workbook = window.XLSX.utils.book_new();
         const worksheet = window.XLSX.utils.aoa_to_sheet(dataTemplate);
-        worksheet['!cols'] = [ {wch: 30}, {wch: 15}, {wch: 20}, {wch: 10}, {wch: 25}, {wch: 12}, {wch: 10}, {wch: 30}, {wch: 20}, {wch: 25}, {wch: 15}, {wch: 15} ];
+        worksheet['!cols'] = [ {wch: 30}, {wch: 15}, {wch: 20}, {wch: 10}, {wch: 25}, {wch: 12}, {wch: 10}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 15}, {wch: 20}, {wch: 15}, {wch: 15} ];
         
         window.XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Siswa");
         window.XLSX.writeFile(workbook, "Template_Data_Siswa.xlsx");
@@ -497,7 +549,6 @@
                 if(nama) { 
                     const newSiswaRef = push(ref(db, 'siswa'));
                     set(newSiswaRef, {
-                        // Pastikan nama di-trim (hapus spasi kosong) agar rapi saat disortir A-Z
                         nama: String(nama).trim().toUpperCase(), 
                         nisn: getVal(["nisn"]) || "", 
                         nik: getVal(["nik"]) || "", 
@@ -507,8 +558,10 @@
                         agama: getVal(["agama"]) || "",
                         alamat: getVal(["alamat"]) || "",
                         kk: getVal(["kk", "kartu"]) || "",
-                        ortu: getVal(["ayah", "ibu", "ortu"]) || "",
-                        pekerjaan: getVal(["pekerjaan", "kerja"]) || "",
+                        ayah: getVal(["ayah"]) || "",
+                        kerjaAyah: getVal(["pekerjaan ayah", "kerja ayah"]) || "",
+                        ibu: getVal(["ibu"]) || "",
+                        kerjaIbu: getVal(["pekerjaan ibu", "kerja ibu"]) || "",
                         hp: getVal(["hp"]) || "",
                         foto: "", akta: "", filekk: "" 
                     });
@@ -516,7 +569,7 @@
                 }
             });
 
-            alert(`Selesai! Berhasil mengirimkan ${berhasil} data siswa dari Excel ke Firebase.\nData otomatis diurutkan sesuai abjad pada kolom Nama Lengkap.`);
+            alert(`Selesai! Berhasil mengirimkan ${berhasil} data siswa dari Excel ke Firebase.`);
             document.getElementById('inputExcel').value = ""; 
         };
         reader.readAsArrayBuffer(file);
