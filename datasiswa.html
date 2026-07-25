@@ -14,7 +14,6 @@
         h2 { text-align: center; color: #333; margin-top: 5px; }
 
         /* Tabel Data & Form - Dibuat Responsive & Freeze Header */
-        /* max-height membuat area tabel bisa di-scroll ke bawah tanpa menggeser toolbar di atasnya */
         .table-responsive { width: 100%; max-height: 65vh; overflow-y: auto; overflow-x: auto; margin-top: 15px; border-bottom: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
         table, th, td { border: 1px solid #ddd; }
@@ -27,7 +26,7 @@
         .btn-edit { padding: 5px; background: #FFC107; color: black; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;}
         .btn-hapus { padding: 5px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;}
         .btn-file { padding: 5px 8px; background: #2196F3; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: bold;}
-        .btn-unduh { background: #ff9800; } /* Warna khusus tombol unduh */
+        .btn-unduh { background: #ff9800; }
         
         /* Tombol Toolbar Atas */
         .toolbar { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;}
@@ -37,6 +36,7 @@
         .btn-template { background: #2196F3; } 
         .btn-excel { background: #1b7339; }    
         .btn-hapus-massal { background: #f44336; } 
+        .btn-cetak { background: #E91E63; } /* Tombol Cetak F4 */
         
         /* Form dalam Modal */
         .form-group { margin-bottom: 12px; }
@@ -44,7 +44,7 @@
         .form-group input[type="text"], .form-group select, .form-group input[type="file"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         .file-info { font-size: 11px; color: red; margin-top: 3px; }
         
-        /* === CSS MODAL (POP-UP FORM) - Dibuat Scrollable === */
+        /* === CSS MODAL (POP-UP FORM) === */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
         .modal-content { background-color: #fff; margin: 2% auto; padding: 20px; border-radius: 8px; width: 550px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
         .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; position: sticky; top: 0; background: #fff; padding-bottom: 10px; border-bottom: 1px solid #eee; z-index: 5;}
@@ -53,13 +53,46 @@
         .btn-batal { background: #ccc; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
         .btn-simpan { padding: 10px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         
-        /* Grid untuk Form agar lebih rapi */
         .form-row { display: flex; gap: 15px; }
         .form-row .form-group { flex: 1; }
+
+        /* === CSS CETAK BIODATA & KERTAS F4 === */
+        #area-cetak-biodata { display: none; } /* Sembunyikan area cetak di layar biasa */
+
+        .biodata-container { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px dashed #ccc; }
+        .biodata-header { text-align: center; font-size: 16pt; font-weight: bold; margin-bottom: 25px; text-decoration: underline; }
+        .biodata-body { display: flex; justify-content: space-between; align-items: flex-start; }
+        .biodata-table { width: 75%; border-collapse: collapse; border: none; font-size: 12pt; }
+        .biodata-table td { padding: 5px; vertical-align: top; border: none; white-space: normal;}
+        .biodata-table td:nth-child(1) { width: 35%; font-weight: bold; }
+        .biodata-table td:nth-child(2) { width: 2%; text-align: center; }
+        .biodata-photo { width: 3cm; height: 4cm; border: 1px solid #000; display: flex; justify-content: center; align-items: center; text-align: center; font-size: 10pt; background: #eee; overflow: hidden; margin-top: 10px; }
+        .biodata-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+        @media print {
+            /* Matikan seluruh tampilan aplikasi saat mode print berjalan */
+            body { background: #fff; padding: 0; margin: 0; }
+            #app-container, .modal { display: none !important; }
+            
+            /* Tampilkan area cetak */
+            #area-cetak-biodata { display: block !important; width: 215mm; margin: 0 auto; }
+            
+            .biodata-container { 
+                page-break-after: always; /* Setiap siswa otomatis ganti halaman (1 siswa 1 lembar F4) */
+                width: 215mm; 
+                min-height: 330mm; 
+                padding: 15mm; 
+                box-sizing: border-box;
+                border: none; /* Hilangkan garis batas saat diprint */
+                margin: 0;
+            }
+        }
+        @page { size: 215mm 330mm; margin: 0; } /* Ukuran Kertas F4 */
     </style>
 </head>
 <body>
 
+<!-- KONTENER APLIKASI UTAMA -->
 <div class="app-container" id="app-container">
     <h2>Data Lengkap Siswa</h2>
     
@@ -80,10 +113,13 @@
         <input type="file" id="inputExcel" accept=".xlsx, .xls" style="display: none;" onchange="prosesImporExcel(event)">
         
         <button class="btn-toolbar btn-template" onclick="downloadTemplateExcel()">⬇️ Download Template</button>
+        
+        <!-- Tombol Cetak diletakkan di sebelah kiri tombol Hapus Terpilih -->
+        <button class="btn-toolbar btn-cetak" onclick="bukaModalCetak()">🖨️ Cetak Terpilih</button>
         <button class="btn-toolbar btn-hapus-massal" onclick="hapusTerpilih()">🗑️ Hapus Terpilih</button>
     </div>
 
-    <!-- Wrapper agar tabel bisa digeser ke samping dan bawah tanpa merusak header -->
+    <!-- Tabel Data -->
     <div class="table-responsive">
         <table>
             <thead>
@@ -93,6 +129,7 @@
                     </th>
                     <th style="text-align: center;">No.</th>
                     <th>Nama Lengkap</th>
+                    <th>NIS</th>
                     <th>NISN</th>
                     <th>NIK</th>
                     <th>Kelas</th>
@@ -129,12 +166,15 @@
         
         <input type="hidden" id="form-index" value=""> 
         
-        <!-- Data Diri Siswa -->
         <div class="form-group"><label>Nama Lengkap:</label><input type="text" id="form-nama" autocomplete="off"></div>
+        
+        <!-- Kolom NIS, NISN, NIK dibuat sejajar -->
         <div class="form-row">
+            <div class="form-group"><label>NIS:</label><input type="text" id="form-nis" autocomplete="off"></div>
             <div class="form-group"><label>NISN:</label><input type="text" id="form-nisn" autocomplete="off"></div>
             <div class="form-group"><label>NIK:</label><input type="text" id="form-nik" autocomplete="off"></div>
         </div>
+        
         <div class="form-row">
             <div class="form-group"><label>Kelas:</label><input type="text" id="form-kelas" autocomplete="off" placeholder="Contoh: 1, otomatis jadi 1 (Satu)"></div>
             <div class="form-group"><label>Jenis Kelamin (L/P):</label>
@@ -193,6 +233,28 @@
     </div>
 </div>
 
+<!-- Modal Pop-up Preview Cetak Biodata -->
+<div id="modalCetak" class="modal">
+    <div class="modal-content" style="width: 750px;">
+        <div class="modal-header">
+            <span id="modal-judul-cetak">Preview Biodata Siswa</span>
+            <span class="close-btn" onclick="tutupModalCetak()">&times;</span>
+        </div>
+        
+        <!-- Area tempat Preview Biodata (hanya untuk dilihat sebelum diprint) -->
+        <div id="preview-cetak-area" style="max-height: 60vh; overflow-y: auto; background: #f9f9f9; padding: 15px; border: 1px solid #ddd;">
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-batal" onclick="tutupModalCetak()">Batal</button>
+            <button class="btn-simpan" style="background:#E91E63;" onclick="prosesCetak()">🖨️ Print (Kertas F4)</button>
+        </div>
+    </div>
+</div>
+
+<!-- Area Khusus Tersembunyi Untuk Diprint (Kertas F4) -->
+<div id="area-cetak-biodata"></div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
@@ -217,7 +279,7 @@
     window.dataPeserta = [];
     window.dataKeys = [];
 
-    // Listener Real-time Firebase (DENGAN PENGURUTAN A-Z OTOMATIS)
+    // Listener Real-time Firebase (Pengurutan Otomatis)
     const siswaRef = ref(db, 'siswa');
     onValue(siswaRef, (snapshot) => {
         const data = snapshot.val();
@@ -230,7 +292,6 @@
                 tempArr.push({ id: key, data: data[key] });
             });
 
-            // LOGIKA PENGURUTAN (SORT) NAMA LENGKAP (A-Z)
             tempArr.sort((a, b) => {
                 let namaA = String(a.data.nama || "").trim().toUpperCase();
                 let namaB = String(b.data.nama || "").trim().toUpperCase();
@@ -265,7 +326,7 @@
         return str;
     }
 
-    // --- FUNGSI MEMBACA FILE MENJADI BASE64 ---
+    // --- FUNGSI UPLOAD BERKAS ---
     window.encodeFile = function(element, hiddenId) {
         const file = element.files[0];
         if (file) {
@@ -301,13 +362,10 @@
     // --- FUNGSI DOWNLOAD BERKAS ---
     window.downloadBerkas = function(base64String, namaSiswa, jenisBerkas) {
         if(!base64String) return;
-        
-        // Deteksi format file otomatis dari Data URL
         let ext = "pdf"; 
         if(base64String.includes("image/jpeg") || base64String.includes("image/jpg")) ext = "jpg";
         else if(base64String.includes("image/png")) ext = "png";
 
-        // Membersihkan nama siswa agar aman dijadikan nama file (hilangkan karakter aneh)
         const safeNama = namaSiswa.replace(/[^a-z0-9]/gi, '_').toUpperCase();
         const namaFile = `${jenisBerkas}_${safeNama}.${ext}`;
 
@@ -319,7 +377,7 @@
         document.body.removeChild(a);
     }
 
-    // Fungsi Render Tabel
+    // --- FUNGSI RENDER TABEL ---
     window.renderTabel = function() {
         const tbody = document.getElementById("tabel-body");
         tbody.innerHTML = "";
@@ -341,19 +399,15 @@
             }
 
             if (tampilkan) {
-                // Konfigurasi Tombol Berkas
                 const btnFoto = p.foto ? `<button class="btn-file" onclick="bukaFile('${p.foto}')">Lihat</button>` : `-`;
                 const btnAkta = p.akta ? `<button class="btn-file btn-unduh" onclick="downloadBerkas('${p.akta}', '${p.nama || 'Siswa'}', 'AKTA')">⬇ Unduh</button>` : `-`;
                 const btnKK = p.filekk ? `<button class="btn-file btn-unduh" onclick="downloadBerkas('${p.filekk}', '${p.nama || 'Siswa'}', 'KK')">⬇ Unduh</button>` : `-`;
                 
-                // Fallback untuk data lama yang masih pakai kolom 'ortu' dan 'pekerjaan'
-                const fallbackAyah = p.ayah || p.ortu || '';
-                const fallbackKerjaAyah = p.kerjaAyah || p.pekerjaan || '';
-
                 const tr = `<tr>
                     <td style="text-align: center;"><input type="checkbox" class="check-item" value="${index}"></td>
                     <td style="text-align: center;">${nomorUrut}</td>
                     <td>${p.nama || ''}</td>
+                    <td>${p.nis || ''}</td>
                     <td>${p.nisn || ''}</td>
                     <td>${p.nik || ''}</td>
                     <td>${displayKelas}</td>
@@ -362,8 +416,8 @@
                     <td>${p.agama || ''}</td>
                     <td>${p.alamat || ''}</td>
                     <td>${p.kk || ''}</td>
-                    <td>${fallbackAyah}</td>
-                    <td>${fallbackKerjaAyah}</td>
+                    <td>${p.ayah || ''}</td>
+                    <td>${p.kerjaAyah || ''}</td>
                     <td>${p.ibu || ''}</td>
                     <td>${p.kerjaIbu || ''}</td>
                     <td>${p.hp || ''}</td>
@@ -381,18 +435,19 @@
         });
     }
 
+    // --- CHECKBOX SELECTION ---
     window.toggleSelectAll = function(source) {
         const checkboxes = document.querySelectorAll('.check-item');
         checkboxes.forEach(cb => cb.checked = source.checked);
     }
 
+    // --- FUNGSI HAPUS MASSAL ---
     window.hapusTerpilih = function() {
         const checkboxes = document.querySelectorAll('.check-item:checked');
         if (checkboxes.length === 0) {
             alert("Silakan pilih/centang data yang ingin dihapus terlebih dahulu!");
             return;
         }
-
         if(confirm(`Yakin menghapus ${checkboxes.length} data siswa secara permanen?`)) {
             checkboxes.forEach(cb => {
                 const key = window.dataKeys[cb.value];
@@ -402,6 +457,68 @@
         }
     }
 
+    // --- FUNGSI CETAK BIODATA (POP-UP & PRINT) ---
+    window.bukaModalCetak = function() {
+        const checkboxes = document.querySelectorAll('.check-item:checked');
+        if (checkboxes.length === 0) {
+            alert("Silakan pilih/centang data siswa yang ingin dicetak biodatanya!");
+            return;
+        }
+        
+        const previewArea = document.getElementById('preview-cetak-area');
+        const printArea = document.getElementById('area-cetak-biodata');
+        previewArea.innerHTML = "";
+        printArea.innerHTML = "";
+        
+        checkboxes.forEach(cb => {
+            const p = window.dataPeserta[cb.value];
+            const fotoHTML = p.foto ? `<img src="${p.foto}">` : `<span>Pas Foto<br>3x4</span>`;
+            
+            // Susunan layout Biodata
+            const biodataHTML = `
+            <div class="biodata-container">
+                <div class="biodata-header">BIODATA SISWA</div>
+                <div class="biodata-body">
+                    <table class="biodata-table">
+                        <tr><td>Nama Lengkap</td><td>:</td><td>${p.nama || '-'}</td></tr>
+                        <tr><td>NIS / NISN</td><td>:</td><td>${p.nis || '-'} / ${p.nisn || '-'}</td></tr>
+                        <tr><td>NIK</td><td>:</td><td>${p.nik || '-'}</td></tr>
+                        <tr><td>Kelas</td><td>:</td><td>${window.formatKelasBaku(p.kelas) || '-'}</td></tr>
+                        <tr><td>Tempat, Tgl Lahir</td><td>:</td><td>${p.ttl || '-'}</td></tr>
+                        <tr><td>Jenis Kelamin</td><td>:</td><td>${p.jk || '-'}</td></tr>
+                        <tr><td>Agama</td><td>:</td><td>${p.agama || '-'}</td></tr>
+                        <tr><td>Alamat Lengkap</td><td>:</td><td>${p.alamat || '-'}</td></tr>
+                        <tr><td>Nomor KK</td><td>:</td><td>${p.kk || '-'}</td></tr>
+                        <tr><td>Nama Ayah</td><td>:</td><td>${p.ayah || '-'}</td></tr>
+                        <tr><td>Pekerjaan Ayah</td><td>:</td><td>${p.kerjaAyah || '-'}</td></tr>
+                        <tr><td>Nama Ibu</td><td>:</td><td>${p.ibu || '-'}</td></tr>
+                        <tr><td>Pekerjaan Ibu</td><td>:</td><td>${p.kerjaIbu || '-'}</td></tr>
+                        <tr><td>Nomor HP Orang Tua</td><td>:</td><td>${p.hp || '-'}</td></tr>
+                    </table>
+                    <div style="width: 25%; display: flex; justify-content: flex-end;">
+                        <div class="biodata-photo">${fotoHTML}</div>
+                    </div>
+                </div>
+            </div>
+            `;
+            // Masukkan layout ke area preview pop-up dan area yang akan di-print
+            previewArea.innerHTML += biodataHTML;
+            printArea.innerHTML += biodataHTML;
+        });
+        
+        document.getElementById('modalCetak').style.display = 'block';
+    }
+
+    window.tutupModalCetak = function() {
+        document.getElementById('modalCetak').style.display = 'none';
+    }
+
+    // Menjalankan fungsi bawaan browser untuk print kertas
+    window.prosesCetak = function() {
+        window.print();
+    }
+
+    // --- FUNGSI MODAL FORM SISWA ---
     window.bukaModalForm = function(index = null) {
         document.getElementById('modalForm').style.display = 'block';
         
@@ -415,6 +532,7 @@
             
             const p = window.dataPeserta[index];
             document.getElementById('form-nama').value = p.nama || '';
+            document.getElementById('form-nis').value = p.nis || '';
             document.getElementById('form-nisn').value = p.nisn || '';
             document.getElementById('form-nik').value = p.nik || '';
             document.getElementById('form-kelas').value = window.formatKelasBaku(p.kelas);
@@ -423,13 +541,10 @@
             document.getElementById('form-agama').value = p.agama || 'Islam';
             document.getElementById('form-alamat').value = p.alamat || '';
             document.getElementById('form-kk').value = p.kk || '';
-            
-            // Handle fallback data lama
-            document.getElementById('form-ayah').value = p.ayah || p.ortu || '';
-            document.getElementById('form-kerja-ayah').value = p.kerjaAyah || p.pekerjaan || '';
+            document.getElementById('form-ayah').value = p.ayah || '';
+            document.getElementById('form-kerja-ayah').value = p.kerjaAyah || '';
             document.getElementById('form-ibu').value = p.ibu || '';
             document.getElementById('form-kerja-ibu').value = p.kerjaIbu || '';
-            
             document.getElementById('form-hp').value = p.hp || '';
             
             document.getElementById('hidden-foto').value = p.foto || '';
@@ -439,6 +554,7 @@
             document.getElementById('modal-judul').innerText = "Tambah Siswa Baru";
             document.getElementById('form-index').value = "";
             document.getElementById('form-nama').value = "";
+            document.getElementById('form-nis').value = "";
             document.getElementById('form-nisn').value = "";
             document.getElementById('form-nik').value = "";
             document.getElementById('form-kelas').value = "";
@@ -447,12 +563,10 @@
             document.getElementById('form-agama').value = "Islam";
             document.getElementById('form-alamat').value = "";
             document.getElementById('form-kk').value = "";
-            
             document.getElementById('form-ayah').value = "";
             document.getElementById('form-kerja-ayah').value = "";
             document.getElementById('form-ibu').value = "";
             document.getElementById('form-kerja-ibu').value = "";
-            
             document.getElementById('form-hp').value = "";
             
             document.getElementById('hidden-foto').value = "";
@@ -463,6 +577,7 @@
 
     window.tutupModalForm = function() { document.getElementById('modalForm').style.display = 'none'; }
 
+    // --- FUNGSI SIMPAN SISWA KE DATABASE ---
     window.simpanSiswa = function() {
         const index = document.getElementById('form-index').value;
         const inputNama = String(document.getElementById('form-nama').value).trim().toUpperCase();
@@ -474,6 +589,7 @@
 
         const dataBaru = {
             nama: inputNama,
+            nis: document.getElementById('form-nis').value,
             nisn: document.getElementById('form-nisn').value,
             nik: document.getElementById('form-nik').value,
             kelas: window.formatKelasBaku(document.getElementById('form-kelas').value),
@@ -513,12 +629,12 @@
     // --- FUNGSI EXCEL DOWNLOAD TEMPLATE ---
     window.downloadTemplateExcel = function() {
         const dataTemplate = [
-            ["Nama Lengkap", "NISN", "NIK", "Kelas", "Tempat, Tgl Lahir", "L/P", "Agama", "Alamat Lengkap", "No. KK", "Nama Ayah", "Pekerjaan Ayah", "Nama Ibu", "Pekerjaan Ibu", "No. HP Ortu"],
-            ["CONTOH NAMA SISWA", "1234567890", "3524000000", "1", "Lamongan, 17 Agustus 2010", "Laki-laki", "Islam", "Jl. Merdeka No 1", "3524111111", "Budi", "Petani", "Wati", "Ibu Rumah Tangga", "08123456789"]
+            ["Nama Lengkap", "NIS", "NISN", "NIK", "Kelas", "Tempat, Tgl Lahir", "L/P", "Agama", "Alamat Lengkap", "No. KK", "Nama Ayah", "Pekerjaan Ayah", "Nama Ibu", "Pekerjaan Ibu", "No. HP Ortu"],
+            ["CONTOH NAMA SISWA", "1011", "1234567890", "3524000000", "1", "Lamongan, 17 Agustus 2010", "Laki-laki", "Islam", "Jl. Merdeka No 1", "3524111111", "Budi", "Petani", "Wati", "Ibu Rumah Tangga", "08123456789"]
         ];
         const workbook = window.XLSX.utils.book_new();
         const worksheet = window.XLSX.utils.aoa_to_sheet(dataTemplate);
-        worksheet['!cols'] = [ {wch: 30}, {wch: 15}, {wch: 20}, {wch: 10}, {wch: 25}, {wch: 12}, {wch: 10}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 15}, {wch: 20}, {wch: 15}, {wch: 15} ];
+        worksheet['!cols'] = [ {wch: 30}, {wch: 10}, {wch: 15}, {wch: 20}, {wch: 10}, {wch: 25}, {wch: 12}, {wch: 10}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 15}, {wch: 20}, {wch: 15}, {wch: 15} ];
         
         window.XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Siswa");
         window.XLSX.writeFile(workbook, "Template_Data_Siswa.xlsx");
@@ -550,6 +666,7 @@
                     const newSiswaRef = push(ref(db, 'siswa'));
                     set(newSiswaRef, {
                         nama: String(nama).trim().toUpperCase(), 
+                        nis: getVal(["nis", "induk siswa"]) || "", 
                         nisn: getVal(["nisn"]) || "", 
                         nik: getVal(["nik"]) || "", 
                         kelas: window.formatKelasBaku(getVal(["kelas", "kls"])),
