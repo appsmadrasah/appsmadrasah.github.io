@@ -10,11 +10,12 @@
     <style>
         /* === CSS APLIKASI UTAMA === */
         body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
-        .app-container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .app-container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #333; margin-top: 5px; }
 
-        /* Tabel Data & Form */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;}
+        /* Tabel Data & Form - Dibuat Responsive (Bisa digeser horizontal) */
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
         table, th, td { border: 1px solid #ddd; }
         th, td { padding: 8px; text-align: left; }
         th { background-color: #4CAF50; color: white; }
@@ -22,6 +23,7 @@
         /* Tombol Aksi Tabel */
         .btn-edit { padding: 5px; background: #FFC107; color: black; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;}
         .btn-hapus { padding: 5px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;}
+        .btn-file { padding: 4px 8px; background: #2196F3; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; text-decoration: none;}
         
         /* Tombol Toolbar Atas */
         .toolbar { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;}
@@ -32,29 +34,30 @@
         .btn-excel { background: #1b7339; }    
         .btn-hapus-massal { background: #f44336; } 
         
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
-        .form-group input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        /* Form dalam Modal */
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 4px; font-size: 13px;}
+        .form-group input[type="text"], .form-group select, .form-group input[type="file"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .file-info { font-size: 11px; color: red; margin-top: 3px; }
         
-        /* === CSS MODAL (POP-UP FORM) === */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fff; margin: 5% auto; padding: 20px; border-radius: 8px; width: 400px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-        .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between;}
+        /* === CSS MODAL (POP-UP FORM) - Dibuat Scrollable === */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
+        .modal-content { background-color: #fff; margin: 2% auto; padding: 20px; border-radius: 8px; width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; position: sticky; top: 0; background: #fff; padding-bottom: 10px; border-bottom: 1px solid #eee;}
         .close-btn { cursor: pointer; color: red; font-weight: bold; font-size: 20px;}
-        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-        .btn-batal { background: #ccc; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; position: sticky; bottom: 0; background: #fff; padding-top: 10px; border-top: 1px solid #eee;}
+        .btn-batal { background: #ccc; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
         .btn-simpan { padding: 10px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="app-container" id="app-container">
-    <h2>Data Siswa</h2>
+    <h2>Data Lengkap Siswa</h2>
     
     <div class="toolbar">
         <button class="btn-toolbar btn-tambah" onclick="bukaModalForm()">➕ Tambah Siswa</button>
         
-        <!-- Fitur Dropdown Sortir Kelas -->
         <select class="btn-toolbar btn-sortir" id="filter-kelas" onchange="renderTabel()">
             <option value="semua" style="color: black;">🔃 Filter Kelas (Semua)</option>
             <option value="1" style="color: black;">Kelas 1</option>
@@ -72,25 +75,38 @@
         <button class="btn-toolbar btn-hapus-massal" onclick="hapusTerpilih()">🗑️ Hapus Terpilih</button>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 30px; text-align: center;">
-                    <input type="checkbox" id="check-all" onclick="toggleSelectAll(this)" title="Pilih Semua">
-                </th>
-                <th style="width: 40px; text-align: center;">No.</th>
-                <th>Nama</th>
-                <th>Tgl Lahir</th>
-                <th>No. Ujian</th>
-                <th>NISN</th>
-                <th>Kelas</th>
-                <th style="width: 80px; text-align:center;">Aksi</th>
-            </tr>
-        </thead>
-        <tbody id="tabel-body">
-            <!-- Data akan dimuat secara otomatis dari Firebase -->
-        </tbody>
-    </table>
+    <!-- Wrapper agar tabel bisa digeser ke samping -->
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 30px; text-align: center;">
+                        <input type="checkbox" id="check-all" onclick="toggleSelectAll(this)" title="Pilih Semua">
+                    </th>
+                    <th style="text-align: center;">No.</th>
+                    <th>Nama Lengkap</th>
+                    <th>NISN</th>
+                    <th>NIK</th>
+                    <th>Kelas</th>
+                    <th>Tempat, Tgl Lahir</th>
+                    <th>L/P</th>
+                    <th>Agama</th>
+                    <th>Alamat Lengkap</th>
+                    <th>No. KK</th>
+                    <th>Nama Ayah & Ibu</th>
+                    <th>Pekerjaan Ortu</th>
+                    <th>No. HP Ortu</th>
+                    <th>Pas Foto</th>
+                    <th>Akta</th>
+                    <th>KK</th>
+                    <th style="text-align:center;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tabel-body">
+                <!-- Data akan dimuat otomatis -->
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Modal Tambah / Edit Siswa -->
@@ -100,18 +116,53 @@
             <span id="modal-judul">Tambah Siswa</span>
             <span class="close-btn" onclick="tutupModalForm()">&times;</span>
         </div>
+        
         <input type="hidden" id="form-index" value=""> 
-        <div class="form-group"><label>Nama Peserta:</label><input type="text" id="form-nama" autocomplete="off"></div>
-        <div class="form-group"><label>Tanggal Lahir:</label><input type="text" id="form-tgl" placeholder="Contoh: 2006-03-08" autocomplete="off"></div>
-        <div class="form-group">
-            <label>Nomor Ujian:</label>
-            <input type="text" id="form-no" autocomplete="off" placeholder="Kosongkan agar terisi otomatis (6 Digit)">
-        </div>
+        
+        <!-- Field Teks -->
+        <div class="form-group"><label>Nama Lengkap:</label><input type="text" id="form-nama" autocomplete="off"></div>
         <div class="form-group"><label>NISN:</label><input type="text" id="form-nisn" autocomplete="off"></div>
+        <div class="form-group"><label>NIK:</label><input type="text" id="form-nik" autocomplete="off"></div>
+        <div class="form-group"><label>Kelas:</label><input type="text" id="form-kelas" autocomplete="off" placeholder="Contoh: 1, otomatis jadi 1 (Satu)"></div>
+        <div class="form-group"><label>Tempat, Tanggal Lahir:</label><input type="text" id="form-ttl" autocomplete="off" placeholder="Contoh: Lamongan, 12 Agustus 2010"></div>
+        
         <div class="form-group">
-            <label>Kelas:</label>
-            <input type="text" id="form-kelas" autocomplete="off" placeholder="Contoh: Ketik angka 1, otomatis jadi 1 (Satu)">
+            <label>Jenis Kelamin:</label>
+            <select id="form-jk">
+                <option value="Laki-laki">Laki-laki</option>
+                <option value="Perempuan">Perempuan</option>
+            </select>
         </div>
+        
+        <div class="form-group"><label>Agama:</label><input type="text" id="form-agama" autocomplete="off" value="Islam"></div>
+        <div class="form-group"><label>Alamat Lengkap:</label><input type="text" id="form-alamat" autocomplete="off"></div>
+        <div class="form-group"><label>Nomor KK:</label><input type="text" id="form-kk" autocomplete="off"></div>
+        <div class="form-group"><label>Nama Ayah dan Ibu:</label><input type="text" id="form-ortu" autocomplete="off" placeholder="Ayah: ... / Ibu: ..."></div>
+        <div class="form-group"><label>Pekerjaan Orang Tua:</label><input type="text" id="form-pekerjaan" autocomplete="off"></div>
+        <div class="form-group"><label>Nomor HP Orang Tua:</label><input type="text" id="form-hp" autocomplete="off"></div>
+
+        <hr style="margin: 20px 0; border: 0.5px solid #ddd;">
+        
+        <!-- Field Upload Berkas -->
+        <div class="form-group">
+            <label>Pas Foto:</label>
+            <input type="file" id="form-foto" accept="image/*" onchange="encodeFile(this, 'hidden-foto')">
+            <div class="file-info">*Maksimal 2MB (Format: JPG/PNG)</div>
+            <input type="hidden" id="hidden-foto">
+        </div>
+        <div class="form-group">
+            <label>Akta Kelahiran:</label>
+            <input type="file" id="form-akta" accept="image/*,.pdf" onchange="encodeFile(this, 'hidden-akta')">
+            <div class="file-info">*Maksimal 2MB (Format: JPG/PNG/PDF)</div>
+            <input type="hidden" id="hidden-akta">
+        </div>
+        <div class="form-group">
+            <label>Kartu Keluarga (KK):</label>
+            <input type="file" id="form-filekk" accept="image/*,.pdf" onchange="encodeFile(this, 'hidden-filekk')">
+            <div class="file-info">*Maksimal 2MB (Format: JPG/PNG/PDF)</div>
+            <input type="hidden" id="hidden-filekk">
+        </div>
+
         <div class="modal-footer">
             <button class="btn-batal" onclick="tutupModalForm()">Batal</button>
             <button class="btn-simpan" onclick="simpanSiswa()">Simpan Data</button>
@@ -125,7 +176,7 @@
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
     import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
-    // Firebase configuration
+    // Konfigurasi Firebase Anda
     const firebaseConfig = {
         apiKey: "AIzaSyCae3CoI4eWy9T6yhf_yGvoHiyoAJ7gUyA",
         authDomain: "datasiswa-65abf.firebaseapp.com",
@@ -137,7 +188,6 @@
         measurementId: "G-D6YZGM4KT5"
     };
 
-    // Inisialisasi Firebase & Database
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getDatabase(app);
@@ -183,6 +233,40 @@
         return str;
     }
 
+    // --- FUNGSI MEMBACA FILE MENJADI BASE64 (Dibatasi 2MB) ---
+    window.encodeFile = function(element, hiddenId) {
+        const file = element.files[0];
+        if (file) {
+            // Batas maksimal 2MB agar Firebase tidak nge-lag
+            if(file.size > 2 * 1024 * 1024) {
+                alert("Gagal: Ukuran file terlalu besar! Maksimal 2MB per file.");
+                element.value = ""; 
+                document.getElementById(hiddenId).value = "";
+                return;
+            }
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                document.getElementById(hiddenId).value = reader.result;
+            }
+            reader.readAsDataURL(file);
+        } else {
+            document.getElementById(hiddenId).value = "";
+        }
+    }
+
+    // --- FUNGSI MEMBUKA FILE DI TAB BARU ---
+    window.bukaFile = function(base64String) {
+        if(!base64String) return;
+        const newWindow = window.open();
+        if(newWindow) {
+            if(base64String.startsWith("data:image")) {
+                newWindow.document.write(`<img src="${base64String}" style="max-width:100%;">`);
+            } else {
+                newWindow.document.write(`<iframe src="${base64String}" width="100%" height="100%" style="border:none;"></iframe>`);
+            }
+        }
+    }
+
     // Fungsi Render Tabel
     window.renderTabel = function() {
         const tbody = document.getElementById("tabel-body");
@@ -201,24 +285,35 @@
             if (filterValue !== "semua") {
                 const matchNumber = displayKelas.match(/\d+/);
                 const classNumber = matchNumber ? matchNumber[0] : "";
-                
-                if (classNumber !== filterValue) {
-                    tampilkan = false;
-                }
+                if (classNumber !== filterValue) tampilkan = false;
             }
 
             if (tampilkan) {
-                // Di sini ada tepat 8 <td> sesuai dengan 8 <th> di atas
+                // Menentukan Tampilan Tombol File
+                const btnFoto = p.foto ? `<button class="btn-file" onclick="bukaFile('${p.foto}')">Lihat</button>` : `-`;
+                const btnAkta = p.akta ? `<button class="btn-file" onclick="bukaFile('${p.akta}')">Lihat</button>` : `-`;
+                const btnKK = p.filekk ? `<button class="btn-file" onclick="bukaFile('${p.filekk}')">Lihat</button>` : `-`;
+
                 const tr = `<tr>
                     <td style="text-align: center;">
                         <input type="checkbox" class="check-item" value="${index}">
                     </td>
                     <td style="text-align: center;">${nomorUrut}</td>
                     <td>${p.nama || ''}</td>
-                    <td>${p.tglLahir || ''}</td>
-                    <td>${p.noUjian || ''}</td>
                     <td>${p.nisn || ''}</td>
+                    <td>${p.nik || ''}</td>
                     <td>${displayKelas}</td>
+                    <td>${p.ttl || ''}</td>
+                    <td>${p.jk || ''}</td>
+                    <td>${p.agama || ''}</td>
+                    <td>${p.alamat || ''}</td>
+                    <td>${p.kk || ''}</td>
+                    <td>${p.ortu || ''}</td>
+                    <td>${p.pekerjaan || ''}</td>
+                    <td>${p.hp || ''}</td>
+                    <td style="text-align: center;">${btnFoto}</td>
+                    <td style="text-align: center;">${btnAkta}</td>
+                    <td style="text-align: center;">${btnKK}</td>
                     <td style="text-align:center;">
                         <button class="btn-edit" onclick="bukaModalForm(${index})" title="Edit Data">✏️</button>
                         <button class="btn-hapus" onclick="hapusSiswa(${index})" title="Hapus Data">🗑️</button>
@@ -230,7 +325,6 @@
         });
     }
 
-    // Fungsi Hapus Massal (Checkbox)
     window.toggleSelectAll = function(source) {
         const checkboxes = document.querySelectorAll('.check-item');
         checkboxes.forEach(cb => cb.checked = source.checked);
@@ -243,80 +337,96 @@
             return;
         }
 
-        if(confirm(`Peringatan: Anda yakin ingin menghapus ${checkboxes.length} data siswa yang terpilih secara permanen?`)) {
+        if(confirm(`Yakin menghapus ${checkboxes.length} data siswa secara permanen?`)) {
             checkboxes.forEach(cb => {
-                const index = cb.value;
-                const key = window.dataKeys[index];
+                const key = window.dataKeys[cb.value];
                 if (key) remove(ref(db, `siswa/${key}`)); 
             });
             document.getElementById('check-all').checked = false;
         }
     }
 
-    // Modal
     window.bukaModalForm = function(index = null) {
         document.getElementById('modalForm').style.display = 'block';
+        
+        // Reset file inputs visual
+        document.getElementById('form-foto').value = '';
+        document.getElementById('form-akta').value = '';
+        document.getElementById('form-filekk').value = '';
+
         if(index !== null) {
             document.getElementById('modal-judul').innerText = "Edit Siswa";
             document.getElementById('form-index').value = index;
-            document.getElementById('form-nama').value = window.dataPeserta[index].nama || '';
-            document.getElementById('form-tgl').value = window.dataPeserta[index].tglLahir || '';
-            document.getElementById('form-no').value = window.dataPeserta[index].noUjian || '';
-            document.getElementById('form-nisn').value = window.dataPeserta[index].nisn || '';
-            document.getElementById('form-kelas').value = window.formatKelasBaku(window.dataPeserta[index].kelas);
+            
+            const p = window.dataPeserta[index];
+            document.getElementById('form-nama').value = p.nama || '';
+            document.getElementById('form-nisn').value = p.nisn || '';
+            document.getElementById('form-nik').value = p.nik || '';
+            document.getElementById('form-kelas').value = window.formatKelasBaku(p.kelas);
+            document.getElementById('form-ttl').value = p.ttl || '';
+            document.getElementById('form-jk').value = p.jk || 'Laki-laki';
+            document.getElementById('form-agama').value = p.agama || 'Islam';
+            document.getElementById('form-alamat').value = p.alamat || '';
+            document.getElementById('form-kk').value = p.kk || '';
+            document.getElementById('form-ortu').value = p.ortu || '';
+            document.getElementById('form-pekerjaan').value = p.pekerjaan || '';
+            document.getElementById('form-hp').value = p.hp || '';
+            
+            // Set hidden fields file
+            document.getElementById('hidden-foto').value = p.foto || '';
+            document.getElementById('hidden-akta').value = p.akta || '';
+            document.getElementById('hidden-filekk').value = p.filekk || '';
         } else {
             document.getElementById('modal-judul').innerText = "Tambah Siswa Baru";
             document.getElementById('form-index').value = "";
             document.getElementById('form-nama').value = "";
-            document.getElementById('form-tgl').value = "";
-            document.getElementById('form-no').value = "";
             document.getElementById('form-nisn').value = "";
+            document.getElementById('form-nik').value = "";
             document.getElementById('form-kelas').value = "";
+            document.getElementById('form-ttl').value = "";
+            document.getElementById('form-jk').value = "Laki-laki";
+            document.getElementById('form-agama').value = "Islam";
+            document.getElementById('form-alamat').value = "";
+            document.getElementById('form-kk').value = "";
+            document.getElementById('form-ortu').value = "";
+            document.getElementById('form-pekerjaan').value = "";
+            document.getElementById('form-hp').value = "";
+            
+            document.getElementById('hidden-foto').value = "";
+            document.getElementById('hidden-akta').value = "";
+            document.getElementById('hidden-filekk').value = "";
         }
     }
 
     window.tutupModalForm = function() { document.getElementById('modalForm').style.display = 'none'; }
 
-    // --- FUNGSI GENERATE NOMOR UJIAN OTOMATIS ---
-    window.generateNoUjian = function(currentMaxOverride = null) {
-        let maxNo = currentMaxOverride || 0;
-        
-        if (currentMaxOverride === null) {
-            window.dataPeserta.forEach(p => {
-                let num = parseInt(p.noUjian, 10);
-                if (!isNaN(num) && num > maxNo) {
-                    maxNo = num;
-                }
-            });
-        }
-        
-        return String(maxNo + 1).padStart(6, '0');
-    }
-
-    // Simpan Data Manual
     window.simpanSiswa = function() {
         const index = document.getElementById('form-index').value;
-        let inputNoUjian = document.getElementById('form-no').value.trim();
-        let inputKelas = document.getElementById('form-kelas').value.trim();
+        const inputNama = document.getElementById('form-nama').value.toUpperCase();
         
-        if (inputNoUjian === "") {
-            inputNoUjian = window.generateNoUjian();
-        }
-
-        inputKelas = window.formatKelasBaku(inputKelas);
-
-        const dataBaru = {
-            nama: document.getElementById('form-nama').value.toUpperCase(),
-            tglLahir: document.getElementById('form-tgl').value,
-            noUjian: inputNoUjian,
-            nisn: document.getElementById('form-nisn').value,
-            kelas: inputKelas
-        };
-
-        if(dataBaru.nama === "" || dataBaru.nisn === "") { 
-            alert("Nama dan NISN tidak boleh kosong!"); 
+        if(inputNama === "") { 
+            alert("Nama Lengkap tidak boleh kosong!"); 
             return; 
         }
+
+        const dataBaru = {
+            nama: inputNama,
+            nisn: document.getElementById('form-nisn').value,
+            nik: document.getElementById('form-nik').value,
+            kelas: window.formatKelasBaku(document.getElementById('form-kelas').value),
+            ttl: document.getElementById('form-ttl').value,
+            jk: document.getElementById('form-jk').value,
+            agama: document.getElementById('form-agama').value,
+            alamat: document.getElementById('form-alamat').value,
+            kk: document.getElementById('form-kk').value,
+            ortu: document.getElementById('form-ortu').value,
+            pekerjaan: document.getElementById('form-pekerjaan').value,
+            hp: document.getElementById('form-hp').value,
+            // Simpan Base64 File
+            foto: document.getElementById('hidden-foto').value,
+            akta: document.getElementById('hidden-akta').value,
+            filekk: document.getElementById('hidden-filekk').value
+        };
 
         if(index === "") {
             const newSiswaRef = push(ref(db, 'siswa'));
@@ -330,27 +440,26 @@
     }
 
     window.hapusSiswa = function(index) {
-        const namaSiswa = window.dataPeserta[index].nama;
-        if(confirm(`Yakin ingin menghapus data ${namaSiswa}?`)) {
+        if(confirm(`Yakin ingin menghapus data ${window.dataPeserta[index].nama}?`)) {
             const key = window.dataKeys[index];
             remove(ref(db, `siswa/${key}`));
         }
     }
 
+    // --- FUNGSI EXCEL (Disesuaikan dengan kolom baru, TANPA FILE UPLOAD) ---
     window.downloadTemplateExcel = function() {
         const dataTemplate = [
-            ["Nama", "Tgl Lahir", "No. Ujian", "NISN", "Kelas"],
-            ["CONTOH NAMA SISWA", "2006-03-08", "", "1234567890", "6"]
+            ["Nama Lengkap", "NISN", "NIK", "Kelas", "Tempat Tgl Lahir", "Jenis Kelamin", "Agama", "Alamat Lengkap", "Nomor KK", "Nama Ayah Ibu", "Pekerjaan", "Nomor HP"],
+            ["CONTOH NAMA SISWA", "1234567890", "3524000000", "6", "Lamongan, 17 Agustus 2010", "Laki-laki", "Islam", "Jl. Merdeka No 1", "3524111111", "Budi / Wati", "Petani", "08123456789"]
         ];
         const workbook = window.XLSX.utils.book_new();
         const worksheet = window.XLSX.utils.aoa_to_sheet(dataTemplate);
-        worksheet['!cols'] = [ { wch: 30 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 } ];
+        worksheet['!cols'] = [ {wch: 30}, {wch: 15}, {wch: 20}, {wch: 10}, {wch: 25}, {wch: 15}, {wch: 10}, {wch: 30}, {wch: 20}, {wch: 25}, {wch: 15}, {wch: 15} ];
         
         window.XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Siswa");
-        window.XLSX.writeFile(workbook, "Template_Data_Siswa.xlsx");
+        window.XLSX.writeFile(workbook, "Template_Data_Baru.xlsx");
     }
 
-    // Impor Excel
     window.prosesImporExcel = function(event) {
         const file = event.target.files[0];
         if(!file) return;
@@ -363,14 +472,6 @@
             const jsonSheet = window.XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {raw: false});
             
             let berhasil = 0;
-            
-            let currentMaxNo = 0;
-            window.dataPeserta.forEach(p => {
-                let num = parseInt(p.noUjian, 10);
-                if (!isNaN(num) && num > currentMaxNo) {
-                    currentMaxNo = num;
-                }
-            });
 
             jsonSheet.forEach(row => {
                 const keys = Object.keys(row);
@@ -380,34 +481,28 @@
                 };
 
                 const nama = getVal(["nama"]);
-                const tgl = getVal(["lahir", "tanggal", "tgl", "ttl"]); 
-                let no = getVal(["ujian", "nomor", "peserta", "no. ", "no "]);
-                const nisn = getVal(["nisn"]);
-                let kelas = getVal(["kelas", "kls"]);
-                
-                if(!no || String(no).trim() === "") {
-                    no = window.generateNoUjian(currentMaxNo);
-                    currentMaxNo++; 
-                } else {
-                    no = String(no).trim();
-                }
-
-                let stringKelas = window.formatKelasBaku(kelas);
-
-                if(nama && nisn) { 
+                if(nama) { 
                     const newSiswaRef = push(ref(db, 'siswa'));
                     set(newSiswaRef, {
                         nama: String(nama).toUpperCase(), 
-                        tglLahir: tgl || "", 
-                        noUjian: no, 
-                        nisn: nisn, 
-                        kelas: stringKelas
+                        nisn: getVal(["nisn"]) || "", 
+                        nik: getVal(["nik"]) || "", 
+                        kelas: window.formatKelasBaku(getVal(["kelas", "kls"])),
+                        ttl: getVal(["tempat", "tgl", "lahir"]) || "",
+                        jk: getVal(["jenis", "kelamin", "l/p"]) || "",
+                        agama: getVal(["agama"]) || "",
+                        alamat: getVal(["alamat"]) || "",
+                        kk: getVal(["kk", "kartu keluarga"]) || "",
+                        ortu: getVal(["ayah", "ibu", "ortu"]) || "",
+                        pekerjaan: getVal(["pekerjaan", "kerja"]) || "",
+                        hp: getVal(["hp", "telepon"]) || "",
+                        foto: "", akta: "", filekk: ""
                     });
                     berhasil++;
                 }
             });
 
-            alert(`Selesai! Berhasil mengirimkan ${berhasil} data siswa baru ke cloud Firebase.\nNomor ujian otomatis dibuatkan.\nFormat kelas otomatis disesuaikan.`);
+            alert(`Selesai! Berhasil mengirimkan ${berhasil} data siswa dari Excel ke Firebase.`);
             document.getElementById('inputExcel').value = ""; 
         };
         reader.readAsArrayBuffer(file);
