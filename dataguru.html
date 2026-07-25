@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Penyimpanan Data Guru</title>
+    
+    <!-- FontAwesome untuk Ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Library SheetJS untuk Export ke Excel murni (.xlsx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: #f4f7f6; color: #333; display: block; }
+
+        /* --- Header & Navigasi --- */
+        .top-container {
+            background-color: #ffffff;
+            padding: 30px 40px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            border-top: 5px solid #f4f7f6; 
+        }
+
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 800;
+            color: #2b4b66; 
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            letter-spacing: 0.5px;
+        }
+
+        .menu-wrapper { display: flex; gap: 10px; justify-content: flex-start; }
+        
+        .menu-btn {
+            padding: 10px 20px; font-size: 13px; font-weight: 700; text-transform: uppercase;
+            cursor: pointer; border-radius: 3px; transition: all 0.2s ease;
+            background-color: #f1f1f1; color: #333; border: 1px solid #ddd;
+        }
+        .menu-btn:hover { background-color: #e2e2e2; }
+        .menu-btn.active { background-color: #4CAF50; color: #ffffff; border: 1px solid #1a1a1a; }
+
+        /* --- Main Content --- */
+        .main-content { width: 100%; padding: 0 40px 40px 40px; }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+
+        /* Toolbar */
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .search-bar { padding: 10px 15px; width: 350px; border: 1px solid #ddd; border-radius: 4px; outline: none; font-size: 14px;}
+        .search-bar:focus { border-color: #4CAF50; }
+        
+        .toolbar-actions { display: flex; gap: 10px; }
+
+        /* Buttons */
+        .btn { padding: 9px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; font-size: 13px;}
+        .btn-primary { background-color: #2b4b66; color: white; }
+        .btn-primary:hover { background-color: #1a3347; }
+        .btn-success { background-color: #2ecc71; color: white; }
+        .btn-success:hover { background-color: #27ae60; }
+        .btn-danger { background-color: #e74c3c; color: white; }
+        .btn-danger:hover { background-color: #c0392b; }
+        .btn-info { background-color: #f39c12; color: white; }
+        .btn-info:hover { background-color: #d68910; }
+        .btn-excel { background-color: #107c41; color: white; } 
+        .btn-excel:hover { background-color: #0c5e31; }
+        .btn-secondary { background-color: #95a5a6; color: white; }
+
+        /* Tables */
+        .table-container { background: white; border-radius: 5px; padding: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+        th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 14px; }
+        th { background-color: #f8f9fa; color: #2c3e50; font-weight: 700; text-transform: uppercase; font-size: 12px; }
+        
+        .action-buttons { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; }
+        .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
+        .status-lengkap { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-kurang { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+
+        /* Modal Styling Umum */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; border-radius: 8px; padding: 25px; max-height: 90vh; overflow-y: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #7f8c8d; }
+        
+        /* Modal Tambah/Edit Guru (Grid Layout untuk 26 Input) */
+        .modal-tambah .modal-content { width: 900px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 10px; }
+        .form-group.full-width { grid-column: span 2; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px; color: #2c3e50; }
+        .form-control { width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; outline: none; }
+        .form-control:focus { border-color: #2b4b66; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px; grid-column: span 2;}
+
+        /* Modal Kelola Berkas */
+        .modal-berkas .modal-content { width: 750px; }
+        .doc-list { list-style: none; }
+        .doc-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f1f2f6; }
+        .doc-name { font-weight: 600; width: 45%; color: #34495e; font-size: 14px;}
+        .doc-status { width: 25%; font-size: 13px; font-weight: 500; }
+        .doc-actions { display: flex; gap: 10px; justify-content: flex-end; width: 30%;}
+        .file-input { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="top-container">
+        <h1 class="main-title">SISTEM PENYIMPANAN DATA GURU</h1>
+        <div class="menu-wrapper">
+            <button class="menu-btn active" data-target="data-guru">DATA GURU</button>
+            <button class="menu-btn" data-target="arsip">ARSIP BERKAS</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        
+        <!-- ================= SECTION 1: DATA GURU ================= -->
+        <div id="data-guru" class="content-section active">
+            <div class="toolbar">
+                <input type="text" class="search-bar" id="searchData" placeholder="Cari berdasarkan NIP atau Nama Guru..." onkeyup="searchTable('tableDataGuru', 'searchData')">
+                <div class="toolbar-actions">
+                    <button class="btn btn-excel" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel"></i> Download Excel
+                    </button>
+                    <button class="btn btn-primary" onclick="openFormModal()">
+                        <i class="fas fa-plus"></i> Tambah Guru Baru
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="tableDataGuru">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama Lengkap</th>
+                            <th>NIK</th>
+                            <th>NUPTK/NIP</th>
+                            <th>Tempat, Tgl Lahir</th>
+                            <th>Jenis Kelamin</th>
+                            <th>Agama</th>
+                            <th>Alamat Lengkap</th>
+                            <th>Telepon/HP</th>
+                            <th>Email</th>
+                            <th>Status Pegawai</th>
+                            <th>Jabatan</th>
+                            <th>Mata Pelajaran</th>
+                            <th>Pendidikan Terakhir</th>
+                            <th>Program Studi</th>
+                            <th>Nama PT</th>
+                            <th>Tahun Lulus</th>
+                            <th>Sertifikat Pendidik</th>
+                            <th>Pangkat/Golongan</th>
+                            <th>Masa Kerja</th>
+                            <th>Status Pernikahan</th>
+                            <th>Nama Pasangan</th>
+                            <th>Jumlah Anak</th>
+                            <th>No Rekening Bank</th>
+                            <th>NPWP</th>
+                            <th>BPJS</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyDataGuru">
+                        <!-- Render via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= SECTION 2: ARSIP BERKAS ================= -->
+        <div id="arsip" class="content-section">
+            <div class="toolbar">
+                <input type="text" class="search-bar" id="searchArsip" placeholder="Cari berdasarkan NIP atau Nama Guru..." onkeyup="searchTable('tableArsipBerkas', 'searchArsip')">
+            </div>
+
+            <div class="table-container">
+                <table id="tableArsipBerkas">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>NIP / NUPTK</th>
+                            <th>Nama Guru</th>
+                            <th>Status Kelengkapan</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyArsipBerkas">
+                        <!-- Render via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL TAMBAH & EDIT GURU (26 Kolom) ================= -->
+    <div class="modal-overlay modal-tambah" id="tambahModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalFormTitle">Tambah Data Guru Baru</h3>
+                <button type="button" class="close-btn" onclick="closeFormModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="formTambahGuru" onsubmit="simpanDataGuru(event)">
+                <input type="hidden" name="id" id="formGuruId">
+
+                <div class="form-grid">
+                    <div class="form-group"><label>1. Nama Lengkap (Beserta Gelar)</label><input type="text" name="nama" class="form-control" required></div>
+                    <div class="form-group"><label>2. Nomor Induk Kependudukan (NIK)</label><input type="number" name="nik" class="form-control" required></div>
+                    <div class="form-group"><label>3. NUPTK / NIP</label><input type="text" name="nip" class="form-control" required></div>
+                    <div class="form-group"><label>4. Tempat dan Tanggal Lahir</label><input type="text" name="ttl" class="form-control" placeholder="Contoh: Lamongan, 15 Agustus 1990"></div>
+                    <div class="form-group">
+                        <label>5. Jenis Kelamin</label>
+                        <select name="jk" class="form-control">
+                            <option value="Laki-laki">Laki-laki</option>
+                            <option value="Perempuan">Perempuan</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>6. Agama</label><input type="text" name="agama" class="form-control"></div>
+                    <div class="form-group full-width"><label>7. Alamat Lengkap</label><input type="text" name="alamat" class="form-control"></div>
+                    <div class="form-group"><label>8. Nomor Telepon / HP</label><input type="number" name="hp" class="form-control"></div>
+                    <div class="form-group"><label>9. Email</label><input type="email" name="email" class="form-control"></div>
+                    <div class="form-group">
+                        <label>10. Status Kepegawaian</label>
+                        <select name="status_pegawai" class="form-control">
+                            <option value="ASN">ASN</option>
+                            <option value="PPPK">PPPK</option>
+                            <option value="Honorer">Honorer</option>
+                            <option value="Yayasan">Yayasan</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>11. Jabatan</label><input type="text" name="jabatan" class="form-control" placeholder="Contoh: Wali Kelas, Guru Mapel"></div>
+                    <div class="form-group"><label>12. Mata Pelajaran yang diampu</label><input type="text" name="mapel" class="form-control"></div>
+                    <div class="form-group">
+                        <label>13. Pendidikan Terakhir</label>
+                        <select name="pendidikan" class="form-control">
+                            <option value="S1">S1</option>
+                            <option value="S2">S2</option>
+                            <option value="S3">S3</option>
+                            <option value="D3">D3</option>
+                            <option value="SMA/SMK">SMA/SMK Sederajat</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>14. Program Studi / Jurusan</label><input type="text" name="prodi" class="form-control"></div>
+                    <div class="form-group"><label>15. Nama Perguruan Tinggi</label><input type="text" name="kampus" class="form-control"></div>
+                    <div class="form-group"><label>16. Tahun Lulus</label><input type="number" name="tahun_lulus" class="form-control"></div>
+                    <div class="form-group"><label>17. Sertifikat Pendidik (Jika Ada)</label><input type="text" name="sertifikat_pendidik" class="form-control"></div>
+                    <div class="form-group"><label>18. Pangkat / Golongan (Bagi ASN)</label><input type="text" name="pangkat" class="form-control"></div>
+                    <div class="form-group"><label>19. Masa Kerja</label><input type="text" name="masa_kerja" class="form-control" placeholder="Contoh: 5 Tahun 2 Bulan"></div>
+                    <div class="form-group">
+                        <label>20. Status Pernikahan</label>
+                        <select name="status_nikah" class="form-control">
+                            <option value="Belum Menikah">Belum Menikah</option>
+                            <option value="Menikah">Menikah</option>
+                            <option value="Cerai">Cerai</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>21. Nama Pasangan</label><input type="text" name="pasangan" class="form-control"></div>
+                    <div class="form-group"><label>22. Jumlah Anak</label><input type="number" name="anak" class="form-control" value="0"></div>
+                    <div class="form-group"><label>23. Nomor Rekening Bank</label><input type="text" name="rekening" class="form-control"></div>
+                    <div class="form-group"><label>24. NPWP</label><input type="text" name="npwp" class="form-control"></div>
+                    <div class="form-group"><label>25. BPJS Kes / TK (Jika Ada)</label><input type="text" name="bpjs" class="form-control"></div>
+                    <div class="form-group"><label>26. Upload Pas Foto Terbaru (Abaikan Jika Edit)</label><input type="file" name="foto" class="form-control" accept="image/*"></div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeFormModal()">Batal</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan Data</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL KELOLA BERKAS ================= -->
+    <div class="modal-overlay modal-berkas" id="berkasModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalGuruName">Kelola Berkas - </h3>
+                <button type="button" class="close-btn" onclick="closeBerkasModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <ul class="doc-list" id="docListContainer">
+                <!-- Render via JS -->
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // --- Tab Menu Navigation ---
+        const menuBtns = document.querySelectorAll('.menu-btn');
+        const sections = document.querySelectorAll('.content-section');
+
+        menuBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                menuBtns.forEach(m => m.classList.remove('active'));
+                sections.forEach(s => s.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.getAttribute('data-target')).classList.add('active');
+            });
+        });
+
+        // --- Data Definitions ---
+        const documentTypes = [
+            { id: 'ktp', name: '1. KTP' },
+            { id: 'ijazah_mi', name: '2. Ijazah MI/SD' },
+            { id: 'ijazah_mts', name: '3. Ijazah MTs/SMP' },
+            { id: 'ijazah_sma', name: '4. Ijazah SMA/MA' },
+            { id: 'ijazah_s1', name: '5. Ijazah S1' },
+            { id: 'sk_guru', name: '6. SK Pengangkatan Guru' },
+            { id: 'sertifikat', name: '7. Sertifikat Pendidik' },
+            { id: 'buku_rekening', name: '8. Buku Rekening' }
+        ];
+
+        // Mock Database 
+        let dataGuru = [
+            {
+                id: 1, nama: 'Budi Santoso, S.Pd', nik: '352411000000001', nip: '198507232010011015',
+                ttl: 'Surabaya, 12 Juli 1985', jk: 'Laki-laki', agama: 'Islam', alamat: 'Jl. Merdeka No. 10', hp: '08123456789', email: 'budi@mail.com', status_pegawai: 'ASN', jabatan: 'Guru Kelas', mapel: 'Matematika', pendidikan: 'S1', prodi: 'Pendidikan Matematika', kampus: 'UNESA', tahun_lulus: '2008', sertifikat_pendidik: 'Ada', pangkat: 'Penata - III/c', masa_kerja: '14 Tahun', status_nikah: 'Menikah', pasangan: 'Siti', anak: '2', rekening: '1234567890 (BRI)', npwp: '12.345.678.9-000.000', bpjs: '000123456789',
+                berkas: { ktp: true, ijazah_mi: true, ijazah_mts: true, ijazah_sma: true, ijazah_s1: true, sk_guru: true, sertifikat: true, buku_rekening: false }
+            },
+            {
+                id: 2, nama: 'Siti Aminah, M.Pd', nik: '352411000000002', nip: '199011152015042003',
+                ttl: 'Malang, 15 Nov 1990', jk: 'Perempuan', agama: 'Islam', alamat: 'Jl. Mawar No. 5', hp: '08198765432', email: 'siti@mail.com', status_pegawai: 'ASN', jabatan: 'Guru Mapel', mapel: 'Bahasa Indonesia', pendidikan: 'S2', prodi: 'Pendidikan Bahasa', kampus: 'UM', tahun_lulus: '2014', sertifikat_pendidik: 'Belum', pangkat: 'Penata Muda - III/a', masa_kerja: '7 Tahun', status_nikah: 'Belum Menikah', pasangan: '-', anak: '0', rekening: '0987654321 (BNI)', npwp: '98.765.432.1-000.000', bpjs: '000987654321',
+                berkas: { ktp: true, ijazah_mi: false, ijazah_mts: false, ijazah_sma: false, ijazah_s1: true, sk_guru: false, sertifikat: false, buku_rekening: false }
+            }
+        ];
+
+        // --- Render Data Guru ---
+        function renderTableDataGuru() {
+            const tbody = document.getElementById('tbodyDataGuru');
+            tbody.innerHTML = '';
+            dataGuru.forEach((guru, index) => {
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td style="font-weight: 600;">${guru.nama}</td>
+                        <td>${guru.nik}</td>
+                        <td>${guru.nip}</td>
+                        <td>${guru.ttl}</td>
+                        <td>${guru.jk}</td>
+                        <td>${guru.agama}</td>
+                        <td>${guru.alamat}</td>
+                        <td>${guru.hp}</td>
+                        <td>${guru.email}</td>
+                        <td>${guru.status_pegawai}</td>
+                        <td>${guru.jabatan}</td>
+                        <td>${guru.mapel}</td>
+                        <td>${guru.pendidikan}</td>
+                        <td>${guru.prodi}</td>
+                        <td>${guru.kampus}</td>
+                        <td>${guru.tahun_lulus}</td>
+                        <td>${guru.sertifikat_pendidik}</td>
+                        <td>${guru.pangkat}</td>
+                        <td>${guru.masa_kerja}</td>
+                        <td>${guru.status_nikah}</td>
+                        <td>${guru.pasangan}</td>
+                        <td>${guru.anak}</td>
+                        <td>${guru.rekening}</td>
+                        <td>${guru.npwp}</td>
+                        <td>${guru.bpjs}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-info" onclick="openFormModal(${guru.id})"><i class="fas fa-edit"></i> Edit</button>
+                                <button class="btn btn-danger" onclick="hapusGuru(${guru.id})"><i class="fas fa-trash"></i> Hapus</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // --- Render Arsip Berkas ---
+        function renderTableArsip() {
+            const tbody = document.getElementById('tbodyArsipBerkas');
+            tbody.innerHTML = '';
+            dataGuru.forEach((guru, index) => {
+                const total = documentTypes.length;
+                const kumpul = Object.values(guru.berkas).filter(s => s === true).length;
+                
+                const statusHtml = (kumpul === total) 
+                    ? `<span class="status-badge status-lengkap"><i class="fas fa-check"></i> Lengkap (${kumpul}/${total})</span>` 
+                    : `<span class="status-badge status-kurang"><i class="fas fa-exclamation-triangle"></i> Kurang (${kumpul}/${total})</span>`;
+
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${guru.nip}</td>
+                        <td style="font-weight: 500;">${guru.nama}</td>
+                        <td>${statusHtml}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-info" onclick="openBerkasModal(${guru.id})">
+                                    <i class="fas fa-folder-open"></i> Kelola Berkas
+                                </button>
+                                <button class="btn btn-danger" onclick="hapusGuru(${guru.id})">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // --- Logika Tambah & Edit Guru ---
+        function openFormModal(id = null) {
+            const form = document.getElementById('formTambahGuru');
+            form.reset(); 
+            
+            if(id) {
+                document.getElementById('modalFormTitle').innerText = 'Edit Data Guru';
+                document.getElementById('formGuruId').value = id;
+                
+                const guru = dataGuru.find(g => g.id === id);
+                
+                for(let key in guru) {
+                    if (key !== 'berkas' && form.elements[key]) {
+                        form.elements[key].value = guru[key];
+                    }
+                }
+            } else {
+                document.getElementById('modalFormTitle').innerText = 'Tambah Data Guru Baru';
+                document.getElementById('formGuruId').value = '';
+            }
+            
+            document.getElementById('tambahModal').classList.add('active');
+        }
+
+        function closeFormModal() {
+            document.getElementById('tambahModal').classList.remove('active');
+        }
+
+        function simpanDataGuru(event) {
+            event.preventDefault(); 
+            
+            const formData = new FormData(event.target);
+            const newData = Object.fromEntries(formData.entries());
+            const idForm = document.getElementById('formGuruId').value;
+            
+            if (idForm) {
+                const index = dataGuru.findIndex(g => g.id == idForm);
+                newData.id = parseInt(idForm); 
+                newData.berkas = dataGuru[index].berkas; 
+                
+                dataGuru[index] = newData;
+                alert("Data Guru Berhasil Diperbarui!");
+            } else {
+                newData.id = dataGuru.length > 0 ? Math.max(...dataGuru.map(g => g.id)) + 1 : 1;
+
+                let berkasKosong = {};
+                documentTypes.forEach(doc => { berkasKosong[doc.id] = false; });
+                newData.berkas = berkasKosong;
+
+                dataGuru.push(newData);
+                alert("Data Guru Berhasil Ditambahkan!");
+            }
+
+            closeFormModal();
+            renderTableDataGuru();
+            renderTableArsip();
+        }
+
+        // --- Logika Hapus Guru ---
+        function hapusGuru(id) {
+            if(confirm("Apakah Anda yakin ingin menghapus data guru ini? Data akan hilang dari sistem.")) {
+                dataGuru = dataGuru.filter(g => g.id !== id);
+                renderTableDataGuru();
+                renderTableArsip();
+            }
+        }
+
+        // --- Logika Modal Arsip (Kelola Berkas) ---
+        let currentGuruId = null;
+
+        function openBerkasModal(id) {
+            currentGuruId = id;
+            const guru = dataGuru.find(g => g.id === id);
+            document.getElementById('modalGuruName').innerHTML = `<i class="fas fa-user"></i> ${guru.nama}`;
+            
+            const docContainer = document.getElementById('docListContainer');
+            docContainer.innerHTML = '';
+
+            documentTypes.forEach(doc => {
+                const isUploaded = guru.berkas[doc.id];
+                const statusText = isUploaded 
+                    ? '<span style="color: #27ae60; font-weight:600;"><i class="fas fa-check-circle"></i> Tersimpan</span>' 
+                    : '<span style="color: #e74c3c; font-weight:600;"><i class="fas fa-times-circle"></i> Kosong</span>';
+                
+                const btnDownload = isUploaded 
+                    ? `<button class="btn btn-success" onclick="alert('Mengunduh ${doc.name}')"><i class="fas fa-download"></i> Unduh</button>` 
+                    : `<button class="btn btn-secondary" disabled><i class="fas fa-download"></i> Unduh</button>`;
+
+                const docRow = `
+                    <li class="doc-item">
+                        <div class="doc-name">${doc.name}</div>
+                        <div class="doc-status">${statusText}</div>
+                        <div class="doc-actions">
+                            ${btnDownload}
+                            <input type="file" id="file-${doc.id}" class="file-input" onchange="handleUpload(event, '${doc.id}')" accept=".pdf, .jpg, .jpeg, .png">
+                            <button class="btn btn-primary" onclick="document.getElementById('file-${doc.id}').click()"><i class="fas fa-upload"></i> Unggah</button>
+                        </div>
+                    </li>
+                `;
+                docContainer.innerHTML += docRow;
+            });
+
+            document.getElementById('berkasModal').classList.add('active');
+        }
+
+        function closeBerkasModal() {
+            document.getElementById('berkasModal').classList.remove('active');
+            currentGuruId = null;
+            renderTableArsip(); 
+        }
+
+        function handleUpload(event, docId) {
+            const file = event.target.files[0];
+            if (file) {
+                alert(`Berhasil mengunggah berkas!`);
+                const guru = dataGuru.find(g => g.id === currentGuruId);
+                guru.berkas[docId] = true; 
+                openBerkasModal(currentGuruId); 
+            }
+        }
+
+        // --- Logika Download Asli Excel (.xlsx) dengan SheetJS ---
+        function exportToExcel() {
+            // 1. Menyusun Data agar rapi di Excel
+            const dataForExcel = dataGuru.map((guru, index) => ({
+                "No": index + 1,
+                "Nama Lengkap": guru.nama,
+                "NIK": guru.nik,
+                "NUPTK/NIP": guru.nip,
+                "Tempat/Tgl Lahir": guru.ttl,
+                "Jenis Kelamin": guru.jk,
+                "Agama": guru.agama,
+                "Alamat Lengkap": guru.alamat,
+                "Telepon/HP": guru.hp,
+                "Email": guru.email,
+                "Status Pegawai": guru.status_pegawai,
+                "Jabatan": guru.jabatan,
+                "Mata Pelajaran": guru.mapel,
+                "Pendidikan Terakhir": guru.pendidikan,
+                "Program Studi": guru.prodi,
+                "Nama PT": guru.kampus,
+                "Tahun Lulus": guru.tahun_lulus,
+                "Sertifikat Pendidik": guru.sertifikat_pendidik,
+                "Pangkat/Golongan": guru.pangkat,
+                "Masa Kerja": guru.masa_kerja,
+                "Status Pernikahan": guru.status_nikah,
+                "Nama Pasangan": guru.pasangan,
+                "Jumlah Anak": guru.anak,
+                "No Rekening Bank": guru.rekening,
+                "NPWP": guru.npwp,
+                "BPJS": guru.bpjs
+            }));
+
+            // 2. Membuat Worksheet dari JSON
+            const worksheet = XLSX.utils.json_to_sheet(dataForExcel);
+
+            // 3. Membuat Workbook
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Data Guru");
+
+            // 4. Memproses dan mendownload file sebagai .xlsx
+            XLSX.writeFile(workbook, "Data_Guru.xlsx");
+        }
+
+        // --- Fitur Pencarian Dinamis ---
+        function searchTable(tableId, inputId) {
+            const input = document.getElementById(inputId).value.toLowerCase();
+            const table = document.getElementById(tableId);
+            const tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                let rowText = tr[i].innerText.toLowerCase();
+                if (rowText.includes(input)) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+
+        // Run on Startup
+        renderTableDataGuru();
+        renderTableArsip();
+    </script>
+</body>
+</html>
