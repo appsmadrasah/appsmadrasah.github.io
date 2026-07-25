@@ -18,14 +18,14 @@
         body {
             display: flex;
             height: 100vh;
-            background-color: #ecf0f5; /* Background abu-abu terang ala AdminLTE */
+            background-color: #ecf0f5; 
             overflow: hidden;
         }
 
         /* Sidebar Styling */
         .sidebar {
             width: 250px;
-            background-color: #222d32; /* Warna gelap sidebar */
+            background-color: #222d32; 
             color: #b8c7ce;
             display: flex;
             flex-direction: column;
@@ -37,7 +37,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #367fa9; /* Biru header */
+            background-color: #367fa9; 
             color: white;
         }
 
@@ -75,7 +75,6 @@
 
         .nav-item i { margin-right: 15px; width: 20px; text-align: center; font-size: 16px; }
 
-        /* Styling Khusus Dropdown Submenu */
         .submenu {
             display: none; 
             flex-direction: column;
@@ -113,9 +112,7 @@
             padding: 20px;
         }
 
-        .page.active-page {
-            display: block; 
-        }
+        .page.active-page { display: block; }
 
         iframe {
             width: 100%;
@@ -125,16 +122,8 @@
             border-radius: 4px;
         }
 
-        /* =========================================
-           STYLING KHUSUS DASHBOARD BARU
-           ========================================= */
-        .dash-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-
+        /* Dashboard Header & Cards */
+        .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         .dash-title h2 { font-size: 24px; color: #333; margin-bottom: 5px; font-weight: normal; }
         .dash-title h2 i { margin-right: 10px; font-size: 20px; }
         .dash-title p { font-size: 13px; color: #777; margin: 0; }
@@ -142,141 +131,63 @@
         .dash-breadcrumb i { margin-right: 5px; }
         .dash-breadcrumb span { color: #3c8dbc; margin-left: 5px; }
 
-        .info-boxes {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .info-box {
-            display: flex;
-            background: #fff;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .info-box-icon {
-            width: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 35px;
-            color: #fff;
-        }
-
-        .info-box-content {
-            padding: 10px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
+        .info-boxes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .info-box { display: flex; background: #fff; box-shadow: 0 1px 1px rgba(0,0,0,0.1); border-radius: 2px; overflow: hidden; }
+        .info-box-icon { width: 80px; display: flex; align-items: center; justify-content: center; font-size: 35px; color: #fff; }
+        .info-box-content { padding: 10px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
         .info-box-text { font-size: 13px; color: #333; margin-bottom: 5px; text-transform: uppercase; }
         .info-box-number { font-size: 20px; font-weight: bold; color: #333; }
 
-        /* Warna Box */
         .bg-green { background-color: #00a65a; }
         .bg-teal { background-color: #00c0ef; }
         .bg-yellow { background-color: #f39c12; }
         .bg-red { background-color: #dd4b39; }
 
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 15px;
-        }
+        .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 15px; }
+        .panel-box { background: #fff; box-shadow: 0 1px 1px rgba(0,0,0,0.1); border-radius: 3px; }
 
-        .panel-box {
-            background: #fff;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
-            border-radius: 3px;
-        }
-
-        /* Panel Kiri (Form) */
+        /* Panel Tabs & Form (Logic Ditambahkan) */
         .panel-form { border-top: 3px solid #d2d6de; }
-        .panel-tabs {
-            display: flex;
-            gap: 20px;
-            border-bottom: 1px solid #f4f4f4;
-            padding: 15px 20px 0;
-            background: #fafafa;
-        }
-        .panel-tab {
-            padding: 10px 15px;
-            font-size: 14px;
-            color: #00a65a;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            margin-bottom: -1px;
-        }
-        .panel-tab.active {
-            border-bottom-color: #00a65a;
-            font-weight: bold;
-            background: #fff;
-            border-top: 1px solid #f4f4f4;
-            border-left: 1px solid #f4f4f4;
-            border-right: 1px solid #f4f4f4;
-        }
-
+        .panel-tabs { display: flex; gap: 20px; border-bottom: 1px solid #f4f4f4; padding: 15px 20px 0; background: #fafafa; }
+        .panel-tab { padding: 10px 15px; font-size: 14px; color: #00a65a; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+        .panel-tab.active { border-bottom-color: #00a65a; font-weight: bold; background: #fff; border-top: 1px solid #f4f4f4; border-left: 1px solid #f4f4f4; border-right: 1px solid #f4f4f4; }
+        
         .form-body { padding: 30px 20px; }
-        .form-group {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
+        
+        /* Menyembunyikan form yang tidak aktif */
+        .form-section { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .form-section.active { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .form-group { display: flex; align-items: center; margin-bottom: 15px; }
+        .form-group label { width: 150px; text-align: right; padding-right: 20px; font-size: 14px; color: #333; }
+        .form-group input, .form-group select, .form-group textarea {
+            flex-grow: 1; padding: 8px 12px; border: 1px solid #d2d6de; border-radius: 0; font-size: 14px; color: #555; outline: none;
         }
-        .form-group label {
-            width: 150px;
-            text-align: right;
-            padding-right: 20px;
+        .form-group input:focus, .form-group textarea:focus { border-color: #3c8dbc; }
+
+        .btn-submit {
+            background-color: #3c8dbc;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 3px;
+            margin-left: 150px;
             font-size: 14px;
-            color: #333;
         }
-        .form-group input, .form-group select {
-            flex-grow: 1;
-            padding: 8px 12px;
-            border: 1px solid #d2d6de;
-            border-radius: 0;
-            font-size: 14px;
-            color: #555;
-            outline: none;
-        }
-        .form-group input:focus { border-color: #3c8dbc; }
+        .btn-submit:hover { background-color: #367fa9; }
 
         /* Panel Kanan (Logo & Chart) */
-        .panel-logo {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .school-badge {
-            width: 150px;
-            height: 150px;
-            border: 2px solid #00a65a;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            color: #00a65a;
-            font-size: 60px;
-        }
+        .panel-logo { padding: 20px; display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
+        .school-badge { width: 150px; height: 150px; border: 2px solid #00a65a; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; color: #00a65a; font-size: 60px; }
         .action-buttons { display: flex; gap: 5px; }
-        .btn-action {
-            border: none;
-            color: white;
-            padding: 6px 15px;
-            border-radius: 3px;
-            cursor: pointer;
-        }
+        .btn-action { border: none; color: white; padding: 6px 15px; border-radius: 3px; cursor: pointer; }
+        .btn-action:hover { filter: brightness(90%); }
         .btn-action.green { background: #00a65a; }
         .btn-action.yellow { background: #f39c12; }
         .btn-action.red { background: #dd4b39; }
-
         .panel-chart { padding: 15px; }
     </style>
 </head>
@@ -293,23 +204,18 @@
         <div class="nav-menu">
             
             <div class="nav-item active" onclick="showPage('dashboard', this)">
-                <i class="fas fa-tachometer-alt"></i>
-                Dashboard
+                <i class="fas fa-tachometer-alt"></i> Dashboard
             </div>
 
             <div class="nav-item" onclick="toggleMenu(this)">
-                <i class="fas fa-laptop"></i>
-                Kelembagaan
-                <i class="fas fa-chevron-down toggle-icon"></i>
+                <i class="fas fa-laptop"></i> Kelembagaan <i class="fas fa-chevron-down toggle-icon"></i>
             </div>
             <div class="submenu">
                 <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Profil Lembaga</div>
             </div>
 
             <div class="nav-item" onclick="toggleMenu(this)">
-                <i class="fas fa-graduation-cap"></i>
-                Akademik
-                <i class="fas fa-chevron-down toggle-icon"></i>
+                <i class="fas fa-graduation-cap"></i> Akademik <i class="fas fa-chevron-down toggle-icon"></i>
             </div>
             <div class="submenu">
                 <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Mutasi Masuk</div>
@@ -318,59 +224,41 @@
             </div>
 
             <div class="nav-item" onclick="toggleMenu(this)">
-                <i class="fas fa-cubes"></i>
-                Administrasi
-                <i class="fas fa-chevron-down toggle-icon"></i>
+                <i class="fas fa-cubes"></i> Administrasi <i class="fas fa-chevron-down toggle-icon"></i>
             </div>
             <div class="submenu">
                 <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Buku Induk</div>
                 <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Cetak Data</div>
             </div>
 
+            <!-- MENU DATA SISWA TEPAT DI BAWAH ADMINISTRASI -->
             <div class="nav-item" onclick="showPage('siswa', this)">
-                <i class="fas fa-users"></i>
-                Data Siswa
+                <i class="fas fa-users"></i> Data Siswa
             </div>
 
             <div class="nav-item" onclick="toggleMenu(this)">
-                <i class="fas fa-user-circle"></i>
-                Data Alumni
-                <i class="fas fa-chevron-down toggle-icon"></i>
+                <i class="fas fa-user-circle"></i> Data Alumni <i class="fas fa-chevron-down toggle-icon"></i>
             </div>
             <div class="submenu">
                 <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Daftar Alumni</div>
             </div>
 
             <div class="nav-item" onclick="toggleMenu(this)">
-                <i class="fas fa-user-plus"></i>
-                Data PPDB
-                <i class="fas fa-chevron-down toggle-icon"></i>
+                <i class="fas fa-user-plus"></i> Data PPDB <i class="fas fa-chevron-down toggle-icon"></i>
             </div>
             <div class="submenu">
                 <div class="nav-item" onclick="showPage('blank', this)"><i class="fas fa-angle-right"></i> Pendaftar</div>
             </div>
             
             <div class="nav-item" onclick="toggleMenu(this)">
-                <i class="fas fa-folder-open"></i>
-                Data Ujian
-                <i class="fas fa-chevron-down toggle-icon"></i>
+                <i class="fas fa-folder-open"></i> Data Ujian <i class="fas fa-chevron-down toggle-icon"></i>
             </div>
             <div class="submenu">
-                <div class="nav-item" onclick="showPage('hadir', this)">
-                    <i class="fas fa-angle-right"></i> Daftar Hadir
-                </div>
-                <div class="nav-item" onclick="showPage('un', this)">
-                    <i class="fas fa-angle-right"></i> Nomor Ujian Nasional
-                </div>
-                <div class="nav-item" onclick="showPage('sat', this)">
-                    <i class="fas fa-angle-right"></i> Nomor Ujian SAT
-                </div>
-                <div class="nav-item" onclick="showPage('jadwal', this)">
-                    <i class="fas fa-angle-right"></i> Jadwal Ujian
-                </div>
-                <a href="https://appsmadrasah.github.io/umbk.html" target="_blank" class="nav-item">
-                    <i class="fas fa-angle-right"></i> Nilai UM
-                </a>
+                <div class="nav-item" onclick="showPage('hadir', this)"><i class="fas fa-angle-right"></i> Daftar Hadir</div>
+                <div class="nav-item" onclick="showPage('un', this)"><i class="fas fa-angle-right"></i> Nomor Ujian Nasional</div>
+                <div class="nav-item" onclick="showPage('sat', this)"><i class="fas fa-angle-right"></i> Nomor Ujian SAT</div>
+                <div class="nav-item" onclick="showPage('jadwal', this)"><i class="fas fa-angle-right"></i> Jadwal Ujian</div>
+                <a href="https://appsmadrasah.github.io/umbk.html" target="_blank" class="nav-item"><i class="fas fa-angle-right"></i> Nilai UM</a>
             </div>
 
         </div>
@@ -391,77 +279,119 @@
             </div>
 
             <div class="info-boxes">
-                <div class="info-box">
-                    <div class="info-box-icon bg-green"><i class="fas fa-users"></i></div>
-                    <div class="info-box-content">
-                        <span class="info-box-text">SISWA</span>
-                        <span class="info-box-number" id="count-siswa">0</span>
-                    </div>
-                </div>
-                <div class="info-box">
-                    <div class="info-box-icon bg-teal"><i class="fas fa-user-md"></i></div>
-                    <div class="info-box-content">
-                        <span class="info-box-text">GURU</span>
-                        <span class="info-box-number">0</span>
-                    </div>
-                </div>
-                <div class="info-box">
-                    <div class="info-box-icon bg-yellow"><i class="fas fa-graduation-cap"></i></div>
-                    <div class="info-box-content">
-                        <span class="info-box-text">ALUMNI</span>
-                        <span class="info-box-number">4</span>
-                    </div>
-                </div>
-                <div class="info-box">
-                    <div class="info-box-icon bg-red"><i class="fas fa-clone"></i></div>
-                    <div class="info-box-content">
-                        <span class="info-box-text">KELAS</span>
-                        <span class="info-box-number" id="count-kelas">3</span>
-                    </div>
-                </div>
+                <div class="info-box"><div class="info-box-icon bg-green"><i class="fas fa-users"></i></div><div class="info-box-content"><span class="info-box-text">SISWA</span><span class="info-box-number" id="count-siswa">0</span></div></div>
+                <div class="info-box"><div class="info-box-icon bg-teal"><i class="fas fa-user-md"></i></div><div class="info-box-content"><span class="info-box-text">GURU</span><span class="info-box-number">24</span></div></div>
+                <div class="info-box"><div class="info-box-icon bg-yellow"><i class="fas fa-graduation-cap"></i></div><div class="info-box-content"><span class="info-box-text">ALUMNI</span><span class="info-box-number">128</span></div></div>
+                <div class="info-box"><div class="info-box-icon bg-red"><i class="fas fa-clone"></i></div><div class="info-box-content"><span class="info-box-text">KELAS</span><span class="info-box-number" id="count-kelas">0</span></div></div>
             </div>
 
             <div class="dashboard-grid">
                 
                 <div class="panel-box panel-form">
+                    <!-- Navigasi Tab -->
                     <div class="panel-tabs">
-                        <div class="panel-tab active"><i class="fas fa-home"></i> Profile</div>
-                        <div class="panel-tab"><i class="fas fa-map-marker-alt"></i> Alamat Lembaga</div>
-                        <div class="panel-tab"><i class="fas fa-phone"></i> Contact</div>
-                        <div class="panel-tab"><i class="fas fa-user-tie"></i> Data Kepala</div>
+                        <div class="panel-tab active" onclick="switchTab(this, 'tab-profile')"><i class="fas fa-home"></i> Profile</div>
+                        <div class="panel-tab" onclick="switchTab(this, 'tab-alamat')"><i class="fas fa-map-marker-alt"></i> Alamat Lembaga</div>
+                        <div class="panel-tab" onclick="switchTab(this, 'tab-contact')"><i class="fas fa-phone"></i> Contact</div>
+                        <div class="panel-tab" onclick="switchTab(this, 'tab-kepala')"><i class="fas fa-user-tie"></i> Data Kepala</div>
                     </div>
                     
                     <div class="form-body">
-                        <div class="form-group">
-                            <label>NSM</label>
-                            <input type="text" value="131265010003" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>NPSN</label>
-                            <input type="text" value="69977331" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Nama Sekolah</label>
-                            <input type="text" value="MA NURUL MUJAHIDAH NW TANJUNG SELOR" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Opsi Pindah Data</label>
-                            <select>
-                                <option>Aksi masuk butir mutasi keluar</option>
-                            </select>
-                        </div>
+                        <!-- 1. Form Profile -->
+                        <form id="tab-profile" class="form-section active" onsubmit="simpanData(event, 'Profile Lembaga')">
+                            <div class="form-group">
+                                <label>NSM</label>
+                                <input type="text" value="131265010003" required>
+                            </div>
+                            <div class="form-group">
+                                <label>NPSN</label>
+                                <input type="text" value="69977331" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nama Sekolah</label>
+                                <input type="text" value="MA NURUL MUJAHIDAH NW TANJUNG SELOR" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Status Sekolah</label>
+                                <select required>
+                                    <option value="Negeri">Negeri</option>
+                                    <option value="Swasta" selected>Swasta</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Opsi Pindah Data</label>
+                                <select id="opsi-pindah" onchange="prosesOpsiPindah()">
+                                    <option value="">-- Pilih Aksi Mutasi --</option>
+                                    <option value="masuk">Aksi masuk butir mutasi</option>
+                                    <option value="keluar">Aksi mutasi keluar</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Simpan Perubahan</button>
+                        </form>
+
+                        <!-- 2. Form Alamat -->
+                        <form id="tab-alamat" class="form-section" onsubmit="simpanData(event, 'Alamat Lembaga')">
+                            <div class="form-group">
+                                <label>Provinsi</label>
+                                <input type="text" value="Kalimantan Utara" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Kab/Kota</label>
+                                <input type="text" value="Bulungan" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Alamat Lengkap</label>
+                                <textarea rows="3" required>Jl. Trans Kalimantan, Tanjung Selor</textarea>
+                            </div>
+                            <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Simpan Alamat</button>
+                        </form>
+
+                        <!-- 3. Form Contact -->
+                        <form id="tab-contact" class="form-section" onsubmit="simpanData(event, 'Kontak Lembaga')">
+                            <div class="form-group">
+                                <label>No. Telepon / HP</label>
+                                <input type="text" value="081234567890" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Email Resmi</label>
+                                <input type="email" value="manurulmujahidah@sch.id" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Website</label>
+                                <input type="text" value="www.manurulmujahidah.sch.id">
+                            </div>
+                            <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Simpan Kontak</button>
+                        </form>
+
+                        <!-- 4. Form Data Kepala -->
+                        <form id="tab-kepala" class="form-section" onsubmit="simpanData(event, 'Data Kepala Sekolah')">
+                            <div class="form-group">
+                                <label>Nama Lengkap</label>
+                                <input type="text" value="H. Ahmad, M.Pd" required>
+                            </div>
+                            <div class="form-group">
+                                <label>NIP</label>
+                                <input type="text" value="197501012005011002">
+                            </div>
+                            <div class="form-group">
+                                <label>Masa Jabatan</label>
+                                <input type="text" value="2020 - Sekarang" required>
+                            </div>
+                            <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Simpan Data Kepala</button>
+                        </form>
                     </div>
                 </div>
 
                 <div>
+                    <!-- Logo Box & Action Buttons -->
                     <div class="panel-box panel-logo">
                         <div class="school-badge">
                             <i class="fas fa-star-and-crescent"></i>
                         </div>
                         <div class="action-buttons">
-                            <button class="btn-action green"><i class="fas fa-user"></i></button>
-                            <button class="btn-action yellow"><i class="fas fa-cog"></i></button>
-                            <button class="btn-action red"><i class="fas fa-power-off"></i></button>
+                            <button class="btn-action green" onclick="aksiUser()" title="Profil Pengguna"><i class="fas fa-user"></i></button>
+                            <button class="btn-action yellow" onclick="aksiPengaturan()" title="Pengaturan Sistem"><i class="fas fa-cog"></i></button>
+                            <button class="btn-action red" onclick="aksiLogout()" title="Keluar"><i class="fas fa-power-off"></i></button>
                         </div>
                     </div>
 
@@ -473,12 +403,14 @@
             </div>
         </div>
 
+        <!-- Halaman Eksternal (Iframe) -->
         <div id="siswa" class="page"><iframe src="https://appsmadrasah.github.io/datasiswa.html"></iframe></div>
         <div id="hadir" class="page"><iframe src="https://appsmadrasah.github.io/daftarhadir.html"></iframe></div>
         <div id="un" class="page"><iframe src="https://appsmadrasah.github.io/kartu1.html"></iframe></div>
         <div id="sat" class="page"><iframe src="https://appsmadrasah.github.io/kartu2.html"></iframe></div>
         <div id="jadwal" class="page"><iframe src="https://appsmadrasah.github.io/jadwal.html"></iframe></div>
         
+        <!-- Halaman Kosong (Untuk menu yang belum ada isinya) -->
         <div id="blank" class="page">
             <h3 style="color: #666; margin-top: 20px;">Halaman ini masih dalam tahap pengembangan...</h3>
         </div>
@@ -488,27 +420,21 @@
     <script>
         let myChart = null; 
 
-        // FUNGSI UNTUK MEMBUKA/MENUTUP MENU DROPDOWN
+        // ==========================================
+        // 1. LOGIKA MENU SIDEBAR & DROPDOWN
+        // ==========================================
         function toggleMenu(element) {
             element.classList.toggle('menu-open');
             const submenu = element.nextElementSibling;
             submenu.classList.toggle('show');
         }
 
-        // FUNGSI NAVIGASI DAN AUTO-RELOAD
         function showPage(pageId, element) {
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active-page');
-            });
-
-            document.querySelectorAll('.nav-item').forEach(nav => {
-                nav.classList.remove('active');
-            });
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active-page'));
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
 
             const selectedPage = document.getElementById(pageId);
-            if(selectedPage) {
-                selectedPage.classList.add('active-page');
-            }
+            if(selectedPage) selectedPage.classList.add('active-page');
             element.classList.add('active');
 
             if (pageId === 'dashboard') {
@@ -523,7 +449,63 @@
             }
         }
 
-        // FUNGSI MENGAMBIL DATA & MENGGAMBAR GRAFIK
+        // ==========================================
+        // 2. LOGIKA TAB FORM DI DASHBOARD
+        // ==========================================
+        function switchTab(element, sectionId) {
+            // Hapus class 'active' dari semua tombol tab
+            document.querySelectorAll('.panel-tab').forEach(tab => tab.classList.remove('active'));
+            // Tambahkan class 'active' ke tombol yang diklik
+            element.classList.add('active');
+
+            // Sembunyikan semua area form
+            document.querySelectorAll('.form-section').forEach(section => section.classList.remove('active'));
+            // Tampilkan form yang sesuai
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // ==========================================
+        // 3. LOGIKA TOMBOL SUBMIT & DROPDOWN OPSI
+        // ==========================================
+        function simpanData(event, namaForm) {
+            event.preventDefault(); // Mencegah reload halaman
+            alert(`Berhasil! Data pada form [${namaForm}] telah disisimpan ke dalam sistem.`);
+        }
+
+        function prosesOpsiPindah() {
+            const selectElemen = document.getElementById('opsi-pindah');
+            const nilai = selectElemen.value;
+            
+            if (nilai === 'masuk') {
+                alert("Membuka menu pemrosesan Data Mutasi Masuk...");
+            } else if (nilai === 'keluar') {
+                alert("Membuka form pemrosesan Mutasi Keluar Siswa...");
+            }
+            // Reset dropdown setelah dipilih
+            selectElemen.selectedIndex = 0; 
+        }
+
+        // ==========================================
+        // 4. LOGIKA TOMBOL AKSI DI BAWAH LOGO
+        // ==========================================
+        function aksiUser() {
+            alert("Membuka halaman pengaturan profil pengguna / ganti password.");
+        }
+
+        function aksiPengaturan() {
+            alert("Membuka panel pengaturan database dan sistem madrasah.");
+        }
+
+        function aksiLogout() {
+            if(confirm("Apakah Anda yakin ingin keluar dari aplikasi?")) {
+                alert("Proses logout berhasil. Dialihkan ke halaman login...");
+                // location.reload(); // Uncomment ini jika ingin benar-benar me-reload web
+            }
+        }
+
+        // ==========================================
+        // 5. LOGIKA GRAFIK FIREBASE
+        // ==========================================
         function loadDashboardData() {
             const firebaseUrl = 'https://datasiswa-65abf-default-rtdb.asia-southeast1.firebasedatabase.app/.json';
 
@@ -534,12 +516,11 @@
 
                     const jumlahPerKelas = {};
                     let totalSiswaData = 0;
-                    
                     const dataArray = Array.isArray(data) ? data : Object.values(data);
 
                     dataArray.forEach(siswa => {
                         if (siswa && typeof siswa === 'object') {
-                            totalSiswaData++; // Hitung total seluruh siswa
+                            totalSiswaData++; 
                             const namaKelas = siswa.kelas || siswa.Kelas || siswa.KELAS || "Tanpa Kelas";
                             if (jumlahPerKelas[namaKelas]) {
                                 jumlahPerKelas[namaKelas]++;
@@ -552,16 +533,11 @@
                     const labelKelas = Object.keys(jumlahPerKelas);
                     const angkaSiswa = Object.values(jumlahPerKelas);
 
-                    // UPDATE WIDGET KARTU DI ATAS SECARA DINAMIS
                     document.getElementById('count-siswa').innerText = totalSiswaData;
                     document.getElementById('count-kelas').innerText = labelKelas.length;
 
-                    // GAMBAR GRAFIK
                     const ctx = document.getElementById('grafikSiswa').getContext('2d');
-                    
-                    if (myChart) {
-                        myChart.destroy();
-                    }
+                    if (myChart) myChart.destroy();
 
                     myChart = new Chart(ctx, {
                         type: 'bar',
@@ -570,22 +546,15 @@
                             datasets: [{
                                 label: 'Jumlah Siswa per Kelas',
                                 data: angkaSiswa,
-                                backgroundColor: 'rgba(0, 166, 90, 0.7)', // Menggunakan warna hijau AdminLTE
+                                backgroundColor: 'rgba(0, 166, 90, 0.7)',
                                 borderColor: 'rgba(0, 166, 90, 1)',
                                 borderWidth: 1
                             }]
                         },
                         options: {
                             responsive: true,
-                            scales: { 
-                                y: { 
-                                    beginAtZero: true, 
-                                    ticks: { stepSize: 1 } 
-                                } 
-                            },
-                            plugins: {
-                                legend: { display: false } // Menyembunyikan legend agar tidak sempit
-                            }
+                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                            plugins: { legend: { display: false } }
                         }
                     });
                 })
@@ -594,6 +563,7 @@
                 });
         }
 
+        // Load dashboard otomatis saat aplikasi dibuka
         window.onload = () => {
             loadDashboardData();
         };
