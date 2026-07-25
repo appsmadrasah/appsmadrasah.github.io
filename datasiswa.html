@@ -127,7 +127,7 @@
         <div class="form-group"><label>Tempat, Tanggal Lahir:</label><input type="text" id="form-ttl" autocomplete="off" placeholder="Contoh: Lamongan, 12 Agustus 2010"></div>
         
         <div class="form-group">
-            <label>Jenis Kelamin:</label>
+            <label>Jenis Kelamin (L/P):</label>
             <select id="form-jk">
                 <option value="Laki-laki">Laki-laki</option>
                 <option value="Perempuan">Perempuan</option>
@@ -137,7 +137,7 @@
         <div class="form-group"><label>Agama:</label><input type="text" id="form-agama" autocomplete="off" value="Islam"></div>
         <div class="form-group"><label>Alamat Lengkap:</label><input type="text" id="form-alamat" autocomplete="off"></div>
         <div class="form-group"><label>Nomor KK:</label><input type="text" id="form-kk" autocomplete="off"></div>
-        <div class="form-group"><label>Nama Ayah dan Ibu:</label><input type="text" id="form-ortu" autocomplete="off" placeholder="Ayah: ... / Ibu: ..."></div>
+        <div class="form-group"><label>Nama Ayah & Ibu:</label><input type="text" id="form-ortu" autocomplete="off" placeholder="Ayah: ... / Ibu: ..."></div>
         <div class="form-group"><label>Pekerjaan Orang Tua:</label><input type="text" id="form-pekerjaan" autocomplete="off"></div>
         <div class="form-group"><label>Nomor HP Orang Tua:</label><input type="text" id="form-hp" autocomplete="off"></div>
 
@@ -195,7 +195,7 @@
     window.dataPeserta = [];
     window.dataKeys = [];
 
-    // Listener Real-time Firebase
+    // Listener Real-time Firebase (DENGAN PENGURUTAN A-Z OTOMATIS)
     const siswaRef = ref(db, 'siswa');
     onValue(siswaRef, (snapshot) => {
         const data = snapshot.val();
@@ -203,9 +203,25 @@
         window.dataKeys = [];
         
         if (data) {
+            // Memasukkan data dan key ke dalam array sementara
+            let tempArr = [];
             Object.keys(data).forEach(key => {
-                window.dataPeserta.push(data[key]);
-                window.dataKeys.push(key);
+                tempArr.push({ id: key, data: data[key] });
+            });
+
+            // LOGIKA PENGURUTAN (SORT) BERDASARKAN NAMA SISWA A-Z
+            tempArr.sort((a, b) => {
+                let namaA = (a.data.nama || "").toUpperCase();
+                let namaB = (b.data.nama || "").toUpperCase();
+                if (namaA < namaB) return -1;
+                if (namaA > namaB) return 1;
+                return 0;
+            });
+
+            // Memasukkan data yang sudah diurutkan kembali ke variabel utama
+            tempArr.forEach(item => {
+                window.dataKeys.push(item.id);
+                window.dataPeserta.push(item.data);
             });
         }
         window.renderTabel();
@@ -237,7 +253,6 @@
     window.encodeFile = function(element, hiddenId) {
         const file = element.files[0];
         if (file) {
-            // Batas maksimal 2MB agar Firebase tidak nge-lag
             if(file.size > 2 * 1024 * 1024) {
                 alert("Gagal: Ukuran file terlalu besar! Maksimal 2MB per file.");
                 element.value = ""; 
@@ -289,7 +304,6 @@
             }
 
             if (tampilkan) {
-                // Menentukan Tampilan Tombol File
                 const btnFoto = p.foto ? `<button class="btn-file" onclick="bukaFile('${p.foto}')">Lihat</button>` : `-`;
                 const btnAkta = p.akta ? `<button class="btn-file" onclick="bukaFile('${p.akta}')">Lihat</button>` : `-`;
                 const btnKK = p.filekk ? `<button class="btn-file" onclick="bukaFile('${p.filekk}')">Lihat</button>` : `-`;
@@ -349,7 +363,6 @@
     window.bukaModalForm = function(index = null) {
         document.getElementById('modalForm').style.display = 'block';
         
-        // Reset file inputs visual
         document.getElementById('form-foto').value = '';
         document.getElementById('form-akta').value = '';
         document.getElementById('form-filekk').value = '';
@@ -372,7 +385,6 @@
             document.getElementById('form-pekerjaan').value = p.pekerjaan || '';
             document.getElementById('form-hp').value = p.hp || '';
             
-            // Set hidden fields file
             document.getElementById('hidden-foto').value = p.foto || '';
             document.getElementById('hidden-akta').value = p.akta || '';
             document.getElementById('hidden-filekk').value = p.filekk || '';
@@ -422,7 +434,6 @@
             ortu: document.getElementById('form-ortu').value,
             pekerjaan: document.getElementById('form-pekerjaan').value,
             hp: document.getElementById('form-hp').value,
-            // Simpan Base64 File
             foto: document.getElementById('hidden-foto').value,
             akta: document.getElementById('hidden-akta').value,
             filekk: document.getElementById('hidden-filekk').value
@@ -446,18 +457,19 @@
         }
     }
 
-    // --- FUNGSI EXCEL (Disesuaikan dengan kolom baru, TANPA FILE UPLOAD) ---
+    // --- FUNGSI EXCEL (KOLOM DISINKRONKAN DENGAN TABEL BARU) ---
     window.downloadTemplateExcel = function() {
+        // Kolom disesuaikan agar cocok urutannya dengan tabel HTML Anda
         const dataTemplate = [
-            ["Nama Lengkap", "NISN", "NIK", "Kelas", "Tempat Tgl Lahir", "Jenis Kelamin", "Agama", "Alamat Lengkap", "Nomor KK", "Nama Ayah Ibu", "Pekerjaan", "Nomor HP"],
-            ["CONTOH NAMA SISWA", "1234567890", "3524000000", "6", "Lamongan, 17 Agustus 2010", "Laki-laki", "Islam", "Jl. Merdeka No 1", "3524111111", "Budi / Wati", "Petani", "08123456789"]
+            ["Nama Lengkap", "NISN", "NIK", "Kelas", "Tempat, Tgl Lahir", "L/P", "Agama", "Alamat Lengkap", "No. KK", "Nama Ayah & Ibu", "Pekerjaan Ortu", "No. HP Ortu"],
+            ["CONTOH NAMA SISWA", "1234567890", "3524000000", "1", "Lamongan, 17 Agustus 2010", "Laki-laki", "Islam", "Jl. Merdeka No 1", "3524111111", "Budi / Wati", "Petani", "08123456789"]
         ];
         const workbook = window.XLSX.utils.book_new();
         const worksheet = window.XLSX.utils.aoa_to_sheet(dataTemplate);
-        worksheet['!cols'] = [ {wch: 30}, {wch: 15}, {wch: 20}, {wch: 10}, {wch: 25}, {wch: 15}, {wch: 10}, {wch: 30}, {wch: 20}, {wch: 25}, {wch: 15}, {wch: 15} ];
+        worksheet['!cols'] = [ {wch: 30}, {wch: 15}, {wch: 20}, {wch: 10}, {wch: 25}, {wch: 12}, {wch: 10}, {wch: 30}, {wch: 20}, {wch: 25}, {wch: 15}, {wch: 15} ];
         
         window.XLSX.utils.book_append_sheet(workbook, worksheet, "Data_Siswa");
-        window.XLSX.writeFile(workbook, "Template_Data_Baru.xlsx");
+        window.XLSX.writeFile(workbook, "Template_Data_Siswa.xlsx");
     }
 
     window.prosesImporExcel = function(event) {
@@ -489,14 +501,14 @@
                         nik: getVal(["nik"]) || "", 
                         kelas: window.formatKelasBaku(getVal(["kelas", "kls"])),
                         ttl: getVal(["tempat", "tgl", "lahir"]) || "",
-                        jk: getVal(["jenis", "kelamin", "l/p"]) || "",
+                        jk: getVal(["l/p", "jenis", "kelamin"]) || "",
                         agama: getVal(["agama"]) || "",
                         alamat: getVal(["alamat"]) || "",
-                        kk: getVal(["kk", "kartu keluarga"]) || "",
+                        kk: getVal(["kk", "kartu"]) || "",
                         ortu: getVal(["ayah", "ibu", "ortu"]) || "",
                         pekerjaan: getVal(["pekerjaan", "kerja"]) || "",
-                        hp: getVal(["hp", "telepon"]) || "",
-                        foto: "", akta: "", filekk: ""
+                        hp: getVal(["hp"]) || "",
+                        foto: "", akta: "", filekk: "" // File di-set kosong dari excel
                     });
                     berhasil++;
                 }
