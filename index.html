@@ -236,6 +236,11 @@
                 <i class="fas fa-users"></i> Data Siswa
             </div>
 
+            <!-- MENU DATA GURU -->
+            <div class="nav-item" onclick="showPage('guru', this)">
+                <i class="fas fa-chalkboard-teacher"></i> Data Guru
+            </div>
+
             <div class="nav-item" onclick="toggleMenu(this)">
                 <i class="fas fa-user-circle"></i> Data Alumni <i class="fas fa-chevron-down toggle-icon"></i>
             </div>
@@ -405,6 +410,13 @@
 
         <!-- Halaman Eksternal (Iframe) -->
         <div id="siswa" class="page"><iframe src="https://appsmadrasah.github.io/datasiswa.html"></iframe></div>
+        
+        <!-- Halaman Data Guru (Placeholder) -->
+        <div id="guru" class="page">
+            <h3 style="color: #333; margin-top: 20px;"><i class="fas fa-chalkboard-teacher"></i> Data Guru</h3>
+            <p style="color: #666; margin-top: 10px;">Halaman ini akan menampilkan daftar dan manajemen data guru. (Masih dalam tahap pengembangan)</p>
+        </div>
+
         <div id="hadir" class="page"><iframe src="https://appsmadrasah.github.io/daftarhadir.html"></iframe></div>
         <div id="un" class="page"><iframe src="https://appsmadrasah.github.io/kartu1.html"></iframe></div>
         <div id="sat" class="page"><iframe src="https://appsmadrasah.github.io/kartu2.html"></iframe></div>
