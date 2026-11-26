@@ -410,6 +410,12 @@
                 <option value="ASWAJA">ASWAJA</option><option value="B. Arab">B. Arab</option>
                 <option value="B. Inggris">B. Inggris</option><option value="B. Jawa">B. Jawa</option>
             </select>
+            <button type="button" id="btn-tambah-mapel" class="btn-simpan" style="margin-top:8px; padding:7px 12px;" onclick="window.tampilkanInputMapelBaru()">+ Tambah Mata Pelajaran Baru</button>
+            <div id="area-input-mapel-baru" style="display:none; margin-top:8px;">
+                <input type="text" id="input-mapel-baru" placeholder="Masukkan nama mata pelajaran baru" style="width:100%; box-sizing:border-box; margin-bottom:6px;">
+                <button type="button" class="btn-simpan" style="padding:7px 12px;" onclick="window.tambahkanMapelBaru()">Tambahkan</button>
+                <button type="button" class="btn-batal" style="padding:7px 12px;" onclick="window.batalkanTambahMapel()">Batal</button>
+            </div>
         </div>
         <div class="form-group">
             <label>Kode Guru:</label>
@@ -499,7 +505,10 @@
     };
 
     $(document).ready(function() {
-        $('#form-mapel').select2({ dropdownParent: $('#modalFormJadwal'), placeholder: "Ketik nama pelajaran..." });
+        $('#form-mapel').select2({
+            dropdownParent: $('#modalFormJadwal'),
+            placeholder: "Pilih mata pelajaran..."
+        });
         $('#form-kode').select2({ dropdownParent: $('#modalFormJadwal'), placeholder: "Ketik nama/kode guru..." });
     });
 
@@ -527,6 +536,42 @@
         if(tabId === 'tab-daftar-hadir') { window.renderDropdownTanggalHadir(); }
     }
 
+    // Input mata pelajaran baru melalui tombol pada form jadwal.
+    window.tampilkanInputMapelBaru = function() {
+        document.getElementById('area-input-mapel-baru').style.display = 'block';
+        document.getElementById('input-mapel-baru').focus();
+    };
+
+    window.batalkanTambahMapel = function() {
+        document.getElementById('area-input-mapel-baru').style.display = 'none';
+        document.getElementById('input-mapel-baru').value = '';
+    };
+
+    window.tambahkanMapelBaru = function() {
+        const input = document.getElementById('input-mapel-baru');
+        const nama = input.value.trim();
+        if (!nama) {
+            alert('Masukkan nama mata pelajaran terlebih dahulu.');
+            input.focus();
+            return;
+        }
+
+        let opsi = $('#form-mapel option').filter(function() {
+            return this.value.toLowerCase() === nama.toLowerCase();
+        }).first();
+
+        let nilai = nama;
+        if (opsi.length) {
+            nilai = opsi.val();
+        } else {
+            $('#form-mapel').append(new Option(nama, nama, true, true));
+        }
+
+        $('#form-mapel').val(nilai).trigger('change');
+        input.value = '';
+        document.getElementById('area-input-mapel-baru').style.display = 'none';
+    };
+
     // Modal Jadwal
     function bukaModalJadwal(idEdit = null) {
         document.getElementById('modalFormJadwal').style.display = 'block';
@@ -534,7 +579,11 @@
             let data = window.dbJadwal.find(d => d.id == idEdit);
             document.getElementById('form-id').value = data.id;
             document.getElementById('form-kelas').value = data.kelas;
-            document.getElementById('form-tanggal').value = data.tanggal; 
+            document.getElementById('form-tanggal').value = data.tanggal;
+            // Tambahkan opsi sementara bila jadwal lama memakai mata pelajaran di luar daftar awal.
+            if (data.mapel && $('#form-mapel option').filter(function() { return this.value === data.mapel; }).length === 0) {
+                $('#form-mapel').append(new Option(data.mapel, data.mapel, true, true));
+            }
             $('#form-mapel').val(data.mapel).trigger('change');
             $('#form-kode').val(data.kodeGuru).trigger('change');
             document.getElementById('modal-judul').innerText = "Edit Jadwal";
