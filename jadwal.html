@@ -116,7 +116,9 @@
         .istirahat { letter-spacing: 5px; font-weight: bold; background-color: #f8f9fa;}
 
         .footer-section { display: flex; justify-content: space-between; margin-top: 15px; }
-        .grid-guru { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px 15px; text-align: left; font-size: 11px;}
+        .grid-guru { text-align: left; font-size: 11px; line-height: 1.2; }
+        #daftar-kode-guru-cetak { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 15px; width: 100%; }
+        #daftar-kode-guru-cetak .kolom-guru { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
         .ttd-box-area { height: 45px; margin: 2px 0; display: flex; align-items: center; justify-content: center;}
         .ttd-box-area img { max-height: 100%; max-width: 100%; object-fit: contain; }
         .ttd-panitia { width: 220px; text-align: center; font-size: 11px; line-height: 1.3;}
@@ -132,6 +134,8 @@
             .kertas-f4, .kertas-f4-portrait { box-shadow: none; padding: 0; width: 100%; }
             .tabel-jadwal th, .istirahat, .kode-guru { background-color: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .kop-surat { color: #008000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            #daftar-kode-guru-cetak { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 2px 15px !important; }
+            #daftar-kode-guru-cetak .kolom-guru { display: flex !important; flex-direction: column !important; }
         }
     </style>
 </head>
@@ -173,14 +177,18 @@
     </div>
 
     <div id="tab-jumlah-jam" class="tab-content">
+        <div class="action-header-bar">
+            <button class="btn-tambah" onclick="window.bukaModalGuru()">+ Tambah Guru</button>
+        </div>
         <h3 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee; color: #333;">Rekapan Akumulasi Sesi Mengajar Guru</h3>
-        <table class="table-app" style="max-width: 650px;">
+        <table class="table-app" style="max-width: 850px;">
             <thead>
                 <tr>
                     <th style="width: 50px; text-align: center;">No.</th>
                     <th style="width: 100px; text-align: center;">Kode Guru</th>
                     <th>Nama Lengkap Guru</th>
                     <th style="width: 150px; text-align: center;">Total Mengajar</th>
+                    <th style="width: 120px; text-align: center;">Aksi</th>
                 </tr>
             </thead>
             <tbody id="tabel-jumlah-jam-body"></tbody>
@@ -258,12 +266,14 @@
                     <div style="flex-grow: 1;">
                         <div style="font-weight: bold; margin-bottom: 5px;">Kode Guru :</div>
                         <div class="grid-guru">
-                            <div>A : IMAM TAUFIQ, ST</div><div>G : MUSTIKA, S.Pd</div><div>M : M. ZAINUL A</div><div></div>
-                            <div>B : SUBIANTO, S.Pd</div><div>H : MUNAFIAH, S.Pd</div><div>N : FITROTIN A</div><div></div>
-                            <div>C : MUHAMMAD NURIL, S.AG</div><div>I : MUHAIMINAH, S.Pd</div><div>O : CHANDRA ARIES, S.Pd</div><div></div>
-                            <div>D : YUSUF, S.Pd</div><div>J : INDARSIH, S.Pd</div><div>P : YUSHIFUL ILMIY, S.Pd</div><div></div>
-                            <div>E : MOH. YASIN</div><div>K : IMAM HAROMEN, SE</div><div>Q : LATHIFATU NUR NISA, S.Pd</div><div></div>
-                            <div>F : Dra. UMU SYAROFAH</div><div>L : ANDY KUR, S.Pd</div><div>R : ANDRYAN BAYU PRATAMA, S.Pd</div><div></div>
+                            <div id="daftar-kode-guru-cetak">
+                                <div>A : IMAM TAUFIQ, ST</div><div>G : MUSTIKA, S.Pd</div><div>M : M. ZAINUL A</div><div></div>
+                                <div>B : SUBIANTO, S.Pd</div><div>H : MUNAFIAH, S.Pd</div><div>N : FITROTIN A</div><div></div>
+                                <div>C : MUHAMMAD NURIL, S.AG</div><div>I : MUHAIMINAH, S.Pd</div><div>O : CHANDRA ARIES, S.Pd</div><div></div>
+                                <div>D : YUSUF, S.Pd</div><div>J : INDARSIH, S.Pd</div><div>P : YUSHIFUL ILMIY, S.Pd</div><div></div>
+                                <div>E : MOH. YASIN</div><div>K : IMAM HAROMEN, SE</div><div>Q : LATHIFATU NUR NISA, S.Pd</div><div></div>
+                                <div>F : Dra. UMU SYAROFAH</div><div>L : ANDY KUR, S.Pd</div><div>R : ANDRYAN BAYU PRATAMA, S.Pd</div><div></div>
+                            </div>
                         </div>
                     </div>
                     <div class="ttd-panitia">
@@ -401,6 +411,28 @@
     </div>
 </div>
 
+<div id="modalFormGuru" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span id="modal-judul-guru">Tambah Guru</span>
+            <span class="close-btn" onclick="window.tutupModalGuru()">&times;</span>
+        </div>
+        <input type="hidden" id="form-guru-kode-lama" value="">
+        <div class="form-group">
+            <label>Kode Guru:</label>
+            <input type="text" id="form-guru-kode" maxlength="3" placeholder="Contoh: A" style="text-transform: uppercase;">
+        </div>
+        <div class="form-group">
+            <label>Nama Lengkap Guru:</label>
+            <input type="text" id="form-guru-nama" placeholder="Masukkan nama lengkap guru">
+        </div>
+        <div class="modal-footer">
+            <button class="btn-batal" onclick="window.tutupModalGuru()">Batal</button>
+            <button class="btn-simpan" onclick="window.simpanDataGuru()">Simpan Data</button>
+        </div>
+    </div>
+</div>
+
 <div id="modalJudulHadir" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -532,6 +564,32 @@
         }
     }
 
+    window.renderDaftarKodeGuruCetak = function() {
+        const area = document.getElementById('daftar-kode-guru-cetak');
+        if (!area) return;
+        area.innerHTML = '';
+
+        // Susun daftar cetak menjadi 3 kolom: A-F, G-L, dan M-R.
+        const daftar = Object.keys(window.namaGuruMap).sort((a, b) =>
+            a.localeCompare(b, 'id', { numeric: true })
+        );
+        const jumlahPerKolom = Math.ceil(daftar.length / 3);
+
+        for (let kolom = 0; kolom < 3; kolom++) {
+            const wadah = document.createElement('div');
+            wadah.className = 'kolom-guru';
+
+            daftar.slice(kolom * jumlahPerKolom, (kolom + 1) * jumlahPerKolom)
+                .forEach(kode => {
+                    const item = document.createElement('div');
+                    item.textContent = `${kode} : ${window.namaGuruMap[kode]}`;
+                    wadah.appendChild(item);
+                });
+
+            area.appendChild(wadah);
+        }
+    };
+
     window.renderJumlahJam = function() {
         const tbody = document.getElementById('tabel-jumlah-jam-body');
         tbody.innerHTML = '';
@@ -543,17 +601,47 @@
         });
 
         let nomor = 1;
-        Object.keys(window.namaGuruMap).forEach(kode => {
+        Object.keys(window.namaGuruMap).sort().forEach(kode => {
             tbody.innerHTML += `
                 <tr>
                     <td style="text-align: center;">${nomor++}</td>
                     <td style="text-align: center; font-weight: bold; background: #fafafa;">${kode}</td>
                     <td>${window.namaGuruMap[kode]}</td>
                     <td style="text-align: center; font-weight: bold; color: #2196F3;">${hitungJam[kode]} Sesi (Jam)</td>
+                    <td style="text-align: center; white-space: nowrap;">
+                        <button class="btn-edit" onclick="window.bukaModalGuru('${kode}')">✏️</button>
+                        <button class="btn-hapus" onclick="window.hapusDataGuru('${kode}')">🗑️</button>
+                    </td>
                 </tr>`;
         });
-    }
+        if (nomor === 1) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada data guru.</td></tr>';
+        }
+        window.renderDaftarKodeGuruCetak();
+    };
 
+    window.bukaModalGuru = function(kode = null) {
+        const modal = document.getElementById('modalFormGuru');
+        const kodeInput = document.getElementById('form-guru-kode');
+        const namaInput = document.getElementById('form-guru-nama');
+        document.getElementById('form-guru-kode-lama').value = kode || '';
+        if (kode && window.namaGuruMap[kode] !== undefined) {
+            document.getElementById('modal-judul-guru').innerText = 'Edit Data Guru';
+            kodeInput.value = kode;
+            kodeInput.disabled = true;
+            namaInput.value = window.namaGuruMap[kode];
+        } else {
+            document.getElementById('modal-judul-guru').innerText = 'Tambah Guru';
+            kodeInput.disabled = false;
+            kodeInput.value = '';
+            namaInput.value = '';
+        }
+        modal.style.display = 'block';
+    };
+
+    window.tutupModalGuru = function() {
+        document.getElementById('modalFormGuru').style.display = 'none';
+    };
     window.renderTabelApp = function() {
         const tbody = document.getElementById('tabel-jadwal-body');
         tbody.innerHTML = '';
@@ -699,6 +787,7 @@
     window.cetakJadwal = function() {
         document.getElementById('print-style-orient').innerHTML = "@page { size: 330mm 215mm; margin: 5mm; }";
         window.generateTampilanF4();
+        window.renderDaftarKodeGuruCetak();
         document.getElementById('area-cetak').innerHTML = document.getElementById('kertas-preview-jadwal').outerHTML;
         window.print();
     }
@@ -747,6 +836,94 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const dbRef = ref(db);
+
+    async function muatDataGuru() {
+        try {
+            const snapshot = await get(child(dbRef, 'guru'));
+            if (snapshot.exists()) {
+                const dataGuru = snapshot.val();
+                window.namaGuruMap = {};
+                Object.keys(dataGuru).sort().forEach(kode => {
+                    const item = dataGuru[kode];
+                    if (item && item.nama) window.namaGuruMap[kode] = item.nama;
+                });
+            } else {
+                const dataAwal = {};
+                Object.keys(window.namaGuruMap).forEach(kode => {
+                    dataAwal[kode] = { nama: window.namaGuruMap[kode] };
+                });
+                await set(ref(db, 'guru'), dataAwal);
+            }
+            perbaruiPilihanGuru();
+            window.renderJumlahJam();
+        } catch (error) {
+            console.error("Gagal memuat data guru:", error);
+        }
+    }
+
+    function perbaruiPilihanGuru() {
+        const select = document.getElementById('form-kode');
+        if (!select) return;
+        const pilihanSaatIni = select.value;
+        select.innerHTML = '<option value="">-- Cari / Pilih Guru --</option>';
+        Object.keys(window.namaGuruMap).sort().forEach(kode => {
+            const option = document.createElement('option');
+            option.value = kode;
+            option.textContent = `${kode} - ${window.namaGuruMap[kode]}`;
+            select.appendChild(option);
+        });
+        if (window.jQuery && $('#form-kode').hasClass('select2-hidden-accessible')) {
+            $('#form-kode').val(pilihanSaatIni).trigger('change.select2');
+        }
+    }
+
+    window.simpanDataGuru = async function() {
+        const kodeLama = document.getElementById('form-guru-kode-lama').value;
+        const kode = document.getElementById('form-guru-kode').value.trim().toUpperCase();
+        const nama = document.getElementById('form-guru-nama').value.trim();
+
+        if (!/^[A-Z]{1,3}$/.test(kode) || !nama) {
+            alert('Kode guru (1-3 huruf) dan nama lengkap wajib diisi.');
+            return;
+        }
+        if (!kodeLama && window.namaGuruMap[kode] !== undefined) {
+            alert('Kode guru tersebut sudah digunakan. Silakan gunakan kode lain.');
+            return;
+        }
+
+        try {
+            await set(ref(db, 'guru/' + kode), { nama: nama });
+            window.namaGuruMap[kode] = nama;
+            perbaruiPilihanGuru();
+            window.renderJumlahJam();
+            window.generateTampilanF4();
+            window.tutupModalGuru();
+            alert('Data guru berhasil disimpan.');
+        } catch (error) {
+            console.error(error);
+            alert('Gagal menyimpan data guru ke Firebase.');
+        }
+    };
+
+    window.hapusDataGuru = async function(kode) {
+        const dipakai = window.dbJadwal.some(j => j.kodeGuru === kode);
+        const pesan = dipakai
+            ? `Guru kode ${kode} masih digunakan pada data jadwal. Hapus data guru ini? Kode pada jadwal yang sudah ada tidak akan diubah.`
+            : `Hapus data guru kode ${kode}?`;
+        if (!confirm(pesan)) return;
+
+        try {
+            await remove(ref(db, 'guru/' + kode));
+            delete window.namaGuruMap[kode];
+            perbaruiPilihanGuru();
+            window.renderJumlahJam();
+            window.generateTampilanF4();
+            window.renderDaftarHadir();
+        } catch (error) {
+            console.error(error);
+            alert('Gagal menghapus data guru dari Firebase.');
+        }
+    };
 
     async function muatDataFirebase() {
         try {
@@ -885,7 +1062,7 @@
     }
 
     // Auto-load saat pertama kali dibuka
-    muatDataFirebase();
+    muatDataGuru().then(() => muatDataFirebase());
     muatPengaturanKop();
 </script>
 </body>
