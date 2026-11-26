@@ -30,6 +30,28 @@
         .table-app { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;}
         .table-app th, .table-app td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .table-app th { background-color: #4CAF50; color: white; text-align: center; }
+        /* Tampilan kode dan nama guru pada tabel Input Data Jadwal */
+        .table-app td.guru-cell {
+            text-align: left;
+            vertical-align: middle;
+            padding: 8px 10px;
+            line-height: 1.35;
+            white-space: nowrap !important;
+            min-width: 280px;
+        }
+        .table-app td.guru-cell .guru-kode {
+            display: inline;
+            font-weight: bold;
+            white-space: nowrap;
+            margin-right: 2px;
+        }
+        .table-app td.guru-cell .guru-nama {
+            display: inline;
+            white-space: nowrap !important;
+            overflow-wrap: normal;
+            word-break: keep-all;
+        }
+
         
         /* Kontainer Tombol & Filter Atas */
         .action-header-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; flex-wrap: wrap; }
@@ -166,7 +188,7 @@
             <thead>
                 <tr>
                     <th style="width: 50px;">No.</th><th>Kelas</th><th>Hari & Tanggal</th>
-                    <th>Jam / Sesi</th><th>Mata Pelajaran</th><th style="width: 100px;">Kode Guru</th>
+                    <th>Jam / Sesi</th><th>Mata Pelajaran</th><th style="width: 280px; min-width: 280px;">Kode Guru</th>
                     <th style="width: 110px;">Aksi</th>
                 </tr>
             </thead>
@@ -664,7 +686,7 @@
                 <tr>
                     <td style="text-align:center;">${nomorUrut++}</td>
                     <td>Kelas ${d.kelas}</td><td>${hariTgl}</td><td>Sesi ${d.sesi} (${jamText})</td>
-                    <td>${d.mapel}</td><td style="text-align:center; font-weight:bold;">${d.kodeGuru}</td>
+                    <td>${d.mapel}</td><td class="guru-cell"><span class="guru-kode">${d.kodeGuru || ""}.</span> <span class="guru-nama">${window.namaGuruMap[d.kodeGuru] || ""}</span></td>
                     <td style="text-align:center; white-space: nowrap;">
                         <button class="btn-edit" onclick="bukaModalJadwal(${d.id})">✏️</button>
                         <button class="btn-hapus" onclick="window.hapusDataJadwal(${d.id})">🗑️</button>
