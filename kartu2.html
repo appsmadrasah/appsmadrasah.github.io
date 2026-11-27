@@ -241,15 +241,53 @@
     window.logoGlobalSrc = "";
     window.ttdGlobalSrc = "";
 
-    // Membaca tanggal lahir dari beberapa nama field yang umum dipakai daftar siswa.
+    // Mengambil tanggal lahir dari struktur data daftar siswa.
+    // Nama field dapat berbeda antarversi aplikasi, sehingga diperiksa juga secara fleksibel.
     window.ambilTanggalLahir = function(p) {
-        if (!p) return "";
-        const kandidat = [
-            p.tanggalLahir, p.tanggal_lahir, p.tanggal_lahir_siswa,
-            p.tgl_lahir, p.birthDate, p.tglLahir
+        if (!p || typeof p !== "object") return "";
+
+        const prioritas = [
+            "tanggalLahir", "tanggal_lahir", "tanggalLahirSiswa",
+            "tanggal_lahir_siswa", "tglLahir", "tgl_lahir",
+            "tgl_lahir_siswa", "birthDate", "birth_date",
+            "dateOfBirth", "dob", "ttl", "tgl", "tanggal"
         ];
-        const nilai = kandidat.find(v => v !== undefined && v !== null && String(v).trim() !== "");
-        return nilai === undefined ? "" : String(nilai);
+
+        const valid = (v) => {
+            if (v === undefined || v === null || typeof v === "object") return "";
+            const s = String(v).trim();
+            if (!s || s === "-" || s.toLowerCase() === "null" || s.toLowerCase() === "undefined") return "";
+            return s;
+        };
+
+        for (const key of prioritas) {
+            const hasil = valid(p[key]);
+            if (hasil) return hasil;
+        }
+
+        // Cari nama properti lain yang mengandung kata tanggal lahir/birth,
+        // termasuk variasi camelCase dan field tambahan dari aplikasi daftar siswa.
+        for (const [key, value] of Object.entries(p)) {
+            const nama = key.toLowerCase().replace(/[^a-z]/g, "");
+            const mengarahKeLahir =
+                nama === "ttl" || nama === "dob" || nama.includes("birth") ||
+                nama.includes("lahir") || nama === "tgl" || nama === "tanggal";
+            if (mengarahKeLahir) {
+                const hasil = valid(value);
+                if (hasil) return hasil;
+            }
+        }
+
+        // Periksa objek biodata/identitas bila tanggal lahir disimpan bertingkat.
+        for (const [key, value] of Object.entries(p)) {
+            if (value && typeof value === "object" && !Array.isArray(value) &&
+                /biodata|identitas|pribadi|siswa|data/i.test(key)) {
+                const hasil = window.ambilTanggalLahir(value);
+                if (hasil) return hasil;
+            }
+        }
+
+        return "";
     };
 
     // Nomor ujian selalu berupa 10 digit dan diperiksa terhadap seluruh peserta.
