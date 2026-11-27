@@ -224,7 +224,7 @@
         <input type="hidden" id="form-index" value=""> 
         <div class="form-group"><label>Nama Peserta:</label><input type="text" id="form-nama" autocomplete="off"></div>
         <div class="form-group"><label>Tanggal Lahir:</label><input type="text" id="form-tgl" placeholder="Contoh: 2006-03-08" autocomplete="off"></div>
-        <div class="form-group"><label>Nomor Ujian:</label><input type="text" id="form-no" autocomplete="off"></div>
+        <div class="form-group"><label>Nomor Ujian (otomatis, 10 digit):</label><input type="text" id="form-no" maxlength="10" inputmode="numeric" autocomplete="off" readonly></div>
         <div class="form-group"><label>NISN:</label><input type="text" id="form-nisn" autocomplete="off"></div>
         <div class="form-group"><label>Kelas:</label><input type="text" id="form-kelas" autocomplete="off"></div>
         <div class="modal-footer">
@@ -240,6 +240,33 @@
     window.dataPeserta = [];
     window.logoGlobalSrc = "";
     window.ttdGlobalSrc = "";
+
+    // Membaca tanggal lahir dari beberapa nama field yang umum dipakai daftar siswa.
+    window.ambilTanggalLahir = function(p) {
+        if (!p) return "";
+        const kandidat = [
+            p.tanggalLahir, p.tanggal_lahir, p.tanggal_lahir_siswa,
+            p.tgl_lahir, p.birthDate, p.tglLahir
+        ];
+        const nilai = kandidat.find(v => v !== undefined && v !== null && String(v).trim() !== "");
+        return nilai === undefined ? "" : String(nilai);
+    };
+
+    // Nomor ujian selalu berupa 10 digit dan diperiksa terhadap seluruh peserta.
+    window.buatNomorUjianUnik = function(terpakai) {
+        let nomor = "";
+        do {
+            const angka = new Uint32Array(1);
+            if (window.crypto && window.crypto.getRandomValues) {
+                window.crypto.getRandomValues(angka);
+                nomor = String(1000000000 + (angka[0] % 9000000000));
+            } else {
+                nomor = String(Math.floor(1000000000 + Math.random() * 9000000000));
+            }
+        } while (terpakai.has(nomor));
+        terpakai.add(nomor);
+        return nomor;
+    };
 
     window.renderTabel = function() {
         const tbody = document.getElementById("tabel-body");
@@ -263,7 +290,7 @@
             const tr = `<tr>
                 <td style="text-align:center;">${nomorUrut++}</td>
                 <td>${p.nama}</td>
-                <td>${p.tglLahir || '-'}</td>
+                <td>${window.ambilTanggalLahir(p) || '-'}</td>
                 <td>${p.noUjian || '-'}</td>
                 <td>${p.nisn || '-'}</td>
                 <td>${p.kelas || '-'}</td>
@@ -281,8 +308,8 @@
         document.getElementById('modalForm').style.display = 'block';
         document.getElementById('form-index').value = index;
         document.getElementById('form-nama').value = window.dataPeserta[index].nama || "";
-        document.getElementById('form-tgl').value = window.dataPeserta[index].tglLahir || "";
-        document.getElementById('form-no').value = window.dataPeserta[index].noUjian || "";
+        document.getElementById('form-tgl').value = window.ambilTanggalLahir(window.dataPeserta[index]);
+        document.getElementById('form-no').value = /^\d{10}$/.test(String(window.dataPeserta[index].noUjian || '')) ? String(window.dataPeserta[index].noUjian) : "Dibuat otomatis saat sinkronisasi";
         document.getElementById('form-nisn').value = window.dataPeserta[index].nisn || "";
         document.getElementById('form-kelas').value = window.dataPeserta[index].kelas || "";
     }
@@ -332,7 +359,7 @@
         const p = window.dataPeserta[index];
         document.getElementById('k-no').innerText = p.noUjian || "";
         document.getElementById('k-nama').innerText = p.nama || "";
-        document.getElementById('k-tgl').innerText = p.tglLahir || "";
+        document.getElementById('k-tgl').innerText = window.ambilTanggalLahir(p);
         document.getElementById('k-nisn').innerText = p.nisn || "";
         document.getElementById('k-kelas').innerText = p.kelas || "";
         bukaTab('tab-kartu');
@@ -429,7 +456,7 @@
                 <table class="info-table">
                     <tr><td>No. Peserta</td><td>:</td><td>${p.noUjian || ''}</td></tr>
                     <tr><td>Nama</td><td>:</td><td><strong>${p.nama || ''}</strong></td></tr>
-                    <tr><td>Tanggal Lahir</td><td>:</td><td>${p.tglLahir || ''}</td></tr>
+                    <tr><td>Tanggal Lahir</td><td>:</td><td>${window.ambilTanggalLahir(p)}</td></tr>
                     <tr><td>NISN</td><td>:</td><td>${p.nisn || ''}</td></tr>
                     <tr><td>Kelas</td><td>:</td><td>${p.kelas || ''}</td></tr>
                 </table>
@@ -450,7 +477,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, get, set, remove, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, get, set, update, remove, child, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCae3CoI4eWy9T6yhf_yGvoHiyoAJ7gUyA",
@@ -467,20 +494,48 @@
     const db = getDatabase(app);
     const dbRef = ref(db);
 
-    // 1. Fungsi Menarik Data Siswa
+    // Memuat daftar siswa, menyelaraskan tanggal lahir, dan memastikan nomor ujian unik 10 digit.
     async function muatDataFirebase() {
         try {
-            const snapshot = await get(child(dbRef, `siswa`));
-            let dataOnline = [];
-            
-            if (snapshot.exists()) {
-                snapshot.forEach((childSnapshot) => {
-                    let item = childSnapshot.val();
-                    item.docId = childSnapshot.key; 
-                    
+            const siswaRef = ref(db, 'siswa');
+
+            // Transaksi pada node siswa membuat pemeriksaan dan pemberian nomor berlangsung atomik,
+            // sehingga dua proses pemuatan bersamaan tidak memberikan nomor yang sama.
+            const hasil = await runTransaction(siswaRef, (data) => {
+                if (!data || typeof data !== 'object') return data;
+                const terpakai = new Set();
+                const daftar = Object.keys(data);
+
+                // Pertahankan nomor 10 digit yang unik; nomor kosong/tidak valid/duplikat diperbarui.
+                daftar.forEach((key) => {
+                    const item = data[key];
+                    if (!item || typeof item !== 'object') return;
+                    const nomor = item.noUjian === undefined || item.noUjian === null
+                        ? "" : String(item.noUjian).trim();
+                    if (/^\d{10}$/.test(nomor) && !terpakai.has(nomor)) {
+                        terpakai.add(nomor);
+                    } else {
+                        item.noUjian = window.buatNomorUjianUnik(terpakai);
+                    }
+
+                    // Gunakan tanggal lahir yang sudah ada pada daftar siswa sebagai sumber utama.
+                    const tanggal = window.ambilTanggalLahir(item);
+                    if (tanggal) item.tglLahir = tanggal;
+                });
+                return data;
+            }, { applyLocally: false });
+
+            const dataOnline = [];
+            if (hasil.snapshot && hasil.snapshot.exists()) {
+                hasil.snapshot.forEach((childSnapshot) => {
+                    const item = childSnapshot.val() || {};
+                    item.docId = childSnapshot.key;
+
                     if (item.username && !item.nisn) item.nisn = item.username;
                     if (item.password && !item.kelas) item.kelas = item.password;
-                    
+
+                    // Pastikan tanggal yang dipakai kartu sama dengan tanggal pada daftar siswa.
+                    item.tglLahir = window.ambilTanggalLahir(item);
                     dataOnline.push(item);
                 });
             }
@@ -488,7 +543,9 @@
             window.dataPeserta = dataOnline;
             window.renderTabel();
         } catch (error) {
-            console.error(error);
+            console.error("Gagal memuat/sinkronkan data peserta:", error);
+            document.getElementById("tabel-body").innerHTML =
+                `<tr><td colspan="7" style="text-align:center;">Gagal memuat data. Periksa koneksi dan izin Firebase.</td></tr>`;
         }
     }
 
@@ -538,14 +595,30 @@
 
     async function updateSiswa(docId, data) {
         try {
-            await set(ref(db, 'siswa/' + docId), {
+            const siswaRef = ref(db, 'siswa/' + docId);
+            const snapshot = await get(siswaRef);
+            const lama = snapshot.exists() ? snapshot.val() : {};
+            const patch = {
                 nama: data.nama,
-                tglLahir: data.tglLahir,
-                noUjian: data.noUjian,
-                nisn: data.nisn,
-                kelas: data.kelas
-            });
-        } catch (e) { console.error(e); }
+                tglLahir: data.tglLahir
+            };
+
+            // Sinkronkan juga field tanggal lahir yang memang digunakan oleh daftar siswa.
+            ['tanggalLahir', 'tanggal_lahir', 'tgl_lahir', 'birthDate', 'tanggal_lahir_siswa']
+                .forEach((field) => {
+                    if (Object.prototype.hasOwnProperty.call(lama, field)) patch[field] = data.tglLahir;
+                });
+
+            if (data.noUjian) patch.noUjian = data.noUjian;
+            patch.nisn = data.nisn;
+            patch.kelas = data.kelas;
+
+            // update() hanya mengubah field terkait dan tidak menghapus field lain pada data siswa.
+            await update(siswaRef, patch);
+        } catch (e) {
+            console.error("Gagal memperbarui data siswa:", e);
+            throw e;
+        }
     }
 
     async function hapusSiswa(docId) {
