@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Denah Bangku Ujian - Terhubung Data Siswa</title>
+<style>
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;background:#f2f5f3;margin:0;padding:20px;color:#26332a}
+.wrap{max-width:1180px;margin:auto;background:#fff;padding:22px;border-radius:10px;box-shadow:0 2px 12px #0001}
+h1{text-align:center;color:#28613c;margin:0 0 6px}.sub{text-align:center;color:#667;margin:0 0 20px}
+.panel{background:#f7faf8;border:1px solid #d8e2da;border-radius:8px;padding:15px;margin-bottom:18px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+label{font-weight:bold;font-size:13px;display:block;margin-bottom:5px}
+input,select{width:100%;padding:9px;border:1px solid #cbd5ce;border-radius:5px;font:inherit;background:#fff}
+button{border:0;border-radius:5px;padding:10px 14px;background:#27834a;color:white;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.55;cursor:not-allowed}button.alt{background:#53636b}button.orange{background:#d97706}button.red{background:#c43b3b}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.statusline{font-size:13px;margin:10px 0;color:#53645a}.statusline.error{color:#b42318}.statusline.ok{color:#237343}
+.roster-tools{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:12px 0}
+.roster-tools>div{min-width:160px;flex:1}
+.roster{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:7px;max-height:260px;overflow:auto;padding:8px;border:1px solid #dce4de;border-radius:6px;background:white}
+.person{display:flex;align-items:flex-start;gap:8px;padding:7px;border-bottom:1px solid #eef1ee;font-size:12px}
+.person input{width:auto;margin:1px 0 0}.person strong{display:block;font-size:12px}.person small{color:#667}
+.hint{font-size:12px;color:#667;line-height:1.5;margin:8px 0 0}
+.room{text-align:center;font-weight:bold;font-size:19px;margin:12px}
+.front{max-width:650px;margin:0 auto 16px;padding:10px;text-align:center;background:#e8efe9;border:2px solid #607366;border-radius:5px;font-weight:bold;letter-spacing:1px}
+.grid{display:grid;gap:9px;overflow-x:auto;padding:5px 2px 16px}
+.seat{min-width:90px;min-height:82px;border:1px solid #aebfb2;border-radius:6px;text-align:center;padding:7px;display:flex;flex-direction:column;justify-content:center;overflow-wrap:anywhere}
+.seat.empty{background:#f1f2f2;border-style:dashed;color:#999}.no{font-size:10px;color:#667;margin-bottom:5px}
+.name{font-size:12px;font-weight:bold}.exam{font-size:10px;color:#344;margin-top:4px}.class{font-size:10px;color:#687;margin-top:3px}
+.summary{text-align:center;color:#59665e;font-size:13px;margin-top:8px}
+@media print{body{padding:0;background:white}.wrap{box-shadow:none;padding:8mm;max-width:none}.panel,.actions{display:none!important}.grid{overflow:visible;gap:5px}.seat{min-width:0;min-height:65px;padding:4px}.name{font-size:10px}.no,.exam,.class{font-size:8px}.front{margin-bottom:10px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>DENAH BANGKU UJIAN</h1>
+<p class="sub" id="subtitle">Tahun Pelajaran 2026/2027</p>
+
+<section class="panel">
+ <div class="fields">
+  <div><label>Nama Sekolah / Madrasah</label><input id="school" value="MI HIDAYATUS SHIBYAN"></div>
+  <div><label>Nama Ruangan</label><input id="room" value="RUANG 1"></div>
+  <div><label>Tahun Pelajaran</label><input id="year" value="2026/2027"></div>
+  <div><label>Jumlah Baris</label><input id="rows" type="number" min="1" max="20" value="5"></div>
+  <div><label>Bangku per Baris</label><input id="cols" type="number" min="1" max="20" value="5"></div>
+  <div><label>Susunan Bangku</label><select id="order"><option value="normal">Urut kiri ke kanan</option><option value="snake">Zig-zag</option></select></div>
+ </div>
+
+ <div class="actions">
+  <button id="loadBtn" type="button">Muat / Perbarui Data Siswa</button>
+  <button class="alt" type="button" onclick="window.print()">Cetak Denah</button>
+ </div>
+ <div id="dbStatus" class="statusline">Menghubungkan ke Firebase saat halaman dibuka...</div>
+
+ <div class="roster-tools">
+  <div><label>Filter Kelas</label><select id="classFilter"><option value="Semua">Semua Kelas</option></select></div>
+  <div><label>Cari Nama / NISN</label><input id="search" type="text" placeholder="Ketik nama atau NISN"></div>
+  <div style="flex:0 0 auto;min-width:0"><button class="alt" type="button" id="selectVisible">Pilih yang tampil</button></div>
+  <div style="flex:0 0 auto;min-width:0"><button class="alt" type="button" id="clearVisible">Lepas pilihan tampil</button></div>
+ </div>
+ <div id="roster" class="roster"><div class="hint">Data siswa akan ditampilkan setelah berhasil dimuat dari Firebase.</div></div>
+ <p class="hint">Centang peserta yang akan dimasukkan ke denah. Nama, kelas, dan nomor ujian dibaca dari node Firebase <b>siswa</b>. Perubahan pada aplikasi Data Siswa dapat dimuat ulang dengan tombol Muat / Perbarui Data Siswa.</p>
+ <div class="actions">
+  <button type="button" id="makeBtn">Buat / Perbarui Denah dari Peserta Terpilih</button>
+  <button type="button" class="orange" id="shuffleBtn">Acak Posisi Peserta</button>
+  <button type="button" class="red" id="resetBtn">Kosongkan Denah</button>
+ </div>
+</section>
+
+<div class="room" id="roomTitle">MI HIDAYATUS SHIBYAN — RUANG 1</div>
+<div class="front">PAPAN TULIS / MEJA PENGAWAS (DEPAN)</div>
+<div class="grid" id="grid"></div>
+<div class="summary" id="summary"></div>
+</main>
+
+<script>
+let semuaSiswa = [];
+let peserta = [];
+let selectedIds = new Set();
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCae3CoI4eWy9T6yhf_yGvoHiyoAJ7gUyA",
+  authDomain: "datasiswa-65abf.firebaseapp.com",
+  databaseURL: "https://datasiswa-65abf-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "datasiswa-65abf",
+  storageBucket: "datasiswa-65abf.firebasestorage.app",
+  messagingSenderId: "1043621527533",
+  appId: "1:1043621527533:web:3e854e6c862709002731e4",
+  measurementId: "G-D6YZGM4KT5"
+};
+
+const v = id => document.getElementById(id).value.trim();
+function setStatus(message, type='') {
+ const el=document.getElementById('dbStatus'); el.textContent=message; el.className='statusline '+type;
+}
+function getNama(d) {
+ return d.nama || d.namaSiswa || d.nama_lengkap || d.name || d.namasiswa || '';
+}
+function getKelas(d) {
+ return d.kelas || d.class || d.rombel || d.password || d.namaKelas || '';
+}
+function getNomor(d) {
+ return d.noUjian || d.nomorUjian || d.no_ujian || d.noPeserta || d.nomorPeserta || '';
+}
+function classKey(value) {
+ return String(value || '').trim();
+}
+function visibleStudents() {
+ const kelas=v('classFilter'), q=v('search').toLowerCase();
+ return semuaSiswa.filter(s => {
+  const matchClass=kelas==='Semua' || classKey(s.kelas)===kelas;
+  const matchSearch=!q || s.nama.toLowerCase().includes(q) || s.nisn.toLowerCase().includes(q);
+  return matchClass && matchSearch;
+ });
+}
+function renderRoster() {
+ const list=document.getElementById('roster'); list.innerHTML='';
+ const data=visibleStudents();
+ if(!data.length){list.innerHTML='<div class="hint">Tidak ada siswa yang sesuai dengan filter.</div>';return}
+ data.forEach(s=>{
+  const label=document.createElement('label');label.className='person';
+  const cb=document.createElement('input');cb.type='checkbox';cb.checked=selectedIds.has(s.id);
+  cb.addEventListener('change',()=>{if(cb.checked)selectedIds.add(s.id);else selectedIds.delete(s.id)});
+  const info=document.createElement('span');
+  const strong=document.createElement('strong');strong.textContent=s.nama || '(Nama belum diisi)';
+  const small=document.createElement('small');small.textContent='Kelas: '+(s.kelas||'-')+' | NISN: '+(s.nisn||'-')+' | No. Ujian: '+(s.noUjian||'-');
+  info.append(strong,small);label.append(cb,info);list.append(label);
+ });
+}
+function renderClassOptions() {
+ const select=document.getElementById('classFilter'), current=select.value;
+ const kelas=[...new Set(semuaSiswa.map(s=>classKey(s.kelas)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id',{numeric:true}));
+ select.innerHTML='<option value="Semua">Semua Kelas</option>';
+ kelas.forEach(k=>{const op=document.createElement('option');op.value=k;op.textContent='Kelas '+k;select.append(op)});
+ if(kelas.includes(current))select.value=current;
+}
+function kapasitas(){return Math.max(1,Math.min(20,+v('rows')||1))*Math.max(1,Math.min(20,+v('cols')||1))}
+function makePlan(){
+ const ids=[...selectedIds];
+ const byId=new Map(semuaSiswa.map(s=>[s.id,s]));
+ peserta=ids.map(id=>byId.get(id)).filter(Boolean);
+
+ // Sesuaikan kapasitas secara otomatis agar peserta terpilih tidak membuat denah kosong.
+ let cols=Math.max(1,Math.min(20,Number(v('cols'))||5));
+ let rows=Math.max(1,Math.min(20,Number(v('rows'))||5));
+ if(peserta.length > rows*cols){
+   rows=Math.ceil(peserta.length/cols);
+   if(rows>20){
+     cols=Math.min(20,Math.ceil(peserta.length/20));
+     rows=Math.ceil(peserta.length/cols);
+   }
+   document.getElementById('rows').value=Math.min(20,rows);
+   document.getElementById('cols').value=cols;
+ }
+ if(peserta.length > 400){
+   setStatus('Jumlah peserta melebihi kapasitas maksimum denah (400 bangku). Kurangi peserta.', 'error');
+   peserta=[];
+ }
+ draw();
+}
+function draw(){
+ const rows=Math.max(1,Math.min(20,+v('rows')||1)),cols=Math.max(1,Math.min(20,+v('cols')||1));
+ document.getElementById('subtitle').textContent='Tahun Pelajaran '+(v('year')||'............');
+ document.getElementById('roomTitle').textContent=(v('school')||'SEKOLAH')+' — '+(v('room')||'RUANG UJIAN');
+ const grid=document.getElementById('grid');grid.style.gridTemplateColumns=`repeat(${cols},minmax(85px,1fr))`;grid.innerHTML='';
+ let idx=0;
+ for(let r=0;r<rows;r++){
+  let order=[...Array(cols).keys()];if(v('order')==='snake'&&r%2)order.reverse();
+  for(const c of order){
+   const s=peserta[idx]||null;idx++;
+   const el=document.createElement('div');el.className='seat'+(s?'':' empty');
+   const no=document.createElement('div');no.className='no';no.textContent=`BARIS ${r+1} • BANGKU ${c+1} • NO. ${idx}`;
+   const nm=document.createElement('div');nm.className='name';nm.textContent=s?(s.nama||'-'):'—';
+   const exam=document.createElement('div');exam.className='exam';exam.textContent=s?'No. Ujian: '+(s.noUjian||'-'):'';
+   const cl=document.createElement('div');cl.className='class';cl.textContent=s?'Kelas '+(s.kelas||'-'):'KOSONG';
+   el.append(no,nm,exam,cl);grid.append(el);
+  }
+ }
+ document.getElementById('summary').textContent=`Jumlah peserta: ${peserta.length} | Kapasitas: ${rows*cols} bangku | Bangku kosong: ${rows*cols-peserta.length}`;
+}
+function shuffle(){
+ if(!peserta.length){alert('Pilih peserta terlebih dahulu, lalu buat denah.');return}
+ for(let i=peserta.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[peserta[i],peserta[j]]=[peserta[j],peserta[i]]}
+ draw();
+}
+function resetPlan(){peserta=[];selectedIds.clear();renderRoster();draw()}
+async function loadStudents(){
+ setStatus('Sedang mengambil daftar siswa dari Firebase...');document.getElementById('loadBtn').disabled=true;
+ try{
+  const {initializeApp,getApps}=await import('https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js');
+  const {getDatabase,ref,get}=await import('https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js');
+  const app=getApps().length?getApps()[0]:initializeApp(firebaseConfig);
+  const db=getDatabase(app);
+  const snap=await get(ref(db,'siswa'));
+  semuaSiswa=[];
+  if(snap.exists()){
+   snap.forEach(child=>{
+    const d=child.val()||{};
+    const nama=String(getNama(d)||'').trim();
+    const kelas=String(getKelas(d)||'').trim();
+    const nisn=String(d.nisn||d.username||'').trim();
+    const noUjian=String(getNomor(d)||'').trim();
+    if(nama)semuaSiswa.push({id:child.key,nama,kelas,nisn,noUjian});
+   });
+  }
+  selectedIds=new Set(semuaSiswa.map(s=>s.id));
+  renderClassOptions();renderRoster();makePlan();
+  if(semuaSiswa.length){
+    setStatus(`Berhasil memuat ${semuaSiswa.length} siswa dari Firebase. Semua siswa dipilih secara default dan kapasitas bangku disesuaikan otomatis.`, 'ok');
+  } else {
+    setStatus('Koneksi Firebase berhasil, tetapi node siswa tidak berisi data. Periksa lokasi data siswa pada database.', 'error');
+  }
+ }catch(err){
+  console.error(err);
+  setStatus('Gagal memuat data Firebase: '+(err.message||err)+'. Periksa koneksi internet, konfigurasi, dan Rules/izin baca database.', 'error');
+ }finally{document.getElementById('loadBtn').disabled=false}
+}
+document.getElementById('loadBtn').addEventListener('click',loadStudents);
+document.getElementById('classFilter').addEventListener('change',renderRoster);
+document.getElementById('search').addEventListener('input',renderRoster);
+document.getElementById('selectVisible').addEventListener('click',()=>{visibleStudents().forEach(s=>selectedIds.add(s.id));renderRoster()});
+document.getElementById('clearVisible').addEventListener('click',()=>{visibleStudents().forEach(s=>selectedIds.delete(s.id));renderRoster()});
+document.getElementById('makeBtn').addEventListener('click',makePlan);
+document.getElementById('shuffleBtn').addEventListener('click',shuffle);
+document.getElementById('resetBtn').addEventListener('click',resetPlan);
+['school','room','year'].forEach(id=>document.getElementById(id).addEventListener('input',draw));
+['rows','cols','order'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(peserta.length>kapasitas())peserta=peserta.slice(0,kapasitas());draw()}));
+draw();loadStudents();
+</script>
+</body>
+</html>
