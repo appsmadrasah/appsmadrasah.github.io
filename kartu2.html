@@ -309,7 +309,7 @@
     window.renderTabel = function() {
         const tbody = document.getElementById("tabel-body");
         tbody.innerHTML = "";
-        
+
         const filterValue = document.getElementById("filter-kelas").value;
 
         if(window.dataPeserta.length === 0) {
@@ -317,16 +317,27 @@
             return;
         }
 
-        let nomorUrut = 1;
-
-        window.dataPeserta.forEach((p, index) => {
-            if (filterValue !== "Semua") {
+        // Tampilkan siswa berdasarkan urutan alfabet nama (A-Z).
+        // Simpan index asli agar tombol lihat/edit/hapus tetap mengarah ke data yang benar.
+        const daftarTerurut = window.dataPeserta
+            .map((p, index) => ({ p, index }))
+            .filter(({ p }) => {
+                if (filterValue === "Semua") return true;
                 const kelasSiswa = p.kelas ? p.kelas.toString().toUpperCase() : "";
-                if (!kelasSiswa.startsWith(filterValue)) return; 
-            }
+                return kelasSiswa.startsWith(filterValue);
+            })
+            .sort((a, b) => {
+                const namaA = String(a.p.nama || "").trim();
+                const namaB = String(b.p.nama || "").trim();
+                return namaA.localeCompare(namaB, "id", {
+                    sensitivity: "base",
+                    numeric: true
+                });
+            });
 
+        daftarTerurut.forEach(({ p, index }, urutan) => {
             const tr = `<tr>
-                <td style="text-align:center;">${nomorUrut++}</td>
+                <td style="text-align:center;">${urutan + 1}</td>
                 <td>${p.nama}</td>
                 <td>${window.ambilTanggalLahir(p) || '-'}</td>
                 <td>${p.noUjian || '-'}</td>
